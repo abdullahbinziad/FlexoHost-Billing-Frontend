@@ -1,0 +1,83 @@
+/**
+ * Formatting utility functions
+ */
+
+import type { Currency } from "@/types/currency";
+
+export const formatCurrency = (
+  amount: number,
+  currency?: string | Currency
+): string => {
+  let currencyCode = "USD";
+  let locale = "en-US";
+  let symbol = "$";
+
+  if (typeof currency === "string") {
+    currencyCode = currency;
+  } else if (currency) {
+    currencyCode = currency.code;
+    locale = currency.locale || "en-US";
+    symbol = currency.symbol;
+  }
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    // Fallback if currency code is invalid
+    return `${symbol}${amount.toFixed(2)}`;
+  }
+};
+
+export const formatDate = (
+  date: string | Date,
+  format: "long" | "short" | "full" = "long"
+): string => {
+  const dateObj = new Date(date);
+
+  if (format === "short") {
+    // Format: YYYY-MM-DD (e.g., "2026-05-20")
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  if (format === "full") {
+    // Format: "Tuesday, January 19th, 2027"
+    const dayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(dateObj);
+    const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(dateObj);
+    const day = dateObj.getDate();
+    const year = dateObj.getFullYear();
+    
+    // Add ordinal suffix (st, nd, rd, th)
+    const getOrdinal = (n: number): string => {
+      const s = ["th", "st", "nd", "rd"];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    
+    return `${dayName}, ${monthName} ${getOrdinal(day)}, ${year}`;
+  }
+
+  // Format: "May 20, 2026"
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(dateObj);
+};
+
+export const formatDateTime = (date: string | Date): string => {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+};
