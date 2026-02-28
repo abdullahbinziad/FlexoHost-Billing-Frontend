@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
 import type { DomainDetails } from "@/types/domain-manage";
 
@@ -10,6 +10,7 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ domain, onTabChange }: OverviewTabProps) {
+  const formatCurrency = useFormatCurrency();
   const handleQuickAction = (tabId: string) => {
     if (onTabChange) {
       onTabChange(tabId);
@@ -66,13 +67,13 @@ export function OverviewTab({ domain, onTabChange }: OverviewTabProps) {
             <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
               <span className="text-sm text-gray-600 dark:text-gray-400">First Payment Amount</span>
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(domain.billing.firstPaymentAmount, "BDT")}
+                {formatCurrency(domain.billing.firstPaymentAmount)}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
               <span className="text-sm text-gray-600 dark:text-gray-400">Recurring Amount</span>
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(domain.billing.recurringAmount, "BDT")} {domain.billing.billingCycle}
+                {formatCurrency(domain.billing.recurringAmount)} {domain.billing.billingCycle}
               </span>
             </div>
             <div className="flex justify-between items-center py-2">
@@ -85,7 +86,7 @@ export function OverviewTab({ domain, onTabChange }: OverviewTabProps) {
         </div>
       </div>
 
-   
+
     </div>
   );
 }

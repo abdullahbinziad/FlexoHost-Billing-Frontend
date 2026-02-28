@@ -16,6 +16,8 @@ interface ClientHeaderProps {
 
 export function ClientHeader({ onMenuClick }: ClientHeaderProps) {
   const { user, logout } = useAuth();
+
+
   const { isCollapsed, isMounted } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);

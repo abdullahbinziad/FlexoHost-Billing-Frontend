@@ -4,8 +4,8 @@ import { useState } from "react";
 import { ArrowRight, Tag, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import type { OrderSummary, BillingCycle, ServerLocation } from "@/types/checkout";
-import { formatCurrency } from "@/utils/format";
 
 interface OrderSummaryCardProps {
   summary: OrderSummary;
@@ -17,6 +17,7 @@ interface OrderSummaryCardProps {
   onPromoCodeApply?: (code: string) => Promise<boolean>;
   onPromoCodeRemove?: () => void;
   appliedPromoCode?: string;
+  hasDomain?: boolean;
 }
 
 export function OrderSummaryCard({
@@ -29,7 +30,9 @@ export function OrderSummaryCard({
   onPromoCodeApply,
   onPromoCodeRemove,
   appliedPromoCode,
+  hasDomain = false,
 }: OrderSummaryCardProps) {
+  const formatCurrency = useFormatCurrency();
   const [promoCode, setPromoCode] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
@@ -245,9 +248,14 @@ export function OrderSummaryCard({
           </label>
 
           {/* Checkout Button */}
+          {!hasDomain && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+              ⚠ Please configure a domain name to proceed.
+            </p>
+          )}
           <Button
             onClick={onCheckout}
-            disabled={!agreeToTerms}
+            disabled={!agreeToTerms || !hasDomain}
             className="w-full py-4 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             size="lg"
           >

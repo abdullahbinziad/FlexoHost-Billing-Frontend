@@ -1,51 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
 import { CheckoutPage } from "@/components/checkout/CheckoutPage";
-import type {
-  BillingCycleOption,
-  ServerLocation,
-  Addon,
-  BillingContact,
-  PaymentMethod,
-} from "@/types/checkout";
+import { useGetStoreProductQuery } from "@/store/api/storeApi";
+import { setCurrency } from "@/store/slices/currencySlice";
+import { useAuth } from "@/hooks/useAuth";
+import type { ServerLocation, BillingContact, PaymentMethod, Addon } from "@/types/checkout";
 
-// Mock data - Replace with actual API calls
-const mockBillingCycleOptions: BillingCycleOption[] = [
-  {
-    id: "monthly",
-    label: "Monthly",
-    price: 958,
-    pricePerMonth: 958,
-  },
-  {
-    id: "annually",
-    label: "Annually",
-    price: 8047,
-    pricePerMonth: 671,
-    originalPrice: 11496,
-    discount: 3449,
-    discountPercentage: 30,
-  },
-  {
-    id: "biennially",
-    label: "Biennially",
-    price: 13795,
-    pricePerMonth: 575,
-    originalPrice: 22992,
-    discount: 9197,
-    discountPercentage: 40,
-  },
-  {
-    id: "triennially",
-    label: "Triennially",
-    price: 17244,
-    pricePerMonth: 479,
-    originalPrice: 34488,
-    discount: 17244,
-    discountPercentage: 50,
-  },
-];
-
+// Mock server locations data (as requested)
 const mockServerLocations: ServerLocation[] = [
   { id: "usa", country: "USA", countryCode: "US", flag: "🇺🇸" },
   { id: "malaysia", country: "Malaysia", countryCode: "MY", flag: "🇲🇾" },
@@ -53,64 +17,110 @@ const mockServerLocations: ServerLocation[] = [
   { id: "bangladesh", country: "Bangladesh", countryCode: "BD", flag: "🇧🇩" },
   { id: "germany", country: "Germany", countryCode: "DE", flag: "🇩🇪" },
   { id: "finland", country: "Finland", countryCode: "FI", flag: "🇫🇮" },
+  { id: "usa-east", country: "USA East", countryCode: "US", flag: "🇺🇸" },
+];
+
+
+const mockPaymentMethods: PaymentMethod[] = [
+  { id: "stripe", name: "Credit Card (Stripe)", logo: "💳" },
+  { id: "paypal", name: "PayPal", logo: "🅿️" },
+  { id: "bkash", name: "bKash", logo: "🇧🇩" },
+  { id: "nagad", name: "Nagad", logo: "🇧🇩" },
 ];
 
 const mockAddons: Addon[] = [
   {
-    id: "sitejet",
-    name: "Sitejet - AI Powered Website Builder",
-    description:
-      "Sitejet offers a fully integrated website builder with AI-powered features to create stunning websites effortlessly.",
-    price: 0,
-    isFree: true,
+    id: "backup",
+    name: "Daily Backups",
+    description: "Keep your data safe with daily automated backups.",
+    price: 5.0,
   },
   {
-    id: "wp-toolkit",
-    name: "WP Toolkit Deluxe",
-    description:
-      "WP Toolkit Deluxe gives you advanced features for managing WordPress installations with ease.",
-    price: 0,
-    isFree: true,
+    id: "security",
+    name: "Advanced Security",
+    description: "Malware scanning and real-time protection.",
+    price: 10.0,
   },
-];
-
-const mockBillingContacts: BillingContact[] = [
-  {
-    id: "1",
-    name: "ABDULLAH BIN ZIAD",
-    email: "abdullahbinziad@gmail.com",
-    address: {
-      street: "Khordo",
-      city: "Kalaroa",
-      state: "Satkhira",
-      zipCode: "9414",
-      country: "Bangladesh",
-      countryCode: "BD",
-    },
-    phone: "+880.1772-065894",
-    currency: "NGN",
-  },
-];
-
-const mockPaymentMethods: PaymentMethod[] = [
-  {
-    id: "sslcommerz",
-    name: "SSLCommerz - Nagad, Rocket, Upay & BD Cards",
-    logo: "/logos/sslcommerz.svg",
-  },
-  { id: "bkash", name: "bKash Payment", logo: "/logos/bkash.svg" },
 ];
 
 export default function Checkout() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useAuth();
+
+  const productId = searchParams.get("product_id") || searchParams.get("product");
+  const billingCurrency = searchParams.get("billing_currency") || searchParams.get("currency");
+  const billingCycle = searchParams.get("billing_cycle") || searchParams.get("period");
+  const referral = searchParams.get("referral") || searchParams.get("ref");
+
+  // Handle Currency Switch
+  useEffect(() => {
+    if (billingCurrency) {
+      dispatch(setCurrency(billingCurrency.toUpperCase()));
+    }
+  }, [billingCurrency, dispatch]);
+
+  // Fetch Product Data
+  const { data: product, isLoading, error } = useGetStoreProductQuery(
+    productId as string,
+    { skip: !productId }
+  );
+
+  // Redirect if no product ID or error
+  useEffect(() => {
+    if (!productId) {
+      router.push("/");
+    } else if (error) {
+      // Optional: Show toast or error before redirecting
+      console.error("Failed to load product", error);
+      router.push("/");
+    }
+  }, [productId, error, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // If we are rerouting, return null to avoid flashing content
+  if (!productId || error || !product) {
+    return null;
+  }
+
   return (
     <CheckoutPage
-      productName="Hosting - Starter"
-      basePrice={958}
-      billingCycleOptions={mockBillingCycleOptions}
+      productName={product.name}
+      basePrice={0} // Calculated from billing cycle options
+      billingCycleOptions={[]} // Dynamically generated in CheckoutPage from product data
       serverLocations={mockServerLocations}
       availableAddons={mockAddons}
-      billingContacts={mockBillingContacts}
+      billingContacts={
+        isAuthenticated && user
+          ? [
+            {
+              id: String(user.id || (user as any)._id),
+              name: user.name || "My Account",
+              email: user.email,
+              phone: (user as any).phone || "",
+              address: {
+                street: (user as any).address?.street || "",
+                city: (user as any).address?.city || "",
+                state: (user as any).address?.state || "",
+                zipCode: (user as any).address?.zipCode || "",
+                country: (user as any).address?.country || "",
+              },
+            },
+          ]
+          : []
+      }
       paymentMethods={mockPaymentMethods}
+      product={product}
+      initialBillingCycle={billingCycle || undefined}
+      referral={referral || undefined}
     />
   );
 }

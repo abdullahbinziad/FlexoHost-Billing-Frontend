@@ -8,6 +8,7 @@ import { UserRole } from '@/config/api';
  * User Entity
  */
 export interface User {
+    id: any;
     _id: string;
     name: string;
     email: string;

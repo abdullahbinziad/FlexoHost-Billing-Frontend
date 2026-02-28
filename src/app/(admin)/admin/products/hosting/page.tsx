@@ -6,6 +6,7 @@ export default function AdminHostingPage() {
             category="hosting"
             addProductLabel="Add Hosting Package"
             addProductHref="/admin/products/hosting/new"
+            editProductHref="/admin/products/hosting/{id}"
         />
     );
 }

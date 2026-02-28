@@ -1,6 +1,6 @@
 "use client";
 
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
 
@@ -9,6 +9,7 @@ interface BillingOverviewCardProps {
 }
 
 export function BillingOverviewCard({ service }: BillingOverviewCardProps) {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
       <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -18,13 +19,13 @@ export function BillingOverviewCard({ service }: BillingOverviewCardProps) {
         <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
           <span className="text-sm text-gray-600 dark:text-gray-400">First Payment Amount</span>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {formatCurrency(service.billing.firstPaymentAmount, service.pricing.currency)}
+            {formatCurrency(service.billing.firstPaymentAmount)}
           </span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
           <span className="text-sm text-gray-600 dark:text-gray-400">Recurring Amount</span>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {formatCurrency(service.billing.recurringAmount, service.pricing.currency)}
+            {formatCurrency(service.billing.recurringAmount)}
           </span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">

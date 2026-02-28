@@ -9,8 +9,9 @@ import {
   MapPin,
   ExternalLink,
 } from "lucide-react";
-import { formatCurrency } from "@/utils/format";
 import { formatDate } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
+import { getBillingCycleName } from "@/utils/checkout";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
 
 interface ServiceOverviewCardProps {
@@ -18,17 +19,7 @@ interface ServiceOverviewCardProps {
 }
 
 export function ServiceOverviewCard({ service }: ServiceOverviewCardProps) {
-  const getBillingCycleLabel = (cycle: string) => {
-    const labels: Record<string, string> = {
-      monthly: "Monthly",
-      quarterly: "Quarterly",
-      "semi-annually": "Semi-Annually",
-      annually: "Annually",
-      biennially: "Biennially",
-      triennially: "Triennially",
-    };
-    return labels[cycle] || cycle;
-  };
+  const formatCurrency = useFormatCurrency();
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
@@ -92,10 +83,10 @@ export function ServiceOverviewCard({ service }: ServiceOverviewCardProps) {
             <span>Billing Cycle</span>
           </div>
           <p className="text-base font-medium text-gray-900 dark:text-gray-100">
-            {getBillingCycleLabel(service.pricing.billingCycle)}
+            {getBillingCycleName(service.pricing.billingCycle)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatCurrency(service.pricing.amount, service.pricing.currency)} per cycle
+            {formatCurrency(service.pricing.amount)} per cycle
           </p>
         </div>
 

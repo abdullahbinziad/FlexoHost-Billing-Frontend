@@ -1,19 +1,43 @@
 "use client";
 
-import { useState } from "react";
 import { ProductForm } from "@/components/admin/products/ProductForm";
 import { PageHeader } from "@/components/ui/page-header";
 import type { Product } from "@/types/admin";
 import { useRouter } from "next/navigation";
+import { useCreateProductMutation } from "@/store/api/productApi";
+import { toast } from "sonner";
 
+/**
+ * Add New VPS/Server Package Page
+ * 
+ * Allows admin users to create new VPS/Server packages with full configuration
+ * including pricing, features, module settings, and free domain options.
+ */
 export default function AddServerPage() {
     const router = useRouter();
+    const [createProduct, { isLoading }] = useCreateProductMutation();
 
-    const handleCreateProduct = (newProductData: Omit<Product, "id" | "createdAt" | "isHidden">) => {
-        // In a real app, this would call an API
-        console.log("Creating new VPS/Dedicated server:", newProductData);
-        alert("Server product created successfully! (Mock)");
-        router.push("/admin/products/server");
+    /**
+     * Handle product creation
+     * Submits the form data to the API and handles success/error states
+     */
+    const handleCreateProduct = async (newProductData: Omit<Product, "id" | "createdAt" | "isHidden">) => {
+        try {
+            // Call the API to create the product
+            const result = await createProduct(newProductData).unwrap();
+
+            // Show success notification
+            toast.success("VPS/Server package created successfully!");
+
+            // Redirect to the server products list
+            router.push("/admin/products/server");
+        } catch (error: any) {
+            // Handle API errors
+            console.error("Failed to create product:", error);
+
+            const errorMessage = error?.data?.message || error?.message || "Failed to create VPS/Server package. Please try again.";
+            toast.error(errorMessage);
+        }
     };
 
     return (
@@ -22,7 +46,7 @@ export default function AddServerPage() {
                 title="Add New VPS/Dedicated Server"
                 description="Create a new VPS or dedicated server product for your customers."
                 breadcrumbs={[
-                    { label: "Services", href: "/admin/products" },
+                    { label: "Products", href: "/admin/products" },
                     { label: "VPS/Dedicated", href: "/admin/products/server" },
                     { label: "Add New" }
                 ]}
@@ -32,20 +56,6 @@ export default function AddServerPage() {
             <ProductForm
                 variant="page"
                 onSubmit={handleCreateProduct}
-                initialData={{
-                    id: "",
-                    createdAt: "",
-                    isHidden: false,
-                    name: "",
-                    type: "vps",
-                    group: "", // Will force user to select
-                    description: "",
-                    price: 0,
-                    currency: "BDT",
-                    billingCycle: "monthly",
-                    features: [],
-                    stock: undefined
-                }}
             />
         </div>
     );

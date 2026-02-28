@@ -171,21 +171,27 @@ export interface Coupon {
     status: "active" | "expired";
 }
 
-export interface TLDPricingTier {
-    year: number;
+export interface TLDPricingDetail {
     register: number;
     renew: number;
     transfer: number;
+    enable: boolean;
+}
+
+export interface TLDCurrencyPricing {
+    currency: string;
+    "1": TLDPricingDetail;
+    "2": TLDPricingDetail;
+    "3": TLDPricingDetail;
 }
 
 export interface TLD {
     _id: string; // From API
     tld: string;
-    register: string; // Registry Name
     serial: number;
     label?: string;
     isSpotlight: boolean;
-    pricing: TLDPricingTier[];
+    pricing: TLDCurrencyPricing[];
     features: {
         dnsManagement: boolean;
         emailForwarding: boolean;

@@ -2,7 +2,7 @@
 
 import { Shield, Globe, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import type { DomainDetails } from "@/types/domain-manage";
 
 interface AddonsTabProps {
@@ -10,6 +10,7 @@ interface AddonsTabProps {
 }
 
 export function AddonsTab({ domain }: AddonsTabProps) {
+  const formatCurrency = useFormatCurrency();
   const addons = [
     {
       id: "domain-protection",
@@ -67,7 +68,7 @@ export function AddonsTab({ domain }: AddonsTabProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {addon.price === 0 ? "Free" : formatCurrency(addon.price, addon.currency)}
+                    {addon.price === 0 ? "Free" : formatCurrency(addon.price)}
                   </span>
                   {addon.enabled ? (
                     <span className="px-2 py-1 text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">

@@ -2,7 +2,7 @@
 
 import { RefreshCw, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
 import type { DomainDetails } from "@/types/domain-manage";
 
@@ -12,6 +12,7 @@ interface RenewTabProps {
 }
 
 export function RenewTab({ domain, onRenew }: RenewTabProps) {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">
@@ -37,7 +38,7 @@ export function RenewTab({ domain, onRenew }: RenewTabProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Renewal Amount</span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(domain.billing.recurringAmount, "BDT")}
+                {formatCurrency(domain.billing.recurringAmount)}
               </span>
             </div>
           </div>

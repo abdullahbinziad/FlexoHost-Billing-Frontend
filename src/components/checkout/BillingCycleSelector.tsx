@@ -3,8 +3,8 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import type { BillingCycle, BillingCycleOption } from "@/types/checkout";
-import { formatCurrency } from "@/utils/format";
 
 interface BillingCycleSelectorProps {
   options: BillingCycleOption[];
@@ -17,6 +17,7 @@ export function BillingCycleSelector({
   selected,
   onSelect,
 }: BillingCycleSelectorProps) {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Billing Cycle</h2>

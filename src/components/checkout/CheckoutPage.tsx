@@ -1,12 +1,15 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "@/store";
 import { useCheckoutRedux } from "@/hooks/useCheckoutRedux";
 import { BillingCycleSelector } from "./BillingCycleSelector";
 import { DomainConfiguration } from "./DomainConfiguration";
 import { ServerLocationSelector } from "./ServerLocationSelector";
-import { AvailableAddons } from "./AvailableAddons";
+
 import { BillingDetailsForm } from "./BillingDetailsForm";
-import { DomainRegistrantInfo } from "./DomainRegistrantInfo";
+
 import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import { OrderSummaryCard } from "./OrderSummaryCard";
 import type {
@@ -30,12 +33,67 @@ interface CheckoutPageProps {
 export function CheckoutPage({
   productName,
   basePrice,
-  billingCycleOptions,
+  billingCycleOptions: initialBillingCycleOptions,
   serverLocations,
   availableAddons,
   billingContacts,
   paymentMethods,
-}: CheckoutPageProps) {
+  product,
+  initialBillingCycle,
+  referral,
+}: CheckoutPageProps & {
+  product?: any; // Replace with proper Product type
+  initialBillingCycle?: string;
+  referral?: string;
+}) {
+  const selectedCurrency = useSelector((state: RootState) => state.currency.selectedCurrency);
+
+  // Generate billing cycle options from product if available
+  const billingCycleOptions = useMemo(() => {
+    if (!product || !product.pricing) return initialBillingCycleOptions;
+
+    // Find pricing for selected currency
+    const currencyPricing = product.pricing.find(
+      (p: any) => p.currency === selectedCurrency.code
+    ) || product.pricing[0]; // Fallback to first pricing if currency not found
+
+    if (!currencyPricing) return initialBillingCycleOptions;
+
+    const cycles: Array<keyof typeof currencyPricing> = [
+      "monthly",
+      "quarterly",
+      "semiAnnually",
+      "annually",
+      "biennially",
+      "triennially",
+    ];
+
+    return cycles
+      .filter((cycle) => {
+        const pricing = currencyPricing[cycle];
+        return pricing && typeof pricing === "object" && pricing.enable;
+      })
+      .map((cycle) => {
+        const pricing = currencyPricing[cycle];
+        // Calculate price per month based on cycle duration
+        let months = 1;
+        switch (cycle) {
+          case "quarterly": months = 3; break;
+          case "semiAnnually": months = 6; break;
+          case "annually": months = 12; break;
+          case "biennially": months = 24; break;
+          case "triennially": months = 36; break;
+        }
+
+        return {
+          id: cycle as any,
+          label: (cycle as string).charAt(0).toUpperCase() + (cycle as string).slice(1).replace(/([A-Z])/g, ' $1'),
+          price: pricing.price,
+          pricePerMonth: Math.round(pricing.price / months),
+        };
+      });
+  }, [product, selectedCurrency.code, initialBillingCycleOptions]);
+
   const {
     formData,
     orderSummary,
@@ -51,19 +109,61 @@ export function CheckoutPage({
     setPaymentMethod,
     setPromoCode,
     setAgreeToTerms,
+    setProductId,
+    setReferral,
+    setNewAccountInfo,
     handleCheckout,
-  } = useCheckoutRedux(billingCycleOptions);
+  } = useCheckoutRedux(billingCycleOptions, productName);
 
-  // Set default selections if not set (using useEffect would be better, but keeping it simple for now)
-  if (!formData.serverLocation && serverLocations.length > 0) {
-    setServerLocation(serverLocations[0]);
-  }
-  if (!formData.paymentMethod && paymentMethods.length > 0) {
-    setPaymentMethod(paymentMethods[0]);
-  }
-  if (!formData.billingContact && billingContacts.length > 0) {
-    setBillingContact(billingContacts[0]);
-  }
+  // Store product ID in checkout state on mount
+  useEffect(() => {
+    if (product?._id || product?.id) {
+      setProductId(product._id || product.id);
+    }
+    if (referral) {
+      setReferral(referral);
+    }
+  }, [product, referral, setProductId, setReferral]);
+
+  // Set default selections
+  useEffect(() => {
+    // Set default billing cycle if not set
+    if (!formData.billingCycle && billingCycleOptions.length > 0) {
+      const initial = initialBillingCycle && billingCycleOptions.find(opt => opt.id === initialBillingCycle)
+        ? initialBillingCycle
+        : billingCycleOptions[0].id;
+      setBillingCycle(initial as any);
+    }
+
+    if (!formData.serverLocation && serverLocations.length > 0) {
+      setServerLocation(serverLocations[0]);
+    }
+    if (!formData.paymentMethod && paymentMethods.length > 0) {
+      setPaymentMethod(paymentMethods[0]);
+    }
+    if (!formData.billingContact && billingContacts.length > 0) {
+      setBillingContact(billingContacts[0]);
+    }
+  }, [
+    formData.billingCycle,
+    formData.serverLocation,
+    formData.paymentMethod,
+    formData.billingContact,
+    billingCycleOptions,
+    serverLocations,
+    paymentMethods,
+    billingContacts,
+    initialBillingCycle,
+    setBillingCycle,
+    setServerLocation,
+    setPaymentMethod,
+    setBillingContact,
+  ]);
+
+  // Set initial billing cycle if provided and valid
+  // This needs to happen efficiently without causing infinite loops
+  // Moving this logic to useCheckoutRedux or initializing state with it would be better
+  // For now, we rely on the user manually selecting if it differs, or passing it to useCheckoutRedux
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -71,7 +171,7 @@ export function CheckoutPage({
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            You&apos;re almost there! Complete your order
+            {product ? `Configure ${product.name}` : "You're almost there! Complete your order"}
           </h1>
           {error && (
             <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
@@ -87,7 +187,7 @@ export function CheckoutPage({
             <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
               <BillingCycleSelector
                 options={billingCycleOptions}
-                selected={formData.billingCycle || "monthly"}
+                selected={(formData.billingCycle || initialBillingCycle || "monthly") as any}
                 onSelect={setBillingCycle}
               />
             </div>
@@ -96,6 +196,7 @@ export function CheckoutPage({
             <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-lg border border-primary/20 dark:border-primary/30">
               <DomainConfiguration
                 selectedAction={formData.domainAction || "register"}
+                selectedDomain={formData.selectedDomain}
                 onActionChange={setDomainAction}
                 onDomainSelect={setSelectedDomain}
               />
@@ -110,16 +211,6 @@ export function CheckoutPage({
               />
             </div>
 
-            {/* Available Addons */}
-            {availableAddons.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-                <AvailableAddons
-                  addons={availableAddons}
-                  selectedAddons={formData.selectedAddons || []}
-                  onAddonToggle={toggleAddon}
-                />
-              </div>
-            )}
 
             {/* Billing Details */}
             <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
@@ -135,28 +226,17 @@ export function CheckoutPage({
                   }
                 }}
                 onCreateNew={() => {
-                  // TODO: Open create new contact modal
                   console.log("Create new contact");
                 }}
+                onNewAccountChange={setNewAccountInfo}
               />
             </div>
 
-            {/* Domain Registrant Info */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-              <DomainRegistrantInfo
-                useDefault={formData.useDefaultRegistrant ?? true}
-                onUseDefaultChange={setUseDefaultRegistrant}
-                onCustomRegistrantChange={() => {
-                  // TODO: Open custom registrant form
-                  console.log("Custom registrant");
-                }}
-              />
-            </div>
+
 
             {/* Payment Method */}
             <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
               <PaymentMethodSelector
-                methods={paymentMethods}
                 selected={formData.paymentMethod || paymentMethods[0]}
                 onSelect={setPaymentMethod}
               />
@@ -167,11 +247,12 @@ export function CheckoutPage({
           <div className="lg:col-span-1">
             <OrderSummaryCard
               summary={orderSummary}
-              billingCycle={formData.billingCycle || "monthly"}
+              billingCycle={(formData.billingCycle || initialBillingCycle || "monthly") as any}
               serverLocation={formData.serverLocation || serverLocations[0]}
               agreeToTerms={formData.agreeToTerms || false}
               onAgreeToTermsChange={setAgreeToTerms}
               onCheckout={handleCheckout}
+              hasDomain={!!formData.selectedDomain}
               onPromoCodeApply={async (code: string) => {
                 // Mock validation - replace with actual API call
                 // For now, accept codes starting with "PROMO" or "SAVE"

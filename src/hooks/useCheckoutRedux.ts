@@ -23,9 +23,14 @@ import {
   setError,
   resetCheckout,
   clearCheckout,
+  setProductId,
+  setReferral,
+  setNewAccountInfo,
 } from "@/store/slices/checkoutSlice";
 import type {
   CheckoutFormData,
+  CreateOrderPayload,
+  NewAccountInfo,
   BillingCycle,
   DomainAction,
   ServerLocation,
@@ -37,15 +42,19 @@ import type {
   OrderItem,
 } from "@/types/checkout";
 import { useCreateOrderMutation } from "@/store/api/checkoutApi";
+import { useGetTldsQuery } from "@/store/api/tldApi";
 
 export function useCheckoutRedux(
   billingCycleOptions: Array<{
     id: BillingCycle;
     price: number;
-  }>
+  }>,
+  productName: string = "Hosting Product"
 ) {
   const dispatch = useDispatch();
   const checkout = useSelector((state: RootState) => state.checkout);
+  const selectedCurrency = useSelector((state: RootState) => state.currency.selectedCurrency);
+  const { data: tldsData } = useGetTldsQuery();
   const [createOrder, { isLoading: isCreatingOrder }] =
     useCreateOrderMutation();
 
@@ -60,7 +69,7 @@ export function useCheckoutRedux(
     if (selectedCycle) {
       items.push({
         id: "hosting-1",
-        name: "Hosting - Starter",
+        name: productName,
         type: "hosting",
         billingCycle: checkout.formData.billingCycle!,
         price: selectedCycle.price,
@@ -70,13 +79,33 @@ export function useCheckoutRedux(
 
     // Add domain if selected
     if (checkout.formData.selectedDomain) {
+      const selectedDomain = checkout.formData.selectedDomain;
+      let computedPrice = selectedDomain.promotionalPrice ?? selectedDomain.price;
+
+      // Dynamically calculate domain price based on current currency
+      const tlds = tldsData || [];
+      if (selectedDomain.tld && selectedDomain.period && tlds.length > 0) {
+        const tldInfo = tlds.find((t) => t.tld === selectedDomain.tld);
+        if (tldInfo) {
+          const currencyPricing = tldInfo.pricing.find((p) => p.currency === selectedCurrency.code);
+          if (currencyPricing) {
+            const yearKey = String(selectedDomain.period) as "1" | "2" | "3";
+            const pricingBlock = currencyPricing[yearKey];
+
+            if (pricingBlock?.enable) {
+              computedPrice = checkout.formData.domainAction === "transfer"
+                ? pricingBlock.transfer
+                : pricingBlock.register;
+            }
+          }
+        }
+      }
+
       items.push({
         id: "domain-1",
-        name: `${checkout.formData.selectedDomain.domain}${checkout.formData.selectedDomain.tld}`,
+        name: `${selectedDomain.domain}${selectedDomain.tld}`,
         type: "domain",
-        price:
-          checkout.formData.selectedDomain.promotionalPrice ??
-          checkout.formData.selectedDomain.price,
+        price: computedPrice,
         quantity: 1,
       });
     }
@@ -103,9 +132,9 @@ export function useCheckoutRedux(
       discount,
       tax,
       total,
-      currency: "TK",
+      currency: selectedCurrency.code,
     };
-  }, [checkout.formData, billingCycleOptions]);
+  }, [checkout.formData, billingCycleOptions, productName, selectedCurrency.code, tldsData]);
 
   // Update order summary in Redux when it changes
   useEffect(() => {
@@ -131,6 +160,9 @@ export function useCheckoutRedux(
       dispatch(setPaymentMethod(method)),
     setPromoCode: (code: string | undefined) => dispatch(setPromoCode(code)),
     setAgreeToTerms: (agree: boolean) => dispatch(setAgreeToTerms(agree)),
+    setProductId: (id: string) => dispatch(setProductId(id)),
+    setReferral: (ref: string | null) => dispatch(setReferral(ref)),
+    setNewAccountInfo: (info: NewAccountInfo | null) => dispatch(setNewAccountInfo(info)),
     setStep: (step: number) => dispatch(setStep(step)),
     nextStep: () => dispatch(nextStep()),
     previousStep: () => dispatch(previousStep()),
@@ -138,11 +170,93 @@ export function useCheckoutRedux(
     clearCheckout: () => dispatch(clearCheckout()),
   };
 
+  // Build the clean order payload from Redux state
+  const buildOrderPayload = (): CreateOrderPayload | null => {
+    const { formData } = checkout;
+    const { productId, referral } = checkout;
+
+    if (!productId || !formData.billingCycle || !formData.serverLocation || !formData.paymentMethod) {
+      return null;
+    }
+
+    // Build domain object based on action
+    const domainAction = formData.domainAction || "register";
+    const selectedDomain = formData.selectedDomain;
+    let domain: CreateOrderPayload["domain"];
+
+    if (domainAction === "register" && selectedDomain) {
+      domain = {
+        action: "register",
+        registration: {
+          domainName: selectedDomain.domain,
+          tld: selectedDomain.tld,
+          period: selectedDomain.period || 1,
+        },
+      };
+    } else if (domainAction === "transfer" && selectedDomain) {
+      domain = {
+        action: "transfer",
+        transfer: {
+          domainName: selectedDomain.domain,
+          tld: selectedDomain.tld,
+          eppCode: selectedDomain.eppCode || "",
+        },
+      };
+    } else if (domainAction === "use-owned" && selectedDomain) {
+      domain = {
+        action: "use-owned",
+        ownDomain: {
+          domainName: selectedDomain.domain,
+          tld: selectedDomain.tld,
+        },
+      };
+    } else {
+      domain = { action: domainAction };
+    }
+
+    // Build client identity
+    let client: CreateOrderPayload["client"];
+    if (formData.billingContact?.id) {
+      // Logged-in user — existing client
+      client = { type: "existing", clientId: formData.billingContact.id };
+    } else if (checkout.newAccountInfo) {
+      // New account registration with this order
+      client = { type: "new", account: checkout.newAccountInfo };
+    } else {
+      // Guest checkout (future)
+      client = { type: "guest" };
+    }
+
+    return {
+      productId,
+      billingCycle: formData.billingCycle,
+      currency: selectedCurrency.code,
+      domain,
+      serverLocation: formData.serverLocation.id,
+      paymentMethod: formData.paymentMethod.id,
+      client,
+      coupon: formData.promoCode || undefined,
+      referral: referral || undefined,
+      agreeToTerms: formData.agreeToTerms || false,
+    };
+  };
+
   // Handle checkout
   const handleCheckout = async () => {
     // Validate form
     if (!checkout.formData.agreeToTerms) {
       dispatch(setError("Please agree to the Terms of Service"));
+      return;
+    }
+
+    // Domain is mandatory — must register, transfer, or use own domain
+    if (!checkout.formData.selectedDomain) {
+      dispatch(setError("Please configure a domain name for your hosting product."));
+      return;
+    }
+
+    if (!checkout.productId) {
+      dispatch(setError("Product not found. Please try again."));
       return;
     }
 
@@ -161,14 +275,17 @@ export function useCheckoutRedux(
       return;
     }
 
+    const payload = buildOrderPayload();
+    if (!payload) {
+      dispatch(setError("Incomplete order data. Please fill all required fields."));
+      return;
+    }
+
     dispatch(setLoading(true));
     dispatch(setError(null));
 
     try {
-      const result = await createOrder({
-        formData: checkout.formData as CheckoutFormData,
-        orderSummary,
-      }).unwrap();
+      const result = await createOrder(payload).unwrap();
 
       // Handle success
       if (result.paymentUrl) {

@@ -1,8 +1,8 @@
 "use client";
 
 import { Server, Globe, Calendar, CreditCard, MapPin } from "lucide-react";
-import { formatCurrency } from "@/utils/format";
 import { formatDate } from "@/utils/format";
+import { getBillingCycleName } from "@/utils/checkout";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
 
 interface ServiceInfoCardProps {
@@ -10,17 +10,6 @@ interface ServiceInfoCardProps {
 }
 
 export function ServiceInfoCard({ service }: ServiceInfoCardProps) {
-  const getBillingCycleLabel = (cycle: string) => {
-    const labels: Record<string, string> = {
-      monthly: "Monthly",
-      quarterly: "Quarterly",
-      "semi-annually": "Semi-Annually",
-      annually: "Annually",
-      biennially: "Biennially",
-      triennially: "Triennially",
-    };
-    return labels[cycle] || cycle;
-  };
 
   const infoItems = [
     {
@@ -41,7 +30,7 @@ export function ServiceInfoCard({ service }: ServiceInfoCardProps) {
     {
       icon: CreditCard,
       label: "Billing Cycle",
-      value: getBillingCycleLabel(service.pricing.billingCycle),
+      value: getBillingCycleName(service.pricing.billingCycle),
     },
     {
       icon: Calendar,

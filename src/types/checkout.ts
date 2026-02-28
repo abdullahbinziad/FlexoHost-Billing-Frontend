@@ -2,7 +2,7 @@
  * Checkout Module Type Definitions
  */
 
-export type BillingCycle = "monthly" | "annually" | "biennially" | "triennially";
+export type BillingCycle = "monthly" | "quarterly" | "semiAnnually" | "annually" | "biennially" | "triennially";
 
 export interface BillingCycleOption {
   id: BillingCycle;
@@ -22,6 +22,8 @@ export interface DomainSearchResult {
   available: boolean;
   price: number;
   promotionalPrice?: number;
+  period?: number;
+  eppCode?: string;
 }
 
 export interface ServerLocation {
@@ -41,18 +43,19 @@ export interface Addon {
   image?: string;
 }
 
+export interface Address {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 export interface BillingContact {
   id: string;
   name: string;
   email: string;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    zipCode: string;
-    country: string;
-    countryCode: string;
-  };
+  address: Address;
   phone: string;
   currency?: string;
 }
@@ -85,6 +88,7 @@ export interface CheckoutFormData {
   registrantContact?: BillingContact;
   paymentMethod: PaymentMethod;
   promoCode?: string;
+  referral?: string;
   agreeToTerms: boolean;
 }
 
@@ -95,4 +99,65 @@ export interface OrderSummary {
   tax?: number;
   total: number;
   currency: string;
+}
+
+export interface NewAccountInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  company?: string;
+  password: string;
+  address: Address;
+}
+
+export interface CreateOrderPayload {
+  // ── Product ──
+  productId: string;
+  billingCycle: string;
+  currency: string;
+
+  // ── Domain (conditional based on action) ──
+  domain: {
+    action: "register" | "transfer" | "use-owned";
+
+    // For REGISTER
+    registration?: {
+      domainName: string;
+      tld: string;
+      period: number;
+    };
+
+    // For TRANSFER
+    transfer?: {
+      domainName: string;
+      tld: string;
+      eppCode: string;
+    };
+
+    // For USE-OWNED
+    ownDomain?: {
+      domainName: string;
+      tld: string;
+    };
+  };
+
+  // ── Server ──
+  serverLocation: string; // ID of the location
+
+  // ── Payment ──
+  paymentMethod: string; // ID of the payment method
+
+  // ── Client Identity (one of three modes) ──
+  client:
+  | { type: "existing"; clientId: string }
+  | { type: "new"; account: NewAccountInfo }
+  | { type: "guest" };
+
+  // ── Promotions ──
+  coupon?: string;
+  referral?: string;
+
+  // ── Terms ──
+  agreeToTerms: boolean;
 }

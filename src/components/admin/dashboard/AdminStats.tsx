@@ -2,13 +2,14 @@
 
 import { Card } from "@/components/ui/card"; // Needs card ui
 import { Users, ShoppingCart, DollarSign, Activity } from "lucide-react";
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 
 export function AdminStats() {
+    const formatCurrency = useFormatCurrency();
     const stats = [
         {
             title: "Total Revenue",
-            value: formatCurrency(125000, "BDT"),
+            value: formatCurrency(125000),
             change: "+20.1% from last month",
             icon: DollarSign,
         },

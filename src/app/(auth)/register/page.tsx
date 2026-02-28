@@ -7,8 +7,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import Image from "next/image";
 import Link from "next/link";
 import { isValidEmail } from "@/lib/security";
-import PhoneInput from "react-phone-number-input";
-import "react-phone-number-input/style.css";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import { countries } from "@/data/countries";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -18,6 +18,7 @@ export default function RegisterPage() {
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [company, setCompany] = useState("");
 
     // Billing Address
     const [streetAddress, setStreetAddress] = useState("");
@@ -79,6 +80,7 @@ export default function RegisterPage() {
                 clientData: {
                     firstName,
                     lastName,
+                    companyName: company,
                     contactEmail: email,
                     phoneNumber,
                     address: {
@@ -116,7 +118,7 @@ export default function RegisterPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-8">
-            <div className="w-full max-w-2xl">
+            <div className="w-full max-w-3xl">
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Image
@@ -217,14 +219,35 @@ export default function RegisterPage() {
                                     >
                                         Phone Number <span className="text-red-500">*</span>
                                     </label>
-                                    <PhoneInput
-                                        international
-                                        defaultCountry="BD"
-                                        value={phoneNumber}
-                                        onChange={(value) => setPhoneNumber(value || "")}
-                                        className="phone-input-custom"
+                                    <div className="w-full flex items-center border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-colors">
+                                        <PhoneInput
+                                            country={'bd'}
+                                            value={phoneNumber}
+                                            onChange={(phone) => setPhoneNumber(phone)}
+                                            containerClass="flex-1 w-full"
+                                            inputClass="!w-full !h-[42px] !bg-transparent !border-none !text-gray-900 dark:!text-gray-100 !px-4 !py-2 !pl-[52px] !focus:ring-0 !focus:outline-none !shadow-none"
+                                            buttonClass="!bg-transparent !border-none !shadow-none hover:!bg-transparent focus:!bg-transparent pl-2"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Company (Optional) */}
+                                <div className="md:col-span-2">
+                                    <label
+                                        htmlFor="company"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Company (optional)
+                                    </label>
+                                    <input
+                                        id="company"
+                                        type="text"
+                                        value={company}
+                                        onChange={(e) => setCompany(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                                        placeholder="Company LLC"
                                         disabled={isLoading}
-                                        required
                                     />
                                 </div>
                             </div>
@@ -447,64 +470,6 @@ export default function RegisterPage() {
                     </div>
                 </div>
             </div>
-
-            <style jsx global>{`
-        /* Custom styles for PhoneInput to match our design */
-        .phone-input-custom .PhoneInputInput {
-          width: 100%;
-          padding: 0.5rem 1rem;
-          border: 1px solid rgb(209 213 219);
-          border-radius: 0.5rem;
-          background-color: white;
-          color: rgb(17 24 39);
-          font-size: 1rem;
-          line-height: 1.5rem;
-        }
-
-        .dark .phone-input-custom .PhoneInputInput {
-          border-color: rgb(75 85 99);
-          background-color: rgb(17 24 39);
-          color: rgb(243 244 246);
-        }
-
-        .phone-input-custom .PhoneInputInput:focus {
-          outline: none;
-          ring: 2px;
-          ring-color: var(--primary);
-          border-color: transparent;
-        }
-
-        .phone-input-custom .PhoneInputCountrySelect {
-          margin-right: 0.5rem;
-          padding: 0.5rem;
-          border: 1px solid rgb(209 213 219);
-          border-radius: 0.5rem;
-          background-color: white;
-          color: rgb(17 24 39);
-        }
-
-        .dark .phone-input-custom .PhoneInputCountrySelect {
-          border-color: rgb(75 85 99);
-          background-color: rgb(17 24 39);
-          color: rgb(243 244 246);
-        }
-
-        .phone-input-custom .PhoneInputCountryIcon {
-          width: 1.5rem;
-          height: 1.5rem;
-          margin-right: 0.5rem;
-        }
-
-        .phone-input-custom .PhoneInputCountrySelectArrow {
-          opacity: 0.6;
-          margin-left: 0.25rem;
-        }
-
-        .phone-input-custom {
-          display: flex;
-          align-items: center;
-        }
-      `}</style>
         </div>
     );
 }

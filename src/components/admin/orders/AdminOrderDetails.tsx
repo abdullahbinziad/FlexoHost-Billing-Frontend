@@ -16,7 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { BackButton } from "@/components/ui/back-button";
 import { mockAdminOrders } from "@/data/mockAdminData";
-import { formatDate, formatCurrency } from "@/utils/format";
+import { formatDate } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import type { Order } from "@/types/admin";
 
 interface AdminOrderDetailsProps {
@@ -24,6 +25,7 @@ interface AdminOrderDetailsProps {
 }
 
 export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
+    const formatCurrency = useFormatCurrency();
     const [order, setOrder] = useState<Order | null>(null);
 
     useEffect(() => {
@@ -106,7 +108,7 @@ export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
                                                         </span>
                                                     </div>
                                                     <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">
-                                                        {formatCurrency(item.price, order.currency)}
+                                                        {formatCurrency(item.price)}
                                                     </span>
                                                 </div>
 
@@ -184,7 +186,7 @@ export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
                                     <div className="flex justify-between items-center">
                                         <span className="text-gray-600 dark:text-gray-400 font-medium">Total Amount Due</span>
                                         <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                            {formatCurrency(order.totalAmount, order.currency)}
+                                            {formatCurrency(order.totalAmount)}
                                         </span>
                                     </div>
                                 </div>

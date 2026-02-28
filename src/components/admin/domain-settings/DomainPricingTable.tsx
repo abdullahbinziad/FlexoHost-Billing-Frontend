@@ -20,7 +20,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { TLD, TLDPricingTier } from "@/types/admin";
+import { TLD, TLDCurrencyPricing, TLDPricingDetail } from "@/types/admin";
 import {
     useGetTldsQuery,
     useCreateTldMutation,
@@ -31,23 +31,7 @@ import { toast } from "sonner";
 import { DomainPricingModal } from "./DomainPricingModal";
 import { DomainPricingRow } from "./DomainPricingRow";
 
-interface PricingTier {
-    register: number;
-    renew: number;
-    transfer: number;
-}
-
-interface PricingData {
-    "1": PricingTier;
-    "2": PricingTier;
-    "3": PricingTier;
-}
-
-const defaultPricing: PricingData = {
-    "1": { register: 10, renew: 12, transfer: 10 },
-    "2": { register: 20, renew: 24, transfer: 20 },
-    "3": { register: 30, renew: 36, transfer: 30 },
-};
+import { defaultPricingDetail, defaultCurrencyPricing } from "@/lib/domain-constants";
 
 export function DomainPricingTable() {
     const { data: tlds = [], isLoading } = useGetTldsQuery();
@@ -101,10 +85,27 @@ export function DomainPricingTable() {
     // General Updates
     const handleUpdateRegistrar = async (id: string, registrar: string) => {
         try {
-            await updateTld({ id, body: { register: registrar } }).unwrap(); // Note: 'register' is the field for registrar in API
+            const enabled = registrar !== "None";
+            const provider = registrar === "None" ? "" : registrar;
+            await updateTld({
+                id,
+                body: {
+                    autoRegistration: { enabled, provider }
+                }
+            }).unwrap();
             toast.success("Registrar updated");
         } catch (error) {
             toast.error("Failed to update registrar");
+        }
+    };
+
+    const handleUpdateStatus = async (tld: TLD) => {
+        const newStatus = tld.status === "active" ? "inactive" : "active";
+        try {
+            await updateTld({ id: tld._id, body: { status: newStatus } }).unwrap();
+            toast.success(`TLD status updated to ${newStatus}`);
+        } catch (error) {
+            toast.error("Failed to update status");
         }
     };
 
@@ -122,15 +123,13 @@ export function DomainPricingTable() {
         if (!newTldName) return;
 
         try {
-            const apiPricing: TLDPricingTier[] = [
-                { year: 1, ...defaultPricing["1"] },
-                { year: 2, ...defaultPricing["2"] },
-                { year: 3, ...defaultPricing["3"] },
+            const apiPricing: TLDCurrencyPricing[] = [
+                defaultCurrencyPricing("USD"),
+                defaultCurrencyPricing("BDT")
             ];
 
             await createTld({
                 tld: newTldName,
-                register: newTldRegistrar,
                 serial: tlds.length + 1,
                 isSpotlight: false,
                 pricing: apiPricing,
@@ -223,6 +222,7 @@ export function DomainPricingTable() {
                                 onUpdateRegistrar={handleUpdateRegistrar}
                                 onDelete={handleDeleteTld}
                                 onToggleSpotlight={handleToggleSpotlight}
+                                onUpdateStatus={handleUpdateStatus}
                             />
                         ))}
 

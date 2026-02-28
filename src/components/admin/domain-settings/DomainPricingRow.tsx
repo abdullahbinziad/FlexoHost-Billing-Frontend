@@ -23,6 +23,7 @@ interface DomainPricingRowProps {
     onUpdateRegistrar: (id: string, registrar: string) => void;
     onDelete: (id: string) => void;
     onToggleSpotlight: (tld: TLD) => void;
+    onUpdateStatus: (tld: TLD) => void;
 }
 
 export function DomainPricingRow({
@@ -33,6 +34,7 @@ export function DomainPricingRow({
     onUpdateRegistrar,
     onDelete,
     onToggleSpotlight,
+    onUpdateStatus,
 }: DomainPricingRowProps) {
     const getBadgeColor = (badge: string | null | undefined) => {
         switch (badge) {
@@ -73,8 +75,8 @@ export function DomainPricingRow({
                         variant="ghost"
                         size="icon"
                         className={`h-9 w-9 ${tld.isSpotlight
-                                ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
-                                : "text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100"
+                            ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
+                            : "text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100"
                             }`}
                         onClick={() => onToggleSpotlight(tld)}
                     >
@@ -94,7 +96,7 @@ export function DomainPricingRow({
             </TableCell>
             <TableCell>
                 <Select
-                    value={tld.register}
+                    value={tld.autoRegistration?.provider || "None"}
                     onValueChange={(val) => onUpdateRegistrar(tld._id, val)}
                 >
                     <SelectTrigger className="h-9 w-full">
@@ -109,8 +111,13 @@ export function DomainPricingRow({
             </TableCell>
             <TableCell>
                 <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
-                        <Settings className="w-4 h-4" />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 px-2 text-xs font-semibold ${tld.status === "active" ? "text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30" : "text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"}`}
+                        onClick={() => onUpdateStatus(tld)}
+                    >
+                        {tld.status === "active" ? "Active" : "Inactive"}
                     </Button>
                     <div className="flex flex-col">
                         <ArrowUp className="w-3 h-3 text-gray-400 cursor-pointer hover:text-gray-600" />

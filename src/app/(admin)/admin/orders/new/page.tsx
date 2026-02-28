@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BackButton } from "@/components/ui/back-button";
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 
 // Mock Data
 const MOCK_CLIENTS = [
@@ -57,6 +57,7 @@ type DomainRow = {
 };
 
 export default function AddNewOrderPage() {
+    const formatCurrency = useFormatCurrency();
     // Global Settings
     const [clientSearch, setClientSearch] = useState("");
     const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -533,8 +534,8 @@ export default function AddNewOrderPage() {
                                                     </p>
                                                 </div>
                                                 <span className="font-medium">
-                                                    {p.priceOverride ? formatCurrency(parseFloat(p.priceOverride), 'BDT') :
-                                                        (prod ? formatCurrency(prod.price * p.quantity, 'BDT') : formatCurrency(0, 'BDT'))}
+                                                    {p.priceOverride ? formatCurrency(parseFloat(p.priceOverride)) :
+                                                        (prod ? formatCurrency(prod.price * p.quantity) : formatCurrency(0))}
                                                 </span>
                                             </div>
                                         );
@@ -550,7 +551,7 @@ export default function AddNewOrderPage() {
                                                 </p>
                                             </div>
                                             <span className="font-medium">
-                                                {d.priceOverride ? formatCurrency(parseFloat(d.priceOverride), 'BDT') : formatCurrency(12.00 * parseInt(d.period), 'BDT')}
+                                                {d.priceOverride ? formatCurrency(parseFloat(d.priceOverride)) : formatCurrency(12.00 * parseInt(d.period))}
                                             </span>
                                         </div>
                                     ))}
@@ -562,11 +563,11 @@ export default function AddNewOrderPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>Sub Total</span>
-                                    <span>{formatCurrency(totalAmount, 'BDT')}</span>
+                                    <span>{formatCurrency(totalAmount)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>Tax (0%)</span>
-                                    <span>{formatCurrency(0, 'BDT')}</span>
+                                    <span>{formatCurrency(0)}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -574,7 +575,7 @@ export default function AddNewOrderPage() {
                         <div className="bg-green-50 dark:bg-green-900/20 p-6 border-t border-green-100 dark:border-green-900/50">
                             <div className="flex justify-between items-center mb-6">
                                 <span className="text-2xl font-bold text-green-700 dark:text-green-400">Total</span>
-                                <span className="text-2xl font-bold text-green-700 dark:text-green-400">{formatCurrency(totalAmount, 'BDT')}</span>
+                                <span className="text-2xl font-bold text-green-700 dark:text-green-400">{formatCurrency(totalAmount)}</span>
                             </div>
                             <Button className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 text-white">
                                 Submit Order

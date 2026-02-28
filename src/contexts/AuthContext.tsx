@@ -176,7 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 console.log("Final redirect destination:", finalRedirect);
                 console.log("========================");
 
-                router.push(finalRedirect);
+                if (redirectUrl !== "NO_REDIRECT") {
+                    router.push(finalRedirect);
+                }
             } else {
                 throw new Error(response.message || "Login failed");
             }

@@ -18,11 +18,29 @@ export const getBillingCycleLabel = (
 ): { short: string; long: string } => {
   const labels: Record<string, { short: string; long: string }> = {
     monthly: { short: "/mo", long: "Monthly" },
+    quarterly: { short: "/3mo", long: "Quarterly" },
+    semiAnnually: { short: "/6mo", long: "Semi-Annually" },
     annually: { short: "/yr", long: "Annually" },
     biennially: { short: "/2yr", long: "Biennially" },
     triennially: { short: "/3yr", long: "Triennially" },
   };
   return labels[cycle] || { short: "", long: cycle };
+};
+
+/**
+ * Simple cycle name — use this in UI components instead of duplicating the label map.
+ * Handles both camelCase ("semiAnnually") and kebab-case ("semi-annually") keys.
+ */
+export const getBillingCycleName = (cycle: string): string => {
+  const labels: Record<string, string> = {
+    monthly: "Monthly",
+    quarterly: "Quarterly",
+    semiAnnually: "Semi-Annually",
+    annually: "Annually",
+    biennially: "Biennially",
+    triennially: "Triennially",
+  };
+  return labels[cycle] || cycle;
 };
 
 export const validateDomainName = (domain: string): boolean => {

@@ -4,7 +4,7 @@ import { Lock } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { DomainProtectionOffer } from "@/types/domain";
-import { formatCurrency } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 
 interface DomainProtectionCardProps {
   offer: DomainProtectionOffer;
@@ -15,6 +15,7 @@ export function DomainProtectionCard({
   offer,
   onGetNow,
 }: DomainProtectionCardProps) {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="mb-6 p-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm">
       <div className="flex items-center justify-between gap-6">
@@ -39,14 +40,14 @@ export function DomainProtectionCard({
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 dark:text-gray-400 line-through">
-                  {formatCurrency(offer.originalPrice, offer.currency)}
+                  {formatCurrency(offer.originalPrice)}
                 </span>
                 <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded">
                   Save {offer.discountPercentage}%
                 </span>
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(offer.discountedPrice, offer.currency)}/{offer.period}
+                {formatCurrency(offer.discountedPrice)}/{offer.period}
               </span>
             </div>
           </div>

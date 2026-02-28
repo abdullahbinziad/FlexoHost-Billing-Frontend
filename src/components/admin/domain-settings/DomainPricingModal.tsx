@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     Table,
     TableBody,
@@ -20,27 +22,11 @@ import {
     DialogFooter,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { TLD, TLDPricingTier } from "@/types/admin";
+import { TLD, TLDCurrencyPricing, TLDPricingDetail } from "@/types/admin";
 import { useUpdateTldMutation } from "@/store/api/tldApi";
 import { toast } from "sonner";
 
-interface PricingTier {
-    register: number;
-    renew: number;
-    transfer: number;
-}
-
-interface PricingData {
-    "1": PricingTier;
-    "2": PricingTier;
-    "3": PricingTier;
-}
-
-const defaultPricing: PricingData = {
-    "1": { register: 10, renew: 12, transfer: 10 },
-    "2": { register: 20, renew: 24, transfer: 20 },
-    "3": { register: 30, renew: 36, transfer: 30 },
-};
+import { defaultPricingDetail, defaultCurrencyPricing } from "@/lib/domain-constants";
 
 interface DomainPricingModalProps {
     open: boolean;
@@ -50,53 +36,56 @@ interface DomainPricingModalProps {
 
 export function DomainPricingModal({ open, onOpenChange, tld }: DomainPricingModalProps) {
     const [updateTld, { isLoading: isUpdating }] = useUpdateTldMutation();
-    const [tempPricing, setTempPricing] = useState<PricingData>(defaultPricing);
+    const [pricingState, setPricingState] = useState<TLDCurrencyPricing[]>([]);
 
     useEffect(() => {
         if (open && tld) {
-            setTempPricing(mapApiPricingToState(tld.pricing));
+            // Initialize with existing pricing or defaults for USD and BDT
+            const currencies = ["USD", "BDT"];
+            const currentPricing = tld.pricing || [];
+
+            const newPricingState = currencies.map(currency => {
+                const existing = currentPricing.find(p => p.currency === currency);
+                if (existing) {
+                    return JSON.parse(JSON.stringify(existing));
+                }
+                return defaultCurrencyPricing(currency);
+            });
+
+            setPricingState(newPricingState);
         }
     }, [open, tld]);
 
-    const mapApiPricingToState = (apiPricing: TLDPricingTier[]): PricingData => {
-        const pricingState: PricingData = JSON.parse(JSON.stringify(defaultPricing));
-        apiPricing.forEach((tier) => {
-            const yearKey = String(tier.year) as "1" | "2" | "3";
-            if (pricingState[yearKey]) {
-                pricingState[yearKey] = {
-                    register: tier.register,
-                    renew: tier.renew,
-                    transfer: tier.transfer,
-                };
-            }
-        });
-        return pricingState;
-    };
+    const updatePricing = (
+        currencyIndex: number,
+        year: "1" | "2" | "3",
+        field: keyof TLDPricingDetail,
+        value: any
+    ) => {
+        setPricingState(prev => {
+            const newState = [...prev];
+            const currencyPricing = { ...newState[currencyIndex] };
+            const yearPricing = { ...currencyPricing[year] };
 
-    const updatePricing = (year: "1" | "2" | "3", type: keyof PricingTier, value: string) => {
-        const numValue = parseFloat(value) || 0;
-        setTempPricing((prev) => ({
-            ...prev,
-            [year]: {
-                ...prev[year],
-                [type]: numValue,
-            },
-        }));
+            if (field === "enable") {
+                yearPricing[field] = value as boolean;
+            } else {
+                yearPricing[field] = parseFloat(value) || 0;
+            }
+
+            currencyPricing[year] = yearPricing;
+            newState[currencyIndex] = currencyPricing;
+            return newState;
+        });
     };
 
     const handleSavePricing = async () => {
         if (!tld) return;
 
-        const apiPricing: TLDPricingTier[] = [
-            { year: 1, ...tempPricing["1"] },
-            { year: 2, ...tempPricing["2"] },
-            { year: 3, ...tempPricing["3"] },
-        ];
-
         try {
             await updateTld({
                 id: tld._id,
-                body: { pricing: apiPricing },
+                body: { pricing: pricingState },
             }).unwrap();
             toast.success("Pricing updated successfully");
             onOpenChange(false);
@@ -109,73 +98,108 @@ export function DomainPricingModal({ open, onOpenChange, tld }: DomainPricingMod
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[90vw]">
+            <DialogContent className="sm:max-w-[800px]">
                 <DialogHeader>
                     <DialogTitle>Edit Pricing: {tld.tld}</DialogTitle>
                     <DialogDescription>
-                        Set the registration, renewal, and transfer pricing for this TLD.
+                        Set the registration, renewal, and transfer pricing for this TLD across different currencies.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Period</TableHead>
-                                <TableHead>Registration</TableHead>
-                                <TableHead>Renewal</TableHead>
-                                <TableHead>Transfer</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {["1", "2", "3"].map((year) => (
-                                <TableRow key={year}>
-                                    <TableCell className="font-medium">
-                                        {year} Year{year !== "1" && "s"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-muted-foreground">$</span>
-                                            <Input
-                                                type="number"
-                                                value={tempPricing[year as keyof PricingData]?.register ?? 0}
-                                                onChange={(e) =>
-                                                    updatePricing(year as any, "register", e.target.value)
-                                                }
-                                                className="w-24"
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-muted-foreground">$</span>
-                                            <Input
-                                                type="number"
-                                                value={tempPricing[year as keyof PricingData]?.renew ?? 0}
-                                                onChange={(e) =>
-                                                    updatePricing(year as any, "renew", e.target.value)
-                                                }
-                                                className="w-24"
-                                            />
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm text-muted-foreground">$</span>
-                                            <Input
-                                                type="number"
-                                                value={tempPricing[year as keyof PricingData]?.transfer ?? 0}
-                                                onChange={(e) =>
-                                                    updatePricing(year as any, "transfer", e.target.value)
-                                                }
-                                                className="w-24"
-                                            />
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
+                <div className="py-4">
+                    <Tabs defaultValue="USD">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            {pricingState.map((p) => (
+                                <TabsTrigger key={p.currency} value={p.currency}>
+                                    {p.currency}
+                                </TabsTrigger>
                             ))}
-                        </TableBody>
-                    </Table>
+                        </TabsList>
+
+                        {pricingState.map((currencyPricing, index) => (
+                            <TabsContent key={currencyPricing.currency} value={currencyPricing.currency}>
+                                <div className="border rounded-md overflow-hidden">
+                                    <Table>
+                                        <TableHeader className="bg-muted/50">
+                                            <TableRow>
+                                                <TableHead>Period</TableHead>
+                                                <TableHead>Registration</TableHead>
+                                                <TableHead>Renewal</TableHead>
+                                                <TableHead>Transfer</TableHead>
+                                                <TableHead className="text-center w-[100px]">Enable</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {(["1", "2", "3"] as const).map((year) => {
+                                                const details = currencyPricing[year];
+                                                const isEnabled = details.enable;
+
+                                                return (
+                                                    <TableRow key={year}>
+                                                        <TableCell className="font-medium">
+                                                            {year} Year{year !== "1" && "s"}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    {currencyPricing.currency === "USD" ? "$" : "৳"}
+                                                                </span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={details.register}
+                                                                    onChange={(e) => updatePricing(index, year, "register", e.target.value)}
+                                                                    disabled={!isEnabled}
+                                                                    className="w-24"
+                                                                />
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    {currencyPricing.currency === "USD" ? "$" : "৳"}
+                                                                </span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={details.renew}
+                                                                    onChange={(e) => updatePricing(index, year, "renew", e.target.value)}
+                                                                    disabled={!isEnabled}
+                                                                    className="w-24"
+                                                                />
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    {currencyPricing.currency === "USD" ? "$" : "৳"}
+                                                                </span>
+                                                                <Input
+                                                                    type="number"
+                                                                    value={details.transfer}
+                                                                    onChange={(e) => updatePricing(index, year, "transfer", e.target.value)}
+                                                                    disabled={!isEnabled}
+                                                                    className="w-24"
+                                                                />
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex justify-center">
+                                                                <Checkbox
+                                                                    checked={isEnabled}
+                                                                    onCheckedChange={(checked) =>
+                                                                        updatePricing(index, year, "enable", checked === true)
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </TabsContent>
+                        ))}
+                    </Tabs>
                 </div>
 
                 <DialogFooter>

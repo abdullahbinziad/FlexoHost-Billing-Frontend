@@ -3,6 +3,7 @@
 import { AlertCircle, Check, Lock } from "lucide-react";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
+import { getBillingCycleName } from "@/utils/checkout";
 import { Button } from "@/components/ui/button";
 import type { HostingService } from "@/types/hosting";
 
@@ -15,18 +16,6 @@ export function ServiceCard({ service, onManage }: ServiceCardProps) {
   const formatCurrency = useFormatCurrency();
   const isExpired = service.status === "expired";
   const isActive = service.status === "active";
-
-  const getBillingCycleLabel = (cycle: string) => {
-    const labels: Record<string, string> = {
-      monthly: "Monthly",
-      quarterly: "Quarterly",
-      "semi-annually": "Semi-Annually",
-      annually: "Annually",
-      biennially: "Biennially",
-      triennially: "Triennially",
-    };
-    return labels[cycle] || cycle;
-  };
 
   return (
     <div className="p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
@@ -49,10 +38,10 @@ export function ServiceCard({ service, onManage }: ServiceCardProps) {
         {/* Pricing Column */}
         <div className="col-span-3">
           <p className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            {formatCurrency(service.pricing.amount, service.pricing.currency)}
+            {formatCurrency(service.pricing.amount)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {getBillingCycleLabel(service.pricing.billingCycle)}
+            {getBillingCycleName(service.pricing.billingCycle)}
           </p>
         </div>
 

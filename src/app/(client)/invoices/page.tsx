@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FileText, Eye } from "lucide-react";
 import { formatDate } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
 
 // Mock invoice data - Replace with actual API call
@@ -32,11 +33,9 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const formatBDT = (amount: number): string => {
-  return `TK ${amount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-};
 
 export default function ClientInvoices() {
+  const formatCurrency = useFormatCurrency();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -102,7 +101,7 @@ export default function ClientInvoices() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right font-semibold text-gray-900 dark:text-gray-100">
-                      {invoice.currency === "BDT" ? formatBDT(invoice.total) : `$${invoice.total.toFixed(2)}`}
+                      {formatCurrency(invoice.total)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <Link href={`/invoices/${invoice.id}`}>

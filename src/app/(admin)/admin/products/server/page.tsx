@@ -6,6 +6,7 @@ export default function AdminServerPage() {
             category="vps"
             addProductLabel="Add VPS/Dedicated Server"
             addProductHref="/admin/products/server/new"
+            editProductHref="/admin/products/server/{id}"
         />
     );
 }

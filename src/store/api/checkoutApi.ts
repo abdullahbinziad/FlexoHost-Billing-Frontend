@@ -1,7 +1,6 @@
 import { api } from "./baseApi";
 import type {
-  CheckoutFormData,
-  OrderSummary,
+  CreateOrderPayload,
   BillingCycleOption,
   ServerLocation,
   Addon,
@@ -9,10 +8,7 @@ import type {
   PaymentMethod,
 } from "@/types/checkout";
 
-export interface CreateOrderRequest {
-  formData: CheckoutFormData;
-  orderSummary: OrderSummary;
-}
+export type CreateOrderRequest = CreateOrderPayload;
 
 export interface CreateOrderResponse {
   orderId: string;
@@ -52,7 +48,7 @@ export const checkoutApi = api.injectEndpoints({
     // Create order
     createOrder: builder.mutation<CreateOrderResponse, CreateOrderRequest>({
       query: (data) => ({
-        url: "/checkout/order",
+        url: "/orders",
         method: "POST",
         body: data,
       }),
@@ -71,15 +67,20 @@ export const checkoutApi = api.injectEndpoints({
       }),
     }),
 
-    // Search domain availability
     searchDomain: builder.query<
-      { available: boolean; price: number; message?: string },
+      { available: boolean; price: number; message?: string; pricing?: { USD: number; BDT: number } },
       { domain: string; tld: string }
     >({
-      query: ({ domain, tld }) => ({
-        url: `/checkout/domain-search`,
-        params: { domain, tld },
-      }),
+      query: ({ domain, tld }) => {
+        const fullDomain = `${domain}${tld}`;
+
+        console.log("Searching domain:", fullDomain);
+
+        return {
+          url: `/domains/search`,
+          params: { domain: fullDomain },
+        };
+      },
     }),
   }),
 });

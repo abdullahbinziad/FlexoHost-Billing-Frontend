@@ -1,20 +1,43 @@
 "use client";
 
-import { useState } from "react";
 import { ProductForm } from "@/components/admin/products/ProductForm";
 import { PageHeader } from "@/components/ui/page-header";
 import type { Product } from "@/types/admin";
 import { useRouter } from "next/navigation";
-import { mockAdminProducts } from "@/data/mockAdminData"; // For now update local mock state/log it
+import { useCreateProductMutation } from "@/store/api/productApi";
+import { toast } from "sonner";
 
+/**
+ * Add New Hosting Package Page
+ * 
+ * Allows admin users to create new hosting packages with full configuration
+ * including pricing, features, module settings, and free domain options.
+ */
 export default function AddHostingPage() {
     const router = useRouter();
+    const [createProduct, { isLoading }] = useCreateProductMutation();
 
-    const handleCreateProduct = (newProductData: Omit<Product, "id" | "createdAt" | "isHidden">) => {
-        // In a real app, this would call an API
-        console.log("Creating new hosting product:", newProductData);
-        alert("Product created successfully! (Mock)");
-        router.push("/admin/products/hosting");
+    /**
+     * Handle product creation
+     * Submits the form data to the API and handles success/error states
+     */
+    const handleCreateProduct = async (newProductData: Omit<Product, "id" | "createdAt" | "isHidden">) => {
+        try {
+            // Call the API to create the product
+            const result = await createProduct(newProductData).unwrap();
+
+            // Show success notification
+            toast.success("Hosting package created successfully!");
+
+            // Redirect to the hosting products list
+            router.push("/admin/products/hosting");
+        } catch (error: any) {
+            // Handle API errors
+            console.error("Failed to create product:", error);
+
+            const errorMessage = error?.data?.message || error?.message || "Failed to create hosting package. Please try again.";
+            toast.error(errorMessage);
+        }
     };
 
     return (
@@ -33,20 +56,6 @@ export default function AddHostingPage() {
             <ProductForm
                 variant="page"
                 onSubmit={handleCreateProduct}
-                initialData={{
-                    id: "",
-                    createdAt: "",
-                    isHidden: false,
-                    name: "",
-                    type: "hosting",
-                    group: "", // Will force user to select
-                    description: "",
-                    price: 0,
-                    currency: "BDT",
-                    billingCycle: "annually",
-                    features: [],
-                    stock: undefined
-                }}
             />
         </div>
     );

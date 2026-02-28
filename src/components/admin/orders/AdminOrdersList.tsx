@@ -18,10 +18,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { mockAdminOrders } from "@/data/mockAdminData";
-import { formatCurrency, formatDate } from "@/utils/format";
+import { formatDate } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import type { Order } from "@/types/admin";
 
 export function AdminOrdersList() {
+    const formatCurrency = useFormatCurrency();
     const router = useRouter();
     const [orders, setOrders] = useState<Order[]>(mockAdminOrders);
     const [isSearchOpen, setIsSearchOpen] = useState(true);
@@ -338,7 +340,7 @@ export function AdminOrdersList() {
                                     </TableCell>
                                     <TableCell className="text-sm">{order.paymentMethod || 'SSLCommerz'}</TableCell>
                                     <TableCell className="font-medium">
-                                        {formatCurrency(order.totalAmount, order.currency)}
+                                        {formatCurrency(order.totalAmount)}
                                     </TableCell>
                                     <TableCell className={getPaymentStatusColor(order.paymentStatus)}>
                                         <Badge variant="outline" className={`border-0 bg-transparent px-0 font-semibold ${getPaymentStatusColor(order.paymentStatus)}`}>

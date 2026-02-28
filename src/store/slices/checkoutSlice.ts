@@ -9,6 +9,7 @@ import type {
   PaymentMethod,
   DomainSearchResult,
   OrderSummary,
+  NewAccountInfo,
 } from "@/types/checkout";
 
 interface CheckoutState {
@@ -17,6 +18,9 @@ interface CheckoutState {
   isLoading: boolean;
   error: string | null;
   step: number;
+  productId: string | null;
+  referral: string | null;
+  newAccountInfo: NewAccountInfo | null;
 }
 
 const initialState: CheckoutState = {
@@ -31,6 +35,9 @@ const initialState: CheckoutState = {
   isLoading: false,
   error: null,
   step: 1,
+  productId: null,
+  referral: null,
+  newAccountInfo: null,
 };
 
 const checkoutSlice = createSlice({
@@ -84,6 +91,15 @@ const checkoutSlice = createSlice({
     },
     setAgreeToTerms: (state, action: PayloadAction<boolean>) => {
       state.formData.agreeToTerms = action.payload;
+    },
+    setReferral: (state, action: PayloadAction<string | null>) => {
+      state.referral = action.payload;
+    },
+    setProductId: (state, action: PayloadAction<string | null>) => {
+      state.productId = action.payload;
+    },
+    setNewAccountInfo: (state, action: PayloadAction<NewAccountInfo | null>) => {
+      state.newAccountInfo = action.payload;
     },
     // Update entire form data
     updateFormData: (
@@ -139,6 +155,9 @@ export const {
   setPaymentMethod,
   setPromoCode,
   setAgreeToTerms,
+  setReferral,
+  setProductId,
+  setNewAccountInfo,
   updateFormData,
   setOrderSummary,
   setStep,
