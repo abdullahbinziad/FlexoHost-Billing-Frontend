@@ -14,13 +14,11 @@ const mockClient = {
     role: "Client"
 };
 
-export default function ClientLayout({
-    children,
-    params,
-}: {
+export default async function ClientLayout(props: {
     children: React.ReactNode;
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
+    const params = await props.params;
     // In a real application, you would fetch the client data here using the ID.
     // const client = await getClient(params.id);
 
@@ -32,7 +30,7 @@ export default function ClientLayout({
             <ClientDetailsHeader client={client} />
             <ClientTabs clientId={params.id} />
             <main className="min-h-[400px]">
-                {children}
+                {props.children}
             </main>
         </div>
     );

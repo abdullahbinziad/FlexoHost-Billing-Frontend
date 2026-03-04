@@ -30,7 +30,7 @@ export const clientNavItems: NavItem[] = [
     hasSubmenu: true,
     submenu: [
       {
-        label: "Domain portfolio",
+        label: "Domain portfolio ",
         href: "/domains",
       },
       {

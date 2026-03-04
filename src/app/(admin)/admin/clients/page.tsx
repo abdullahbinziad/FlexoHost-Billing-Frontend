@@ -110,10 +110,10 @@ export default function ViewSearchClients() {
                                 Phone Number
                             </label>
                             <div className="flex gap-2">
-                                <Select className="w-[80px] bg-white dark:bg-background">
+                                <select className="w-[80px] bg-white dark:bg-background border rounded-md">
                                     <option value="+1">🇺🇸 +1</option>
                                     <option value="+880">🇧🇩 +880</option>
-                                </Select>
+                                </select>
                                 <Input placeholder="201-555-0123" className="flex-1 bg-white dark:bg-background" />
                             </div>
                         </div>
@@ -121,11 +121,11 @@ export default function ViewSearchClients() {
                             <label className="text-sm font-medium text-muted-foreground">
                                 Client Group
                             </label>
-                            <Select className="w-full bg-white dark:bg-background">
+                            <select className="w-full bg-white dark:bg-background border rounded-md h-10 px-3">
                                 <option>Any</option>
                                 <option>Default</option>
                                 <option>VIP</option>
-                            </Select>
+                            </select>
                         </div>
                     </div>
 
@@ -134,12 +134,12 @@ export default function ViewSearchClients() {
                             <label className="text-sm font-medium text-muted-foreground">
                                 Status
                             </label>
-                            <Select className="w-full bg-white dark:bg-background">
+                            <select className="w-full bg-white dark:bg-background border rounded-md h-10 px-3">
                                 <option>Any</option>
                                 <option>Active</option>
                                 <option>Inactive</option>
                                 <option>Closed</option>
-                            </Select>
+                            </select>
                         </div>
 
                         <div className="flex gap-2 items-end">
@@ -160,15 +160,15 @@ export default function ViewSearchClients() {
                 <div className="flex items-center gap-4 mt-2 sm:mt-0">
                     <div className="flex items-center gap-2">
                         <span>Jump to Page:</span>
-                        <Select className="w-16 h-8 text-xs bg-blue-600 text-white border-blue-600 font-bold">
+                        <select className="w-16 h-8 text-xs bg-blue-600 text-white border-blue-600 font-bold rounded-md px-1">
                             <option>ON</option>
-                        </Select>
+                        </select>
                     </div>
                     <div className="flex items-center gap-2">
                         <span>Hide Inactive Clients (26)</span>
-                        <Select className="w-12 h-8 text-xs">
+                        <select className="w-12 h-8 text-xs border rounded-md px-1 bg-white dark:bg-gray-800">
                             <option>1</option>
-                        </Select>
+                        </select>
                     </div>
                 </div>
             </div>

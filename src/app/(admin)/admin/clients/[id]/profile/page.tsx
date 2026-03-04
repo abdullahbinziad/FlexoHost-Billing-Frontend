@@ -36,11 +36,11 @@ export default function ClientProfilePage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Status</label>
-                            <Select className="w-full">
+                            <select className="w-full">
                                 <option>Active</option>
                                 <option>Inactive</option>
                                 <option>Closed</option>
-                            </Select>
+                            </select>
                         </div>
                     </div>
 

@@ -10,7 +10,10 @@ import { cn } from "@/lib/utils";
 import type { Invoice } from "@/types/invoice";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-
+import { usePayInvoiceMutation } from "@/store/api/invoiceApi";
+import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 interface InvoiceDetailProps {
   invoice: Invoice;
@@ -24,16 +27,52 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
   const [showPaymentDropdown, setShowPaymentDropdown] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const [payInvoice, { isLoading: isPaying }] = usePayInvoiceMutation();
+  const searchParams = useSearchParams();
+  const toastShown = useRef(false);
+
+  useEffect(() => {
+    if (toastShown.current) return;
+    const paymentStatus = searchParams.get('payment');
+
+    if (paymentStatus === 'success') {
+      toastShown.current = true;
+      toast.success('Payment completed successfully!');
+      window.history.replaceState(null, '', window.location.pathname);
+    } else if (paymentStatus === 'failed') {
+      toastShown.current = true;
+      toast.error('Payment failed. Please try again or use a different method.');
+      window.history.replaceState(null, '', window.location.pathname);
+    } else if (paymentStatus === 'cancelled') {
+      toastShown.current = true;
+      toast.error('Payment was cancelled. You can try again.');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [searchParams]);
 
   const paymentMethods = [
     { id: "sslcommerz", name: "SSLCommerz - Nagad, Rocket, Upay & BD Cards" },
     { id: "bkash", name: "bKash Payment" },
   ];
 
-  const handlePayNow = () => {
-    // Handle payment processing
-    console.log("Processing payment with:", selectedPaymentMethod);
-    // TODO: Implement payment processing logic
+  const handlePayNow = async () => {
+    try {
+      const response = await payInvoice({
+        invoiceId: invoice.id,
+        gateway: selectedPaymentMethod,
+      }).unwrap();
+
+      if (response?.GatewayPageURL) {
+        window.location.href = response.GatewayPageURL;
+      } else {
+        // SSLCommerz might have returned status: FAILED and failedreason
+        toast.error((response as any)?.failedreason || "Failed to retrieve payment gateway URL");
+        console.error("SSLCommerz Init Error Response:", response);
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast.error(error?.data?.message || "Failed to initiate payment");
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -159,7 +198,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
               <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-4">
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                    Invoice #{invoice.invoiceNumber}
+                    Invoice {invoice.invoiceNumber}
                   </h1>
                 </div>
                 <div className="flex items-center gap-3">
@@ -254,8 +293,16 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
                     onClick={handlePayNow}
                     className="w-full"
                     size="lg"
+                    disabled={isPaying}
                   >
-                    Pay Now
+                    {isPaying ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      "Pay Now"
+                    )}
                   </Button>
                 </div>
               </div>
@@ -269,7 +316,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm px-6 py-4">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                  Invoice #{invoice.invoiceNumber}
+                  Invoice {invoice.invoiceNumber}
                 </h1>
                 <div className="flex items-center gap-3">
                   <Button
@@ -326,7 +373,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
                           Invoice Number
                         </p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          #{invoice.invoiceNumber}
+                          {invoice.invoiceNumber}
                         </p>
                       </div>
                     </div>

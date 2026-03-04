@@ -31,7 +31,7 @@ export function setCookie(
     const {
         maxAge = 86400, // 24 hours default
         path = '/',
-        sameSite = 'Strict',
+        sameSite = 'Lax', // Changed to Lax to support returning from payment gateways cleanly
         secure = process.env.NODE_ENV === 'production',
     } = options;
 

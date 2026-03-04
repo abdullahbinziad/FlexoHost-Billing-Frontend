@@ -17,15 +17,38 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { mockAdminOrders } from "@/data/mockAdminData";
 import { formatDate } from "@/utils/format";
-import { useFormatCurrency } from "@/hooks/useFormatCurrency";
+
 import type { Order } from "@/types/admin";
+import { useGetOrdersQuery } from "@/store/api/orderApi";
 
 export function AdminOrdersList() {
-    const formatCurrency = useFormatCurrency();
+
     const router = useRouter();
-    const [orders, setOrders] = useState<Order[]>(mockAdminOrders);
+    const { data: response, isLoading } = useGetOrdersQuery();
+
+    // Map backend data to frontend format
+    const orders: Order[] = (response?.data || []).map((order: any) => {
+        const mappedStatus = order.status?.toLowerCase().replace('_', ' ') || 'pending';
+        const mappedPaymentStatus = order.paymentStatus?.toLowerCase() || 'unpaid';
+
+        return {
+            id: order._id,
+            customOrderId: order.orderId || `ORD-${order._id.slice(-6)}`, // Fallback for old records
+            orderNumber: order.orderNumber,
+            status: ['pending', 'active', 'cancelled', 'fraud'].includes(mappedStatus) ? mappedStatus : 'pending',
+            paymentStatus: ['paid', 'unpaid', 'refunded', 'incomplete'].includes(mappedPaymentStatus) ? mappedPaymentStatus : 'unpaid',
+            userName: order.client?.name || 'Unknown',
+            userEmail: order.client?.email || '',
+            userId: order.userId || 'N/A',
+            items: [],
+            paymentMethod: order.invoice?.paymentMethod || 'N/A',
+            totalAmount: order.invoice?.total || 0,
+            currency: order.currency || 'USD',
+            createdAt: order.date, // Backend now sends 'date'
+            ipAddress: order.meta?.ipAddress || 'N/A',
+        } as Order;
+    });
     const [isSearchOpen, setIsSearchOpen] = useState(true);
 
     // Pagination State
@@ -67,7 +90,7 @@ export function AdminOrdersList() {
     const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
     const updateOrderStatus = (id: string, status: Order["status"]) => {
-        setOrders(orders.map((o) => (o.id === id ? { ...o, status } : o)));
+        // Handle update
     };
 
     const getStatusColor = (status: string) => {
@@ -101,6 +124,9 @@ export function AdminOrdersList() {
 
     return (
         <div className="space-y-6">
+            {isLoading && (
+                <div className="text-center py-4 text-gray-500">Loading orders...</div>
+            )}
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Orders</h1>
                 <Button className="bg-blue-600 hover:bg-blue-700">
@@ -316,9 +342,9 @@ export function AdminOrdersList() {
                                         <Checkbox />
                                     </TableCell>
                                     <TableCell className="font-mono text-xs font-medium text-blue-600 group-hover:underline">
-                                        {order.id}
+                                        {order.customOrderId}
                                     </TableCell>
-                                    <TableCell className="text-sm">
+                                    <TableCell className="text-sm font-mono text-gray-600 dark:text-gray-400">
                                         {order.orderNumber}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
@@ -340,7 +366,7 @@ export function AdminOrdersList() {
                                     </TableCell>
                                     <TableCell className="text-sm">{order.paymentMethod || 'SSLCommerz'}</TableCell>
                                     <TableCell className="font-medium">
-                                        {formatCurrency(order.totalAmount)}
+                                        {order.currency} {order.totalAmount}
                                     </TableCell>
                                     <TableCell className={getPaymentStatusColor(order.paymentStatus)}>
                                         <Badge variant="outline" className={`border-0 bg-transparent px-0 font-semibold ${getPaymentStatusColor(order.paymentStatus)}`}>

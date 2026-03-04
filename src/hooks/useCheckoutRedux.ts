@@ -188,7 +188,7 @@ export function useCheckoutRedux(
       domain = {
         action: "register",
         registration: {
-          domainName: selectedDomain.domain,
+          domainName: selectedDomain.domain + selectedDomain.tld,
           tld: selectedDomain.tld,
           period: selectedDomain.period || 1,
         },
@@ -197,7 +197,7 @@ export function useCheckoutRedux(
       domain = {
         action: "transfer",
         transfer: {
-          domainName: selectedDomain.domain,
+          domainName: selectedDomain.domain + selectedDomain.tld,
           tld: selectedDomain.tld,
           eppCode: selectedDomain.eppCode || "",
         },
@@ -206,7 +206,7 @@ export function useCheckoutRedux(
       domain = {
         action: "use-owned",
         ownDomain: {
-          domainName: selectedDomain.domain,
+          domainName: selectedDomain.domain + selectedDomain.tld,
           tld: selectedDomain.tld,
         },
       };
@@ -287,12 +287,15 @@ export function useCheckoutRedux(
     try {
       const result = await createOrder(payload).unwrap();
 
-      // Handle success
-      if (result.paymentUrl) {
-        window.location.href = result.paymentUrl;
+      // Clear checkout state on success
+      dispatch(resetCheckout());
+
+      // Redirect to the newly generated invoice page
+      if (result.invoiceId) {
+        window.location.href = `/invoices/${result.invoiceId}`;
       } else {
-        // Redirect to order confirmation
-        window.location.href = `/orders/${result.orderId}`;
+        // Fallback to order page if no invoice was generated
+        window.location.href = `/orders/${result.order?.orderId}`;
       }
     } catch (error: any) {
       dispatch(

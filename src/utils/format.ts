@@ -37,7 +37,9 @@ export const formatDate = (
   date: string | Date,
   format: "long" | "short" | "full" = "long"
 ): string => {
+  if (!date) return "N/A";
   const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return "N/A";
 
   if (format === "short") {
     // Format: YYYY-MM-DD (e.g., "2026-05-20")
@@ -53,14 +55,14 @@ export const formatDate = (
     const monthName = new Intl.DateTimeFormat("en-US", { month: "long" }).format(dateObj);
     const day = dateObj.getDate();
     const year = dateObj.getFullYear();
-    
+
     // Add ordinal suffix (st, nd, rd, th)
     const getOrdinal = (n: number): string => {
       const s = ["th", "st", "nd", "rd"];
       const v = n % 100;
       return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
-    
+
     return `${dayName}, ${monthName} ${getOrdinal(day)}, ${year}`;
   }
 
@@ -73,11 +75,15 @@ export const formatDate = (
 };
 
 export const formatDateTime = (date: string | Date): string => {
+  if (!date) return "N/A";
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return "N/A";
+
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(dateObj);
 };

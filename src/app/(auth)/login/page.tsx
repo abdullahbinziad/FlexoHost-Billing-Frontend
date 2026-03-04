@@ -10,7 +10,9 @@ import Link from "next/link";
 import { loginRateLimiter, isValidEmail } from "@/lib/security";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 
-export default function LoginPage() {
+import { Suspense } from "react";
+
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -214,5 +216,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }

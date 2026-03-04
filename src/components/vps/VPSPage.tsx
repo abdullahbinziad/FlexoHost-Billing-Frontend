@@ -1,6 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { OrderNewHostingBanner } from "../hosting/OrderNewHostingBanner";
 import { ActiveServicesList } from "../hosting/ActiveServicesList";
 import { mockHostingServices } from "@/data/mockHostingServices";

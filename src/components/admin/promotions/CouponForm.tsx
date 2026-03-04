@@ -120,16 +120,16 @@ export function CouponForm({ initialData, onSubmit, onCancel }: CouponFormProps)
 
                             <div className="space-y-2">
                                 <Label htmlFor="type" className="text-sm font-medium">Type *</Label>
-                                <Select
+                                <select
                                     id="type"
                                     name="type"
                                     value={formData.type}
-                                    onChange={handleChange}
-                                    className="h-11"
+                                    onChange={handleChange as unknown as React.ChangeEventHandler<HTMLSelectElement>}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                 >
                                     <option value="percentage">Percentage</option>
                                     <option value="fixed">Fixed Amount</option>
-                                </Select>
+                                </select>
                             </div>
                         </div>
 

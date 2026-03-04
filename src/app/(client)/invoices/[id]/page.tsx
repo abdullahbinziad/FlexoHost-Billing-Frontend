@@ -1,52 +1,79 @@
 "use client";
 
+import { useParams } from "next/navigation";
 import { InvoiceDetail } from "@/components/invoice/InvoiceDetail";
+import { useGetInvoiceByIdQuery } from "@/store/api/invoiceApi";
 import type { Invoice } from "@/types/invoice";
 
-// Mock invoice data - Replace with actual API call
-const mockInvoice: Invoice = {
-  id: "810041",
-  invoiceNumber: "810041",
-  status: "unpaid",
-  invoiceDate: "2026-01-27",
-  dueDate: "2026-02-10",
-  payTo: {
-    name: "SatisfyHost",
-    email: "billing@satisfyhost.com",
-  },
-  paymentMethodsUrl: "https://satisfyhost.com/payment",
-  note: "Payment processing fees may apply.",
-  invoicedTo: {
-    companyName: "Flex Softr",
-    name: "ABDULLAH BIN ZIAD",
-    address: {
-      street: "Khordo",
-      city: "Kalaroa",
-      state: "Satkhira",
-      zipCode: "9414",
-      country: "Bangladesh",
+function mapBackendToFrontend(data: any): Invoice {
+  return {
+    id: data._id,
+    invoiceNumber: data.invoiceNumber,
+    status: data.status?.toLowerCase() || "unpaid",
+    invoiceDate: data.invoiceDate || data.createdAt,
+    dueDate: data.dueDate,
+    payTo: {
+      name: "FlexoHost",
+      email: "billing@flexohost.com",
     },
-  },
-  items: [
-    {
-      id: "1",
-      description: "Basic - facebookryery.com (27/01/2026 - 26/01/2029) Server Location: UK",
-      amount: 12912,
+    paymentMethodsUrl: "/payment",
+    invoicedTo: {
+      companyName: data.billedTo?.companyName,
+      name: data.billedTo?.customerName || "N/A",
+      address: {
+        street: data.billedTo?.address || "N/A",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: data.billedTo?.country || "N/A",
+      },
     },
-    {
-      id: "2",
-      description: "Domain Registration - facebookryery.com - 4 Year/s (27/01/2026 - 26/01/2030)",
-      amount: 5759,
-    },
-  ],
-  subtotal: 18671,
-  credit: 0,
-  total: 18671,
-  balance: 18671,
-  transactions: [],
-  currency: "BDT",
-};
+    items: (data.items || []).map((item: any, idx: number) => ({
+      id: String(idx + 1),
+      description: item.description,
+      amount: item.amount,
+    })),
+    subtotal: data.subTotal,
+    credit: data.credit || 0,
+    total: data.total,
+    balance: data.balanceDue,
+    transactions: [],
+    currency: data.currency || "USD",
+  };
+}
 
 export default function InvoiceDetailPage() {
-  return <InvoiceDetail invoice={mockInvoice} />;
+  const params = useParams();
+  const invoiceId = params.id as string;
+
+  const { data, isLoading, error } = useGetInvoiceByIdQuery(invoiceId, {
+    skip: !invoiceId,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            Invoice Not Found
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            The requested invoice could not be loaded.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const invoice = mapBackendToFrontend(data);
+
+  return <InvoiceDetail invoice={invoice} />;
 }

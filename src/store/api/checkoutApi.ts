@@ -11,10 +11,13 @@ import type {
 export type CreateOrderRequest = CreateOrderPayload;
 
 export interface CreateOrderResponse {
-  orderId: string;
-  status: "pending" | "processing" | "completed" | "failed";
-  paymentUrl?: string;
-  message: string;
+  order: {
+    orderId: string;
+    orderNumber: string;
+    total: number;
+    currency: string;
+  };
+  invoiceId: string;
 }
 
 export interface ValidatePromoCodeRequest {
@@ -52,7 +55,8 @@ export const checkoutApi = api.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: ["Order"],
+      transformResponse: (response: any) => response.data,
+      invalidatesTags: ["Order", "Invoice"],
     }),
 
     // Validate promo code
