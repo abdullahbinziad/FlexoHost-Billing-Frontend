@@ -20,6 +20,15 @@ export const formatCurrency = (
     symbol = currency.symbol;
   }
 
+  // BDT: Use "TK" as prefix (frontend display preference)
+  if (currencyCode === "BDT") {
+    const formatted = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+    return `TK ${formatted}`;
+  }
+
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
@@ -28,8 +37,8 @@ export const formatCurrency = (
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    // Fallback if currency code is invalid
-    return `${symbol}${amount.toFixed(2)}`;
+    // Fallback if currency code is invalid - use code as string
+    return `${currencyCode} ${amount.toFixed(2)}`;
   }
 };
 

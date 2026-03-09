@@ -19,13 +19,13 @@ export function BillingOverviewCard({ service }: BillingOverviewCardProps) {
         <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
           <span className="text-sm text-gray-600 dark:text-gray-400">First Payment Amount</span>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {formatCurrency(service.billing.firstPaymentAmount)}
+            {formatCurrency(service.billing.firstPaymentAmount, service.billing?.currency ?? service.pricing?.currency)}
           </span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
           <span className="text-sm text-gray-600 dark:text-gray-400">Recurring Amount</span>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-            {formatCurrency(service.billing.recurringAmount)}
+            {formatCurrency(service.billing.recurringAmount, service.billing?.currency ?? service.pricing?.currency)}
           </span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">

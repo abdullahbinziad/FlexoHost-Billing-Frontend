@@ -24,6 +24,17 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Product, ProductType } from "@/types/admin";
+import { SERVER_GROUP_OPTIONS } from "@/types/admin";
+
+/** Product type filter options for admin products list */
+const PRODUCT_TYPE_FILTER_OPTIONS: { value: string; label: string }[] = [
+    { value: "all", label: "All Types" },
+    { value: "hosting", label: "Hosting" },
+    { value: "vps", label: "VPS" },
+    { value: "dedicated", label: "Dedicated Server" },
+    { value: "ssl", label: "SSL" },
+    { value: "mail", label: "Business Mail" },
+];
 import Link from "next/link";
 import { toast } from "sonner";
 import {
@@ -32,23 +43,12 @@ import {
     useToggleProductVisibilityMutation,
 } from "@/store/api/productApi";
 
-/**
- * Hardcoded hosting type groups for filtering
- */
-const HOSTING_GROUPS = [
-    "Web Hosting",
-    "BDIX Hosting",
-    "Turbo Hosting",
-    "Ecommerce Hosting",
-    "VPS",
-    "BDIX Vps",
-] as const;
 
 interface AdminProductsListProps {
     category?: ProductType;
     addProductLabel?: string;
     addProductHref?: string;
-    editProductHref?: string; // Pattern like "/admin/products/hosting/{id}"
+    editProductHref?: string; // Pattern like "/admin/products/{id}"
 }
 
 export function AdminProductsList({
@@ -58,14 +58,19 @@ export function AdminProductsList({
     editProductHref,
 }: AdminProductsListProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedType, setSelectedType] = useState<string>("all");
     const [selectedGroup, setSelectedGroup] = useState<string>("all");
     const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
+    // API supports: hosting, vps, domain, ssl. For "all", "dedicated", "mail" fetch all (no type) and filter client-side.
+    const supportedTypes = ["hosting", "vps", "domain", "ssl"];
+    const apiTypeParam = supportedTypes.includes(selectedType) ? selectedType : category;
+
     // Fetch products from API
     const { data: productsData, isLoading, error } = useGetProductsQuery({
-        type: category,
+        type: apiTypeParam,
         page: 1,
-        limit: 100,
+        limit: 500,
     });
 
     // Mutations for delete and toggle visibility
@@ -75,15 +80,16 @@ export function AdminProductsList({
     // Extract products from API response
     const products = productsData?.products || [];
 
-    // Filter products based on search query and selected group
+    // Filter products based on search query, selected type, and selected group
     const filteredProducts = products.filter(
         (product) => {
             const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 product.type.toLowerCase().includes(searchQuery.toLowerCase());
 
+            const matchesType = selectedType === "all" || product.type === selectedType;
             const matchesGroup = selectedGroup === "all" || product.group === selectedGroup;
 
-            return matchesSearch && matchesGroup;
+            return matchesSearch && matchesType && matchesGroup;
         }
     );
 
@@ -159,8 +165,8 @@ export function AdminProductsList({
                 )}
             </div>
 
-            <div className="flex items-center gap-3 mb-4">
-                <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center gap-3 mb-4 flex-wrap">
+                <div className="relative flex-1 min-w-[200px] max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder="Search products..."
@@ -170,15 +176,30 @@ export function AdminProductsList({
                     />
                 </div>
 
-                {/* Group Filter */}
+                {/* Product Type Filter */}
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                    <SelectTrigger className="w-[200px]">
+                        <Filter className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Filter by type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {PRODUCT_TYPE_FILTER_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                {/* Category Filter */}
                 <Select value={selectedGroup} onValueChange={setSelectedGroup}>
                     <SelectTrigger className="w-[200px]">
                         <Filter className="w-4 h-4 mr-2" />
-                        <SelectValue placeholder="Filter by group" />
+                        <SelectValue placeholder="Filter by category" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Groups</SelectItem>
-                        {HOSTING_GROUPS.map((group) => (
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {SERVER_GROUP_OPTIONS.map((group) => (
                             <SelectItem key={group} value={group}>
                                 {group}
                             </SelectItem>
@@ -191,7 +212,8 @@ export function AdminProductsList({
             <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-muted-foreground">
                     Showing {filteredProducts.length} of {products.length} products
-                    {selectedGroup !== "all" && ` in ${selectedGroup}`}
+                    {selectedType !== "all" && ` · ${PRODUCT_TYPE_FILTER_OPTIONS.find((o) => o.value === selectedType)?.label ?? selectedType}`}
+                    {selectedGroup !== "all" && ` · ${selectedGroup}`}
                 </p>
             </div>
 
@@ -201,7 +223,7 @@ export function AdminProductsList({
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Type</TableHead>
-                            <TableHead>Group</TableHead>
+                            <TableHead>Category</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>

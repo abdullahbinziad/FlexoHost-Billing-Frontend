@@ -1,5 +1,6 @@
 /**
- * Currency Type Definitions
+ * Currency Type Definitions - Central config for supported currencies.
+ * To add a new currency: add to SUPPORTED_CURRENCY_CODES and DEFAULT_CURRENCIES.
  */
 
 export interface Currency {
@@ -9,26 +10,9 @@ export interface Currency {
   locale?: string;
 }
 
-// Default currencies - Add more currencies here
+export const SUPPORTED_CURRENCY_CODES = ["BDT", "USD"] as const;
+
 export const DEFAULT_CURRENCIES: Currency[] = [
-  {
-    code: "USD",
-    name: "US Dollar",
-    symbol: "$",
-    locale: "en-US",
-  },
-  {
-    code: "BDT",
-    name: "Bangladeshi Taka",
-    symbol: "৳",
-    locale: "bn-BD",
-  },
-  // Add more currencies here as needed
-  // Example:
-  // {
-  //   code: "EUR",
-  //   name: "Euro",
-  //   symbol: "€",
-  //   locale: "de-DE",
-  // },
+  { code: "USD", name: "US Dollar", symbol: "$", locale: "en-US" },
+  { code: "BDT", name: "Bangladeshi Taka", symbol: "৳", locale: "bn-BD" },
 ];

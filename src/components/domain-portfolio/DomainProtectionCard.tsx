@@ -40,14 +40,14 @@ export function DomainProtectionCard({
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 dark:text-gray-400 line-through">
-                  {formatCurrency(offer.originalPrice)}
+                  {formatCurrency(offer.originalPrice, offer.currency)}
                 </span>
                 <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold rounded">
                   Save {offer.discountPercentage}%
                 </span>
               </div>
               <span className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(offer.discountedPrice)}/{offer.period}
+                {formatCurrency(offer.discountedPrice, offer.currency)}/{offer.period}
               </span>
             </div>
           </div>

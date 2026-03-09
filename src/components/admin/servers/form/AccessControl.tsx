@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ServerConfig } from "@/types/admin";
 import { Shield, Lock, Unlock } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 
 interface AccessControlProps {
     formData: Omit<ServerConfig, "id">;
@@ -31,26 +30,32 @@ export function AccessControl({ formData, setFormData }: AccessControlProps) {
                     onValueChange={(val) => setFormData(prev => ({ ...prev, accessControl: val as "unrestricted" | "restricted" }))}
                     className="grid gap-4"
                 >
-                    <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, accessControl: "unrestricted" }))}>
+                    <label
+                        htmlFor="unrestricted"
+                        className="flex items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition-colors cursor-pointer has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+                    >
                         <RadioGroupItem value="unrestricted" id="unrestricted" className="mt-1" />
-                        <div className="space-y-1">
-                            <Label htmlFor="unrestricted" className="font-medium">Unrestricted Access</Label>
+                        <div className="space-y-1 flex-1">
+                            <span className="font-medium">Unrestricted Access</span>
                             <p className="text-sm text-muted-foreground flex items-center gap-2">
                                 <Unlock className="w-3 h-3" />
                                 All admins can access
                             </p>
                         </div>
-                    </div>
-                    <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, accessControl: "restricted" }))}>
+                    </label>
+                    <label
+                        htmlFor="restricted"
+                        className="flex items-start space-x-3 space-y-0 rounded-md border p-4 hover:bg-muted/50 transition-colors cursor-pointer has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/5"
+                    >
                         <RadioGroupItem value="restricted" id="restricted" className="mt-1" />
-                        <div className="space-y-1">
-                            <Label htmlFor="restricted" className="font-medium">Restricted Access</Label>
+                        <div className="space-y-1 flex-1">
+                            <span className="font-medium">Restricted Access</span>
                             <p className="text-sm text-muted-foreground flex items-center gap-2">
                                 <Lock className="w-3 h-3" />
                                 Limited by role group
                             </p>
                         </div>
-                    </div>
+                    </label>
                 </RadioGroup>
             </CardContent>
         </Card>

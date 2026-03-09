@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ServerConfig } from "@/types/admin";
-import { Database } from "lucide-react";
+import { Database, Eye, EyeOff } from "lucide-react";
 
 interface ModuleConfigProps {
     formData: Omit<ServerConfig, "id">;
@@ -16,6 +17,8 @@ interface ModuleConfigProps {
 }
 
 export function ModuleConfig({ formData, handleModuleChange }: ModuleConfigProps) {
+    const [showPassword, setShowPassword] = useState(false);
+
     return (
         <Card className="border-l-4 border-l-purple-500 overflow-hidden">
             <CardHeader className="bg-muted/10 pb-3">
@@ -67,13 +70,25 @@ export function ModuleConfig({ formData, handleModuleChange }: ModuleConfigProps
 
                     <div className="space-y-1.5">
                         <Label className="text-xs font-medium text-muted-foreground">Password</Label>
-                        <Input
-                            type="password"
-                            value={formData.module.password}
-                            onChange={(e) => handleModuleChange("password", e.target.value)}
-                            placeholder="••••••••"
-                            className="h-9"
-                        />
+                        <div className="relative">
+                            <Input
+                                type={showPassword ? "text" : "password"}
+                                value={formData.module.password}
+                                onChange={(e) => handleModuleChange("password", e.target.value)}
+                                placeholder="••••••••"
+                                className="h-9 pr-10"
+                            />
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                tabIndex={-1}
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 

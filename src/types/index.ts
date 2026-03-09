@@ -1,77 +1,100 @@
 /**
- * Global Type Definitions
+ * Types - Public API
+ * @see README.md for structure
+ *
+ * Prefer importing from domain files for tree-shaking:
+ *   import type { Invoice } from '@/types/invoice'
+ *   import type { User } from '@/types/auth'
+ *
+ * Or use barrel:
+ *   import type { Invoice, User } from '@/types'
  */
 
-// User Types
-export interface User {
-  id: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: "client" | "admin";
-  createdAt: string;
-  updatedAt: string;
-}
+// API
+export type { ApiResponse, PaginatedResponse, ApiError } from './api';
 
-// Product Types
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  billingCycle: "monthly" | "quarterly" | "semi-annually" | "annually";
-  category: string;
-  features: string[];
-}
+// Auth
+export type {
+  User,
+  Client,
+  AuthTokens,
+  LoginCredentials,
+  LoginResponse,
+  RegisterUserData,
+  ClientRegistrationData,
+  ClientRegistrationResponse,
+  ChangePasswordData,
+  ForgotPasswordData,
+  ResetPasswordData,
+  VerifyTokenResponse,
+  AuthState,
+  AuthActions,
+  AuthContextType,
+} from './auth';
 
-// Order Types
-export interface Order {
-  id: string;
-  userId: string;
-  productId: string;
-  status: "pending" | "active" | "suspended" | "cancelled";
-  createdAt: string;
-  updatedAt: string;
-}
+// Checkout
+export type {
+  BillingCycle,
+  BillingCycleOption,
+  DomainAction,
+  DomainSearchResult,
+  ServerLocation,
+  Addon,
+  Address,
+  BillingContact,
+  PaymentMethod,
+  OrderItem,
+  CheckoutFormData,
+  OrderSummary,
+  NewAccountInfo,
+  CreateOrderPayload,
+} from './checkout';
 
-// Invoice Types
-export interface Invoice {
-  id: string;
-  orderId: string;
-  amount: number;
-  status: "pending" | "paid" | "overdue" | "cancelled";
-  dueDate: string;
-  paidDate?: string;
-  createdAt: string;
-}
+// Currency
+export type { Currency } from './currency';
+export { SUPPORTED_CURRENCY_CODES, DEFAULT_CURRENCIES } from './currency';
 
-// Service Types
-export interface Service {
-  id: string;
-  orderId: string;
-  productId: string;
-  status: "active" | "suspended" | "cancelled";
-  domain?: string;
-  createdAt: string;
-}
+// Domain
+export type {
+  Domain,
+  DomainProtectionOffer,
+  DomainTableFilters,
+  BulkAction,
+} from './domain';
 
-// Ticket Types
-export interface Ticket {
-  id: string;
-  userId: string;
-  subject: string;
-  status: "open" | "in-progress" | "resolved" | "closed";
-  priority: "low" | "medium" | "high" | "urgent";
-  createdAt: string;
-  updatedAt: string;
-}
+// Domain manage (detail view)
+export type {
+  DomainDetails,
+  ContactInfo,
+  DNSRecord,
+  EmailForward,
+  TabItem,
+} from './domain-manage';
 
-// Domain Types
-export interface Domain {
-  id: string;
-  userId: string;
-  name: string;
-  status: "active" | "expired" | "pending";
-  expiryDate: string;
-  registrationDate: string;
-}
+// Hosting
+export type { HostingService, ServicesRenewingSoon } from './hosting';
+
+// Hosting manage (detail view)
+export type {
+  HostingServiceDetails,
+  QuickShortcut,
+  SidebarSection,
+  SidebarItem,
+} from './hosting-manage';
+
+// Invoice
+export type {
+  InvoiceStatus,
+  InvoiceItem,
+  InvoiceTransaction,
+  Invoice,
+} from './invoice';
+
+// Navigation
+export type { NavItem, SubMenuItem } from './navigation';
+
+// VPS manage
+export type { VPSServiceDetails } from './vps-manage';
+
+// Admin
+export * from './admin';

@@ -68,7 +68,18 @@ export const productApi = api.injectEndpoints({
 
                 return queryString ? `/admin/products?${queryString}` : "/admin/products";
             },
-            transformResponse: (response: ApiResponse<ProductListResponse>) => response.data,
+            transformResponse: (response: ApiResponse<ProductListResponse>) => {
+                const data = response?.data;
+                const products = (data?.products ?? []) as Product[];
+                const pagination = data?.pagination ?? { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 20 };
+                return {
+                    products: products.map((p) => ({
+                        ...p,
+                        id: p.id ?? (p as any)._id?.toString?.() ?? (p as any)._id,
+                    })),
+                    pagination,
+                };
+            },
             providesTags: (result) =>
                 result
                     ? [

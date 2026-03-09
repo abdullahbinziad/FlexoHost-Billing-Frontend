@@ -1,49 +1,81 @@
 "use client";
 
-import { CouponForm } from "@/components/admin/promotions/CouponForm";
+import { PromotionForm } from "@/components/admin/promotions/PromotionForm";
 import { PageHeader } from "@/components/ui/page-header";
-import { Coupon } from "@/types/admin";
+import { useGetPromotionQuery, useUpdatePromotionMutation } from "@/store/api/promotionApi";
+import type { CreatePromotionDTO } from "@/types/admin/coupon";
 import { useRouter } from "next/navigation";
-import { mockCoupons } from "@/data/mockCouponData";
 import { use } from "react";
+import { toast } from "sonner";
 
 export default function EditPromotionPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const { id } = use(params);
 
-    const coupon = mockCoupons.find(c => c.id === id);
+    const { data: promotion, isLoading, error } = useGetPromotionQuery(id);
+    const [updatePromotion, { isLoading: isUpdating }] = useUpdatePromotionMutation();
 
-    const handleSubmit = (data: Omit<Coupon, "id" | "uses" | "status">) => {
-        console.log("Updated promotion data:", data);
-        // Todo: Implement API call to update promotion
-        alert("Promotion updated successfully (mock)");
-        router.push("/admin/promotions");
+    const handleSubmit = async (data: CreatePromotionDTO) => {
+        try {
+            await updatePromotion({ id, data }).unwrap();
+            toast.success("Promotion updated successfully");
+            router.push("/admin/promotions");
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to update promotion");
+        }
     };
 
     const handleCancel = () => {
         router.push("/admin/promotions");
     };
 
-    if (!coupon) {
-        return <div>Promotion not found</div>;
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="Edit Promotion"
+                    description="Loading..."
+                    breadcrumbs={[{ label: "Promotions", href: "/admin/promotions" }, { label: "Edit" }]}
+                    backHref="/admin/promotions"
+                />
+                <div className="py-12 text-center text-muted-foreground">Loading promotion...</div>
+            </div>
+        );
+    }
+
+    if (error || !promotion) {
+        return (
+            <div className="space-y-6">
+                <PageHeader
+                    title="Edit Promotion"
+                    description="Promotion not found"
+                    breadcrumbs={[{ label: "Promotions", href: "/admin/promotions" }, { label: "Edit" }]}
+                    backHref="/admin/promotions"
+                />
+                <div className="py-12 text-center text-destructive">
+                    Promotion not found or failed to load.
+                </div>
+            </div>
+        );
     }
 
     return (
         <div className="space-y-6">
             <PageHeader
-                title={`Edit Promotion: ${coupon.code}`}
+                title={`Edit Promotion: ${promotion.code}`}
                 description="Update promotional code settings."
                 breadcrumbs={[
                     { label: "Promotions", href: "/admin/promotions" },
-                    { label: coupon.code }
+                    { label: promotion.code },
                 ]}
                 backHref="/admin/promotions"
             />
 
-            <CouponForm
-                initialData={coupon}
+            <PromotionForm
+                initialData={promotion}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
+                isSubmitting={isUpdating}
             />
         </div>
     );

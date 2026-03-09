@@ -85,48 +85,75 @@
   }
 }
 
-/* Print styles for A4 invoices */
+/* Print styles for A4 invoices - invoice only, single page, no page header */
 @media print {
   @page {
     size: A4;
-    margin: 15mm;
+    margin: 12mm;
   }
-  
+
   body {
-    margin: 0;
-    padding: 0;
-    background: white;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  
-  /* Hide non-printable elements */
+
+  /* Hide layout chrome - only invoice content prints */
   .print\:hidden {
     display: none !important;
   }
-  
-  /* Remove borders and shadows for print */
+
   .print\:border-0 {
     border: 0 !important;
   }
-  
+
   .print\:shadow-none {
     box-shadow: none !important;
   }
-  
+
   .print\:rounded-none {
     border-radius: 0 !important;
   }
-  
-  /* Force black text for print */
+
   .print\:text-gray-900 {
     color: #111827 !important;
   }
-  
-  /* Ensure invoice container fits A4 */
+
+  /* Invoice A4 - fit within page, proper space utilization */
+  .invoice-a4,
   [data-invoice-container] {
     width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
+    max-width: 186mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin: 0 auto !important;
     padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Header - always visible, branding */
+  [data-invoice-header] {
+    break-inside: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Body - flexible space between header and footer */
+  .invoice-body {
+    break-inside: avoid;
+  }
+
+  /* Ensure readable print colors */
+  .invoice-a4 *,
+  [data-invoice-container] * {
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+  }
+
+  .invoice-a4 a,
+  [data-invoice-container] a {
+    color: #111827 !important;
   }
 }
 

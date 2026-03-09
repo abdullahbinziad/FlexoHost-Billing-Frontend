@@ -9,7 +9,7 @@ export function AdminStats() {
     const stats = [
         {
             title: "Total Revenue",
-            value: formatCurrency(125000),
+            value: formatCurrency(125000, "USD"),
             change: "+20.1% from last month",
             icon: DollarSign,
         },

@@ -88,6 +88,7 @@ export interface CheckoutFormData {
   registrantContact?: BillingContact;
   paymentMethod: PaymentMethod;
   promoCode?: string;
+  promoDiscount?: number;
   referral?: string;
   agreeToTerms: boolean;
 }

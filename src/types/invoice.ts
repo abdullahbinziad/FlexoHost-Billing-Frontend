@@ -28,7 +28,9 @@ export interface Invoice {
   payTo: {
     name: string;
     email: string;
+    address?: string;
   };
+  paymentMethod?: string;
   paymentMethodsUrl: string;
   note?: string;
   invoicedTo: {

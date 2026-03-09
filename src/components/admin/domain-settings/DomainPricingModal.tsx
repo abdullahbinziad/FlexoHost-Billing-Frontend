@@ -27,6 +27,7 @@ import { useUpdateTldMutation } from "@/store/api/tldApi";
 import { toast } from "sonner";
 
 import { defaultPricingDetail, defaultCurrencyPricing } from "@/lib/domain-constants";
+import { SUPPORTED_CURRENCY_CODES } from "@/types/currency";
 
 interface DomainPricingModalProps {
     open: boolean;
@@ -41,7 +42,7 @@ export function DomainPricingModal({ open, onOpenChange, tld }: DomainPricingMod
     useEffect(() => {
         if (open && tld) {
             // Initialize with existing pricing or defaults for USD and BDT
-            const currencies = ["USD", "BDT"];
+            const currencies = [...SUPPORTED_CURRENCY_CODES];
             const currentPricing = tld.pricing || [];
 
             const newPricingState = currencies.map(currency => {

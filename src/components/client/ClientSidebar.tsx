@@ -39,7 +39,7 @@ export function ClientSidebar({ isOpen, onClose }: ClientSidebarProps) {
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden print:hidden"
           onClick={onClose}
         />
       )}
@@ -47,7 +47,7 @@ export function ClientSidebar({ isOpen, onClose }: ClientSidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-50",
+          "fixed left-0 top-0 h-screen bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col z-50 print:hidden",
           // Width: collapsed = 4rem (w-16), expanded = 16rem (w-64)
           // Default to expanded (w-64) until mounted to prevent layout shift
           displayCollapsed ? "w-16" : "w-64",

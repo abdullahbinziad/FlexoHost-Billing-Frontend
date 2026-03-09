@@ -38,7 +38,7 @@ export function RenewTab({ domain, onRenew }: RenewTabProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600 dark:text-gray-400">Renewal Amount</span>
               <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {formatCurrency(domain.billing.recurringAmount)}
+                {formatCurrency(domain.billing.recurringAmount, domain.billing?.currency)}
               </span>
             </div>
           </div>

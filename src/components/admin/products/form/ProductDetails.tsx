@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package } from "lucide-react";
 import type { ProductType } from "@/types/admin";
+import { SERVER_GROUP_OPTIONS } from "@/types/admin";
 
 interface ProductDetailsProps {
     formData: {
@@ -57,46 +58,22 @@ export function ProductDetails({ formData, handleChange, setFormData }: ProductD
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium">Category / Group *</Label>
-                        {formData.type === "hosting" ? (
-                            <Select
-                                value={formData.group}
-                                onValueChange={(value) => setFormData(prev => ({ ...prev, group: value }))}
-                            >
-                                <SelectTrigger className="h-10">
-                                    <SelectValue placeholder="Select a Category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Web Hosting">Web Hosting</SelectItem>
-                                    <SelectItem value="Turbo Hosting">Turbo Hosting</SelectItem>
-                                    <SelectItem value="BDIX Hosting">BDIX Hosting</SelectItem>
-                                    <SelectItem value="Ecommerce Hosting">Ecommerce Hosting</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        ) : formData.type === "vps" ? (
-                            <Select
-                                value={formData.group}
-                                onValueChange={(value) => setFormData(prev => ({ ...prev, group: value }))}
-                            >
-                                <SelectTrigger className="h-10">
-                                    <SelectValue placeholder="Select a Category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="VPS">VPS</SelectItem>
-                                    <SelectItem value="Dedicated">Dedicated</SelectItem>
-                                    <SelectItem value="BDIX VPS">BDIX VPS</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        ) : (
-                            <Input
-                                id="group"
-                                name="group"
-                                value={formData.group}
-                                onChange={handleChange}
-                                placeholder="e.g. Shared Hosting, Premium VPS"
-                                className="h-10"
-                            />
-                        )}
+                        <Label className="text-sm font-medium">Product Category *</Label>
+                        <Select
+                            value={formData.group}
+                            onValueChange={(value) => setFormData(prev => ({ ...prev, group: value }))}
+                        >
+                            <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select a Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {SERVER_GROUP_OPTIONS.map((category) => (
+                                    <SelectItem key={category} value={category}>
+                                        {category}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 

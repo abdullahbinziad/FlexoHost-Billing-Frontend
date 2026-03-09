@@ -6,7 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Hosting Billing System",
+  title: "FlexoHost",
   description: "Modern hosting billing and management system",
 };
 

@@ -68,7 +68,7 @@ export function AddonsTab({ domain }: AddonsTabProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {addon.price === 0 ? "Free" : formatCurrency(addon.price)}
+                    {addon.price === 0 ? "Free" : formatCurrency(addon.price, addon.currency)}
                   </span>
                   {addon.enabled ? (
                     <span className="px-2 py-1 text-xs font-medium bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">

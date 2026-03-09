@@ -4,13 +4,12 @@ import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { useCheckoutRedux } from "@/hooks/useCheckoutRedux";
+import { useValidateCouponMutation } from "@/store/api/promotionApi";
 import { BillingCycleSelector } from "./BillingCycleSelector";
 import { DomainConfiguration } from "./DomainConfiguration";
 import { ServerLocationSelector } from "./ServerLocationSelector";
 
 import { BillingDetailsForm } from "./BillingDetailsForm";
-
-import { PaymentMethodSelector } from "./PaymentMethodSelector";
 import { OrderSummaryCard } from "./OrderSummaryCard";
 import type {
   BillingCycleOption,
@@ -106,14 +105,16 @@ export function CheckoutPage({
     toggleAddon,
     setBillingContact,
     setUseDefaultRegistrant,
-    setPaymentMethod,
     setPromoCode,
+    setPromoApplied,
     setAgreeToTerms,
     setProductId,
     setReferral,
     setNewAccountInfo,
     handleCheckout,
   } = useCheckoutRedux(billingCycleOptions, productName);
+
+  const [validateCoupon] = useValidateCouponMutation();
 
   // Store product ID in checkout state on mount
   useEffect(() => {
@@ -138,25 +139,19 @@ export function CheckoutPage({
     if (!formData.serverLocation && serverLocations.length > 0) {
       setServerLocation(serverLocations[0]);
     }
-    if (!formData.paymentMethod && paymentMethods.length > 0) {
-      setPaymentMethod(paymentMethods[0]);
-    }
     if (!formData.billingContact && billingContacts.length > 0) {
       setBillingContact(billingContacts[0]);
     }
   }, [
     formData.billingCycle,
     formData.serverLocation,
-    formData.paymentMethod,
     formData.billingContact,
     billingCycleOptions,
     serverLocations,
-    paymentMethods,
     billingContacts,
     initialBillingCycle,
     setBillingCycle,
     setServerLocation,
-    setPaymentMethod,
     setBillingContact,
   ]);
 
@@ -166,11 +161,11 @@ export function CheckoutPage({
   // For now, we rely on the user manually selecting if it differs, or passing it to useCheckoutRedux
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="container mx-auto px-4">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8">
+      <div className="container mx-auto px-3 sm:px-4">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
             {product ? `Configure ${product.name}` : "You're almost there! Complete your order"}
           </h1>
           {error && (
@@ -180,11 +175,11 @@ export function CheckoutPage({
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Billing Cycle */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-800">
               <BillingCycleSelector
                 options={billingCycleOptions}
                 selected={(formData.billingCycle || initialBillingCycle || "monthly") as any}
@@ -193,7 +188,7 @@ export function CheckoutPage({
             </div>
 
             {/* Domain Configuration */}
-            <div className="bg-primary/5 dark:bg-primary/10 p-6 rounded-lg border border-primary/20 dark:border-primary/30">
+            <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-800 min-w-0">
               <DomainConfiguration
                 selectedAction={formData.domainAction || "register"}
                 selectedDomain={formData.selectedDomain}
@@ -203,7 +198,7 @@ export function CheckoutPage({
             </div>
 
             {/* Server Location */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-800">
               <ServerLocationSelector
                 locations={serverLocations}
                 selected={formData.serverLocation || serverLocations[0]}
@@ -213,7 +208,7 @@ export function CheckoutPage({
 
 
             {/* Billing Details */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-800">
               <BillingDetailsForm
                 contacts={billingContacts}
                 selectedContactId={
@@ -231,16 +226,6 @@ export function CheckoutPage({
                 onNewAccountChange={setNewAccountInfo}
               />
             </div>
-
-
-
-            {/* Payment Method */}
-            <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-              <PaymentMethodSelector
-                selected={formData.paymentMethod || paymentMethods[0]}
-                onSelect={setPaymentMethod}
-              />
-            </div>
           </div>
 
           {/* Order Summary Sidebar */}
@@ -254,14 +239,34 @@ export function CheckoutPage({
               onCheckout={handleCheckout}
               hasDomain={!!formData.selectedDomain}
               onPromoCodeApply={async (code: string) => {
-                // Mock validation - replace with actual API call
-                // For now, accept codes starting with "PROMO" or "SAVE"
-                const isValid = code.startsWith("PROMO") || code.startsWith("SAVE");
-                if (isValid) {
-                  setPromoCode(code);
-                  return true;
+                const subtotal = orderSummary?.subtotal ?? 0;
+                if (subtotal <= 0) return false;
+                try {
+                  const domainTlds = formData.selectedDomain?.tld
+                    ? [formData.selectedDomain.tld.startsWith(".") ? formData.selectedDomain.tld : `.${formData.selectedDomain.tld}`]
+                    : [];
+                  const domainPeriod = formData.selectedDomain?.period ?? 1;
+                  const domainBillingCycle = domainPeriod === 1 ? "annually" : domainPeriod === 2 ? "biennially" : "triennially";
+
+                  const result = await validateCoupon({
+                    code: code.trim().toUpperCase(),
+                    subtotal,
+                    currency: selectedCurrency.code,
+                    clientId: formData.billingContact?.id,
+                    productIds: product?._id || product?.id ? [String(product._id || product.id)] : undefined,
+                    productTypes: product?.type ? [product.type] : undefined,
+                    productBillingCycle: formData.billingCycle,
+                    domainTlds,
+                    domainBillingCycle: formData.selectedDomain ? domainBillingCycle : undefined,
+                  }).unwrap();
+                  if (result.valid && result.discountAmount != null) {
+                    setPromoApplied(code.trim().toUpperCase(), result.discountAmount);
+                    return true;
+                  }
+                  return false;
+                } catch {
+                  return false;
                 }
-                return false;
               }}
               onPromoCodeRemove={() => {
                 setPromoCode(undefined);

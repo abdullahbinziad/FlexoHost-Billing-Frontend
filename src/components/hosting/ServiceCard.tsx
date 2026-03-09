@@ -38,7 +38,7 @@ export function ServiceCard({ service, onManage }: ServiceCardProps) {
         {/* Pricing Column */}
         <div className="col-span-3">
           <p className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
-            {formatCurrency(service.pricing.amount)}
+            {formatCurrency(service.pricing.amount, service.pricing.currency)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {getBillingCycleName(service.pricing.billingCycle)}

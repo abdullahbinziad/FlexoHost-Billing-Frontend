@@ -6,8 +6,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ServerConfig } from "@/types/admin";
-import { Server } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuCheckboxItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ServerConfig, SERVER_GROUP_OPTIONS } from "@/types/admin";
+import { Server, ChevronDown } from "lucide-react";
 
 interface BasicInfoProps {
     formData: Omit<ServerConfig, "id">;
@@ -103,23 +110,42 @@ export function BasicInfo({ formData, handleChange, setFormData }: BasicInfoProp
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium">Server Group</Label>
-                        <Select
-                            value={formData.group}
-                            onValueChange={(value: any) => setFormData(prev => ({ ...prev, group: value }))}
-                        >
-                            <SelectTrigger className="h-10">
-                                <SelectValue placeholder="Select Group" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Web Hosting">Web Hosting</SelectItem>
-                                <SelectItem value="BDIX Hosting">BDIX Hosting</SelectItem>
-                                <SelectItem value="Turbo Hosting">Turbo Hosting</SelectItem>
-                                <SelectItem value="Ecommerce Hosting">Ecommerce Hosting</SelectItem>
-                                <SelectItem value="VPS">VPS</SelectItem>
-                                <SelectItem value="BDIX Vps">BDIX Vps</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Label className="text-sm font-medium">Server Groups</Label>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="h-10 w-full justify-between font-normal"
+                                >
+                                    <span className="truncate">
+                                        {formData.groups?.length
+                                            ? formData.groups.join(", ")
+                                            : "Select groups..."}
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                                {SERVER_GROUP_OPTIONS.map((group) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={group}
+                                        checked={formData.groups?.includes(group) ?? false}
+                                        onCheckedChange={(checked) => {
+                                            setFormData((prev) => {
+                                                const current = prev.groups ?? [];
+                                                const next = checked
+                                                    ? [...current, group]
+                                                    : current.filter((g) => g !== group);
+                                                return { ...prev, groups: next.length ? next : ["Web Hosting"] };
+                                            });
+                                        }}
+                                    >
+                                        {group}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <p className="text-xs text-muted-foreground">A server can belong to multiple groups.</p>
                     </div>
 
                     <div className="space-y-2">

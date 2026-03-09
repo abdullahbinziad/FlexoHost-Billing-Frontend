@@ -1,10 +1,35 @@
-import { Coupon } from "@/types/admin";
+/** Mock coupon shape for dev/demo (differs from API Promotion) */
+export interface MockCoupon {
+    id: string;
+    code: string;
+    type: "percent" | "fixed";
+    value: number;
+    recurring: boolean;
+    recurringTimes: number;
+    uses: number;
+    maxUses: number;
+    startDate: string;
+    expiryDate: string;
+    billingCycles: string[];
+    domainPeriods: string[];
+    appliesToProducts: string[];
+    requiresProducts: string[];
+    allowExistingProducts: boolean;
+    applyOnce: boolean;
+    newSignupsOnly: boolean;
+    applyOncePerClient: boolean;
+    existingClientOnly: boolean;
+    upgradesDowngrades: boolean;
+    lifetimePromotion: boolean;
+    adminNotes: string;
+    status: string;
+}
 
-export const mockCoupons: Coupon[] = [
+export const mockCoupons: MockCoupon[] = [
     {
         id: "hny26",
         code: "HNY26",
-        type: "percentage",
+        type: "percent",
         value: 30.00,
         recurring: false,
         recurringTimes: 0,
@@ -54,7 +79,7 @@ export const mockCoupons: Coupon[] = [
     {
         id: "free3days",
         code: "free3days",
-        type: "percentage",
+        type: "percent",
         value: 100.00,
         recurring: false,
         recurringTimes: 0,
@@ -79,7 +104,7 @@ export const mockCoupons: Coupon[] = [
     {
         id: "freefirst",
         code: "freefirst",
-        type: "percentage",
+        type: "percent",
         value: 2470.00,
         recurring: false,
         recurringTimes: 0,
@@ -104,7 +129,7 @@ export const mockCoupons: Coupon[] = [
     {
         id: "sohagbdix30",
         code: "sohagbdix30",
-        type: "percentage",
+        type: "percent",
         value: 30.00,
         recurring: false,
         recurringTimes: 1,

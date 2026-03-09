@@ -18,12 +18,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/utils/format";
+import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 
 import type { Order } from "@/types/admin";
 import { useGetOrdersQuery } from "@/store/api/orderApi";
 
 export function AdminOrdersList() {
-
+    const formatCurrency = useFormatCurrency();
     const router = useRouter();
     const { data: response, isLoading } = useGetOrdersQuery();
 
@@ -366,7 +367,7 @@ export function AdminOrdersList() {
                                     </TableCell>
                                     <TableCell className="text-sm">{order.paymentMethod || 'SSLCommerz'}</TableCell>
                                     <TableCell className="font-medium">
-                                        {order.currency} {order.totalAmount}
+                                        {formatCurrency(order.totalAmount, order.currency)}
                                     </TableCell>
                                     <TableCell className={getPaymentStatusColor(order.paymentStatus)}>
                                         <Badge variant="outline" className={`border-0 bg-transparent px-0 font-semibold ${getPaymentStatusColor(order.paymentStatus)}`}>

@@ -74,7 +74,7 @@ export function OrderSummaryCard({
 
   return (
     <div className="lg:sticky lg:top-20">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6 space-y-6 shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6 space-y-6 shadow-sm">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Order Summary</h2>
 
         {/* Order Items */}

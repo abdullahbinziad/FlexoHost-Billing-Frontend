@@ -1,11 +1,11 @@
 import { AdminProductsList } from "@/components/admin/products/AdminProductsList";
 
-export default function AdminServerPage() {
+export default function AdminProductsPage() {
     return (
         <AdminProductsList
-            category="vps"
-            addProductLabel="Add VPS/Dedicated Server"
-            addProductHref="/admin/products/server/new"
+            addProductLabel="Add Product"
+            addProductHref="/admin/products/add"
+            editProductHref="/admin/products/{id}"
         />
     );
 }

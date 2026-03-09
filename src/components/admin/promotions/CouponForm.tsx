@@ -8,25 +8,48 @@ import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Coupon } from "@/types/admin";
 import { Tag, Percent, Calendar, Settings } from "lucide-react";
 
+/** Form shape for CouponForm (extends Promotion with legacy/UI fields) */
+interface CouponFormData {
+    code: string;
+    type: "percent" | "fixed";
+    value: number;
+    recurring: boolean;
+    recurringTimes: number;
+    maxUses: number;
+    startDate: string;
+    expiryDate: string;
+    billingCycles: string[];
+    domainPeriods: string[];
+    appliesToProducts: string[];
+    requiresProducts: string[];
+    allowExistingProducts: boolean;
+    applyOnce: boolean;
+    newSignupsOnly: boolean;
+    applyOncePerClient: boolean;
+    existingClientOnly: boolean;
+    upgradesDowngrades: boolean;
+    lifetimePromotion: boolean;
+    adminNotes: string;
+}
+
 interface CouponFormProps {
-    initialData?: Coupon;
-    onSubmit: (data: Omit<Coupon, "id" | "uses" | "status">) => void;
+    initialData?: Partial<CouponFormData>;
+    onSubmit: (data: CouponFormData) => void;
     onCancel?: () => void;
 }
 
 export function CouponForm({ initialData, onSubmit, onCancel }: CouponFormProps) {
-    const [formData, setFormData] = useState<Omit<Coupon, "id" | "uses" | "status">>({
+    const [formData, setFormData] = useState<CouponFormData>({
         code: initialData?.code || "",
-        type: initialData?.type || "percentage",
+        type: initialData?.type || "percent",
         value: initialData?.value || 0,
         recurring: initialData?.recurring || false,
         recurringTimes: initialData?.recurringTimes || 0,
-        maxUses: initialData?.maxUses || 0,
-        startDate: initialData?.startDate || "",
-        expiryDate: initialData?.expiryDate || "",
+        maxUses: initialData?.maxUses ?? 0,
+        startDate: initialData?.startDate ?? "",
+        expiryDate: initialData?.expiryDate ?? "",
         billingCycles: initialData?.billingCycles || [],
         domainPeriods: initialData?.domainPeriods || [],
         appliesToProducts: initialData?.appliesToProducts || [],
@@ -127,7 +150,7 @@ export function CouponForm({ initialData, onSubmit, onCancel }: CouponFormProps)
                                     onChange={handleChange as unknown as React.ChangeEventHandler<HTMLSelectElement>}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                 >
-                                    <option value="percentage">Percentage</option>
+                                    <option value="percent">Percentage</option>
                                     <option value="fixed">Fixed Amount</option>
                                 </select>
                             </div>
@@ -136,7 +159,7 @@ export function CouponForm({ initialData, onSubmit, onCancel }: CouponFormProps)
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="value" className="text-sm font-medium">
-                                    Value * {formData.type === "percentage" ? "(%)" : "(BDT)"}
+                                    Value * {formData.type === "percent" ? "(%)" : "(BDT)"}
                                 </Label>
                                 <Input
                                     id="value"
@@ -145,7 +168,7 @@ export function CouponForm({ initialData, onSubmit, onCancel }: CouponFormProps)
                                     step="0.01"
                                     value={formData.value}
                                     onChange={handleChange}
-                                    placeholder={formData.type === "percentage" ? "30.00" : "1699.00"}
+                                    placeholder={formData.type === "percent" ? "30.00" : "1699.00"}
                                     required
                                     className="h-11"
                                 />

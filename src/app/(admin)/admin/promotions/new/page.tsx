@@ -1,18 +1,24 @@
 "use client";
 
-import { CouponForm } from "@/components/admin/promotions/CouponForm";
+import { PromotionForm } from "@/components/admin/promotions/PromotionForm";
 import { PageHeader } from "@/components/ui/page-header";
-import { Coupon } from "@/types/admin";
+import { useCreatePromotionMutation } from "@/store/api/promotionApi";
+import type { CreatePromotionDTO } from "@/types/admin/coupon";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function NewPromotionPage() {
     const router = useRouter();
+    const [createPromotion, { isLoading }] = useCreatePromotionMutation();
 
-    const handleSubmit = (data: Omit<Coupon, "id" | "uses" | "status">) => {
-        console.log("New promotion data:", data);
-        // Todo: Implement API call to create promotion
-        alert("Promotion created successfully (mock)");
-        router.push("/admin/promotions");
+    const handleSubmit = async (data: CreatePromotionDTO) => {
+        try {
+            await createPromotion(data).unwrap();
+            toast.success("Promotion created successfully");
+            router.push("/admin/promotions");
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to create promotion");
+        }
     };
 
     const handleCancel = () => {
@@ -26,14 +32,15 @@ export default function NewPromotionPage() {
                 description="Set up a new promotional code for your customers."
                 breadcrumbs={[
                     { label: "Promotions", href: "/admin/promotions" },
-                    { label: "Create New" }
+                    { label: "Create New" },
                 ]}
                 backHref="/admin/promotions"
             />
 
-            <CouponForm
+            <PromotionForm
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
+                isSubmitting={isLoading}
             />
         </div>
     );

@@ -7,6 +7,7 @@ import {
     Globe,
     Server,
     Tag,
+    CreditCard,
 } from "lucide-react";
 import type { NavItem } from "@/types/navigation";
 
@@ -33,6 +34,22 @@ export const adminNavItems: NavItem[] = [
         ],
     },
     {
+        label: "Billing",
+        href: "/admin/billing/invoices",
+        icon: CreditCard,
+        hasSubmenu: true,
+        submenu: [
+            {
+                label: "Invoice",
+                href: "/admin/billing/invoices",
+            },
+            {
+                label: "Transaction",
+                href: "/admin/billing/transactions",
+            },
+        ],
+    },
+    {
         label: "Order",
         href: "/admin/orders",
         icon: ShoppingCart,
@@ -49,18 +66,18 @@ export const adminNavItems: NavItem[] = [
         ],
     },
     {
-        label: "Services",
+        label: "Products",
         href: "/admin/products",
         icon: Package,
         hasSubmenu: true,
         submenu: [
             {
-                label: "Hosting",
-                href: "/admin/products/hosting",
+                label: "All Products",
+                href: "/admin/products",
             },
             {
-                label: "VPS/Dedicated",
-                href: "/admin/products/server",
+                label: "Add Products",
+                href: "/admin/products/add",
             },
         ],
     },

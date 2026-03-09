@@ -27,17 +27,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ServerConfig } from "@/types/admin";
-
-// Constants for filtering
-const SERVER_GROUPS = [
-    "Web Hosting",
-    "BDIX Hosting",
-    "Turbo Hosting",
-    "Ecommerce Hosting",
-    "VPS",
-    "BDIX Vps"
-];
+import { getServerGroups, SERVER_GROUP_OPTIONS, type ServerConfig, type ServerGroupOption } from "@/types/admin";
 
 const SERVER_LOCATIONS = [
     "USA",
@@ -45,15 +35,21 @@ const SERVER_LOCATIONS = [
     "Singapore",
     "Bangladesh",
     "Germany",
-    "Finland"
-];
+    "Finland",
+] as const;
+
+type FilterGroup = "all" | ServerGroupOption;
+type FilterLocation = "all" | (typeof SERVER_LOCATIONS)[number];
 
 export default function ServerConfigPage() {
     const { data: servers = [], isLoading, refetch } = useGetServersQuery();
     const [deleteServer] = useDeleteServerMutation();
 
-    const [filterGroup, setFilterGroup] = useState<string>("all");
-    const [filterLocation, setFilterLocation] = useState<string>("all");
+    const [filterGroup, setFilterGroup] = useState<FilterGroup>("all");
+    const [filterLocation, setFilterLocation] = useState<FilterLocation>("all");
+
+    const handleGroupChange = (value: string) => setFilterGroup(value as FilterGroup);
+    const handleLocationChange = (value: string) => setFilterLocation(value as FilterLocation);
 
     const handleDeleteServer = async (id: string) => {
         try {
@@ -75,9 +71,10 @@ export default function ServerConfigPage() {
         setFilterLocation("all");
     };
 
-    // Filter servers
+    // Filter servers (server can be in multiple groups)
     const filteredServers = servers.filter((server) => {
-        const matchesGroup = filterGroup === "all" || server.group === filterGroup;
+        const serverGroups = getServerGroups(server);
+        const matchesGroup = filterGroup === "all" || serverGroups.includes(filterGroup);
         const matchesLocation = filterLocation === "all" || server.location === filterLocation;
         return matchesGroup && matchesLocation;
     });
@@ -125,13 +122,13 @@ export default function ServerConfigPage() {
                         <span className="text-sm font-medium">Filters:</span>
                     </div>
 
-                    <Select value={filterGroup} onValueChange={setFilterGroup}>
+                    <Select value={filterGroup} onValueChange={handleGroupChange}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Filter by Group" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Groups</SelectItem>
-                            {SERVER_GROUPS.map((group) => (
+                            {SERVER_GROUP_OPTIONS.map((group) => (
                                 <SelectItem key={group} value={group}>
                                     {group}
                                 </SelectItem>
@@ -139,7 +136,7 @@ export default function ServerConfigPage() {
                         </SelectContent>
                     </Select>
 
-                    <Select value={filterLocation} onValueChange={setFilterLocation}>
+                    <Select value={filterLocation} onValueChange={handleLocationChange}>
                         <SelectTrigger className="w-[180px]">
                             <SelectValue placeholder="Filter by Location" />
                         </SelectTrigger>
@@ -244,8 +241,10 @@ function ServerRow({ server, onDelete }: { server: ServerConfig; onDelete: () =>
                     >
                         {server.name}
                     </Link>
-                    <div className="text-xs text-muted-foreground mt-1 truncate">
-                        {server.group && <span className="mr-2">{server.group}</span>}
+                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                        {getServerGroups(server).map((g) => (
+                            <span key={g}>{g}</span>
+                        ))}
                         {server.location && <span>({server.location})</span>}
                     </div>
                 </div>

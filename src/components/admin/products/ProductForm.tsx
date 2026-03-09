@@ -58,7 +58,7 @@ export function ProductForm({ open, onOpenChange, onSubmit, initialData, variant
         stock: initialData?.stock ? initialData.stock.toString() : "",
         // Module
         moduleName: initialData?.module?.name || "cpanel",
-        serverGroup: initialData?.module?.serverGroup || "default",
+        serverGroup: initialData?.module?.serverGroup || "Web Hosting",
         whmPackageName: initialData?.module?.packageName || "",
         // Free Domain
         freeDomainType: (initialData?.freeDomain?.type || "none") as "none" | "once" | "recurring",

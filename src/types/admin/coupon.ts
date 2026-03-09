@@ -1,25 +1,34 @@
-export interface Coupon {
-    id: string;
+/**
+ * Promotion (Coupon) - aligned with backend API
+ */
+export interface Promotion {
+    _id: string;
     code: string;
-    type: "percentage" | "fixed";
+    name: string;
+    description?: string;
+    type: "percent" | "fixed";
     value: number;
-    recurring: boolean;
-    recurringTimes: number; // 0 = unlimited
-    uses: number;
-    maxUses: number; // 0 = unlimited
+    currency?: string;
+    minOrderAmount?: number;
+    maxDiscountAmount?: number;
     startDate: string;
-    expiryDate: string;
-    billingCycles: string[]; // e.g., ["monthly", "annually"]
-    domainPeriods: string[]; // e.g., ["1", "2", "3"]
-    appliesToProducts: string[]; // Product IDs
-    requiresProducts: string[]; // Product IDs
-    allowExistingProducts: boolean;
-    applyOnce: boolean;
-    newSignupsOnly: boolean;
-    applyOncePerClient: boolean;
-    existingClientOnly: boolean;
-    upgradesDowngrades: boolean;
-    lifetimePromotion: boolean;
-    adminNotes: string;
-    status: "active" | "expired";
+    endDate: string;
+    usageLimit: number;
+    usagePerClient: number;
+    firstOrderOnly: boolean;
+    productIds?: string[];
+    productTypes?: string[];
+    productBillingCycles?: string[];
+    domainTlds?: string[];
+    domainBillingCycles?: string[];
+    isActive: boolean;
+    usageCount: number;
+    createdAt?: string;
+    updatedAt?: string;
 }
+
+export type CreatePromotionDTO = Omit<Promotion, "_id" | "usageCount" | "createdAt" | "updatedAt">;
+export type UpdatePromotionDTO = Partial<CreatePromotionDTO>;
+
+/** Legacy alias for backward compatibility */
+export type Coupon = Promotion;

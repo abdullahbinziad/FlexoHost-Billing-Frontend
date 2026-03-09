@@ -86,7 +86,7 @@ export function ServiceOverviewCard({ service }: ServiceOverviewCardProps) {
             {getBillingCycleName(service.pricing.billingCycle)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {formatCurrency(service.pricing.amount)} per cycle
+            {formatCurrency(service.pricing.amount, service.pricing.currency)} per cycle
           </p>
         </div>
 

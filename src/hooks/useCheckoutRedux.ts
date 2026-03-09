@@ -14,6 +14,7 @@ import {
   setRegistrantContact,
   setPaymentMethod,
   setPromoCode,
+  setPromoApplied,
   setAgreeToTerms,
   setOrderSummary,
   setStep,
@@ -122,7 +123,7 @@ export function useCheckoutRedux(
     });
 
     const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-    const discount = checkout.formData.promoCode ? 0 : 0; // Will be calculated from promo code
+    const discount = checkout.formData.promoDiscount ?? 0;
     const tax = 0; // Will be calculated based on location
     const total = subtotal - discount + tax;
 
@@ -159,6 +160,8 @@ export function useCheckoutRedux(
     setPaymentMethod: (method: PaymentMethod) =>
       dispatch(setPaymentMethod(method)),
     setPromoCode: (code: string | undefined) => dispatch(setPromoCode(code)),
+    setPromoApplied: (code: string, discountAmount: number) =>
+      dispatch(setPromoApplied({ code, discountAmount })),
     setAgreeToTerms: (agree: boolean) => dispatch(setAgreeToTerms(agree)),
     setProductId: (id: string) => dispatch(setProductId(id)),
     setReferral: (ref: string | null) => dispatch(setReferral(ref)),
@@ -175,7 +178,7 @@ export function useCheckoutRedux(
     const { formData } = checkout;
     const { productId, referral } = checkout;
 
-    if (!productId || !formData.billingCycle || !formData.serverLocation || !formData.paymentMethod) {
+    if (!productId || !formData.billingCycle || !formData.serverLocation) {
       return null;
     }
 
@@ -233,7 +236,7 @@ export function useCheckoutRedux(
       currency: selectedCurrency.code,
       domain,
       serverLocation: formData.serverLocation.id,
-      paymentMethod: formData.paymentMethod.id,
+      paymentMethod: formData.paymentMethod?.id ?? "sslcommerz",
       client,
       coupon: formData.promoCode || undefined,
       referral: referral || undefined,
@@ -262,11 +265,6 @@ export function useCheckoutRedux(
 
     if (!checkout.formData.billingContact) {
       dispatch(setError("Please select a billing contact"));
-      return;
-    }
-
-    if (!checkout.formData.paymentMethod) {
-      dispatch(setError("Please select a payment method"));
       return;
     }
 

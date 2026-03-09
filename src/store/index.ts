@@ -1,6 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { api } from "./api/baseApi";
+import "./api/productApi"; // Inject product endpoints
+import "./api/promotionApi"; // Inject promotion endpoints
 import authReducer from "./slices/authSlice";
 import checkoutReducer from "./slices/checkoutSlice";
 import currencyReducer from "./slices/currencySlice";

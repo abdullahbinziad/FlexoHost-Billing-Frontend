@@ -1,46 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { InvoiceDetail } from "@/components/invoice/InvoiceDetail";
+import { InvoiceDetail } from "@/components/invoice";
 import { useGetInvoiceByIdQuery } from "@/store/api/invoiceApi";
-import type { Invoice } from "@/types/invoice";
-
-function mapBackendToFrontend(data: any): Invoice {
-  return {
-    id: data._id,
-    invoiceNumber: data.invoiceNumber,
-    status: data.status?.toLowerCase() || "unpaid",
-    invoiceDate: data.invoiceDate || data.createdAt,
-    dueDate: data.dueDate,
-    payTo: {
-      name: "FlexoHost",
-      email: "billing@flexohost.com",
-    },
-    paymentMethodsUrl: "/payment",
-    invoicedTo: {
-      companyName: data.billedTo?.companyName,
-      name: data.billedTo?.customerName || "N/A",
-      address: {
-        street: data.billedTo?.address || "N/A",
-        city: "",
-        state: "",
-        zipCode: "",
-        country: data.billedTo?.country || "N/A",
-      },
-    },
-    items: (data.items || []).map((item: any, idx: number) => ({
-      id: String(idx + 1),
-      description: item.description,
-      amount: item.amount,
-    })),
-    subtotal: data.subTotal,
-    credit: data.credit || 0,
-    total: data.total,
-    balance: data.balanceDue,
-    transactions: [],
-    currency: data.currency || "USD",
-  };
-}
+import { mapInvoiceApiToFrontend } from "@/lib/mappers";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -73,7 +36,7 @@ export default function InvoiceDetailPage() {
     );
   }
 
-  const invoice = mapBackendToFrontend(data);
+  const invoice = mapInvoiceApiToFrontend(data);
 
   return <InvoiceDetail invoice={invoice} />;
 }

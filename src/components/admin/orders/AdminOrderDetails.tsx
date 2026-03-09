@@ -53,19 +53,27 @@ export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
                     country: orderData.client.address?.country || "N/A",
                 }
                 : undefined,
-            items: (orderData.items || []).map((item: any) => ({
-                productId: item.productId,
-                type: item.type,
-                productName: item.nameSnapshot || (item.type === "DOMAIN" ? "Domain Registration" : "Service"),
-                domain: item.configSnapshot?.domainName || item.configSnapshot?.primaryDomain || "",
-                billingCycle: item.billingCycle || "One Time",
-                price: item.pricingSnapshot?.total || item.total || 0,
-                status: "Pending",
-                username: item.meta?.username || "",
-                password: item.meta?.password || "",
-                server: item.meta?.server || "",
-                _raw: item,
-            })),
+            // Hosting first, then Domain, then other types
+            items: (orderData.items || [])
+                .map((item: any) => ({
+                    productId: item.productId,
+                    type: item.type,
+                    productName: item.nameSnapshot || (item.type === "DOMAIN" ? "Domain Registration" : "Service"),
+                    domain: item.configSnapshot?.domainName || item.configSnapshot?.domain || item.configSnapshot?.primaryDomain || "",
+                    billingCycle: item.billingCycle || "One Time",
+                    price: item.pricingSnapshot?.total ?? item.total ?? 0,
+                    status: "Pending",
+                    username: item.meta?.username || "",
+                    password: item.meta?.password || "",
+                    server: item.meta?.server || "",
+                    _raw: item,
+                }))
+                .sort((a: any, b: any) => {
+                    const order = { HOSTING: 0, DOMAIN: 1 };
+                    const ai = order[a.type as keyof typeof order] ?? 2;
+                    const bi = order[b.type as keyof typeof order] ?? 2;
+                    return ai - bi;
+                }),
         };
     }, [orderData]);
 

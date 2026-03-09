@@ -13,7 +13,8 @@ export interface ServerConfig {
 
     // New Fields
     location: "USA" | "Malaysia" | "Singapore" | "Bangladesh" | "Germany" | "Finland";
-    group: "Web Hosting" | "BDIX Hosting" | "Turbo Hosting" | "Ecommerce Hosting" | "VPS" | "BDIX Vps";
+    /** A server can belong to multiple groups */
+    groups: ("Web Hosting" | "BDIX Hosting" | "Turbo Hosting" | "Ecommerce Hosting" | "VPS" | "BDIX Vps")[];
 
     // Nameservers
     nameservers: {
@@ -54,4 +55,24 @@ export interface ServerGroup {
     name: string;
     fillType: "least-full" | "fill-until-full";
     servers: string[]; // Server IDs
+}
+
+export type ServerGroupOption = ServerConfig["groups"][number];
+
+/** Single source of truth for server group options. Use for server config, product module config, filters, etc. */
+export const SERVER_GROUP_OPTIONS: readonly ServerGroupOption[] = [
+    "Web Hosting",
+    "BDIX Hosting",
+    "Turbo Hosting",
+    "Ecommerce Hosting",
+    "VPS",
+    "BDIX Vps",
+] as const;
+
+/** Get server groups array (supports legacy single `group` from API). */
+export function getServerGroups(server: { groups?: ServerGroupOption[]; group?: string } | null | undefined): ServerGroupOption[] {
+    if (!server) return [];
+    if (Array.isArray(server.groups) && server.groups.length > 0) return server.groups;
+    if ((server as { group?: string }).group) return [(server as { group: string }).group as ServerGroupOption];
+    return [];
 }

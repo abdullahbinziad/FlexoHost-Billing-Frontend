@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, AlertTriangle, RefreshCw } from "lucide-react";
+import { SERVER_GROUP_OPTIONS } from "@/types/admin";
 
 interface ModuleConfigurationProps {
     formData: {
@@ -68,10 +69,11 @@ export function ModuleConfiguration({ formData, setFormData, handleChange }: Mod
                                 <SelectValue placeholder="Select Server Group" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="default">Default</SelectItem>
-                                <SelectItem value="BDIX-01">BDIX-01</SelectItem>
-                                <SelectItem value="USA-01">USA-01</SelectItem>
-                                <SelectItem value="SG-01">SG-01</SelectItem>
+                                {SERVER_GROUP_OPTIONS.map((group) => (
+                                    <SelectItem key={group} value={group}>
+                                        {group}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

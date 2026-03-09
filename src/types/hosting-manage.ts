@@ -26,6 +26,7 @@ export interface HostingServiceDetails extends HostingService {
     paymentMethod: string;
     registrationDate: string;
     nextDueDate: string;
+    currency?: string;
   };
 }
 

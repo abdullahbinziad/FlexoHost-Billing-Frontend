@@ -88,6 +88,14 @@ const checkoutSlice = createSlice({
     },
     setPromoCode: (state, action: PayloadAction<string | undefined>) => {
       state.formData.promoCode = action.payload;
+      if (!action.payload) state.formData.promoDiscount = undefined;
+    },
+    setPromoApplied: (
+      state,
+      action: PayloadAction<{ code: string; discountAmount: number }>
+    ) => {
+      state.formData.promoCode = action.payload.code;
+      state.formData.promoDiscount = action.payload.discountAmount;
     },
     setAgreeToTerms: (state, action: PayloadAction<boolean>) => {
       state.formData.agreeToTerms = action.payload;
@@ -153,7 +161,8 @@ export const {
   setUseDefaultRegistrant,
   setRegistrantContact,
   setPaymentMethod,
-  setPromoCode,
+    setPromoCode,
+    setPromoApplied,
   setAgreeToTerms,
   setReferral,
   setProductId,

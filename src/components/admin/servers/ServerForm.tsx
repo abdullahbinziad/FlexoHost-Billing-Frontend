@@ -27,7 +27,9 @@ export function ServerForm({ initialData, onSubmit, onCancel }: ServerFormProps)
         statusAddress: initialData?.statusAddress || "",
         isEnabled: initialData?.isEnabled ?? true,
         location: initialData?.location || "USA",
-        group: initialData?.group || "Web Hosting",
+        groups: Array.isArray(initialData?.groups) && initialData.groups.length > 0
+            ? initialData.groups
+            : (initialData as any)?.group ? [(initialData as any).group] : ["Web Hosting"],
 
         nameservers: initialData?.nameservers || {
             ns1: "ns1.flexohost.com", ns1Ip: "",

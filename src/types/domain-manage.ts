@@ -16,6 +16,7 @@ export interface DomainDetails extends Domain {
     paymentMethod: string;
     registrationDate: string;
     nextDueDate: string;
+    currency?: string;
   };
   contacts: {
     registrant: ContactInfo;

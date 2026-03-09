@@ -6,43 +6,70 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { mockCoupons } from "@/data/mockCouponData";
-import { Coupon } from "@/types/admin";
-import { Plus, Copy, Pencil, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    useGetPromotionsQuery,
+    useDeletePromotionMutation,
+    useTogglePromotionActiveMutation,
+} from "@/store/api/promotionApi";
+import { Plus, Search, Pencil, Trash2, Power, PowerOff } from "lucide-react";
+import { toast } from "sonner";
 
 export default function PromotionsPage() {
-    const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
-    const [filter, setFilter] = useState<"all" | "active" | "expired">("all");
+    const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [promotionToDelete, setPromotionToDelete] = useState<string | null>(null);
 
-    const filteredCoupons = coupons.filter(coupon => {
-        if (filter === "all") return true;
-        return coupon.status === filter;
+    const { data, isLoading, error } = useGetPromotionsQuery({
+        isActive: filter === "all" ? undefined : filter === "active",
+        page,
+        limit: 20,
+        search: search || undefined,
     });
 
-    const handleDuplicate = (couponId: string) => {
-        const coupon = coupons.find(c => c.id === couponId);
-        if (coupon) {
-            const newCoupon = {
-                ...coupon,
-                id: `${coupon.id}-copy-${Date.now()}`,
-                code: `${coupon.code}_COPY`,
-                uses: 0
-            };
-            setCoupons(prev => [...prev, newCoupon]);
-            alert("Coupon duplicated successfully!");
+    const [deletePromotion] = useDeletePromotionMutation();
+    const [toggleActive] = useTogglePromotionActiveMutation();
+
+    const promotions = data?.promotions || [];
+    const pagination = data?.pagination;
+
+    const handleToggleActive = async (id: string, currentActive: boolean) => {
+        try {
+            await toggleActive({ id, isActive: !currentActive }).unwrap();
+            toast.success(currentActive ? "Promotion deactivated" : "Promotion activated");
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to update promotion");
         }
     };
 
-    const handleExpireNow = (couponId: string) => {
-        setCoupons(prev => prev.map(c =>
-            c.id === couponId ? { ...c, status: "expired" as const } : c
-        ));
-        alert("Coupon expired!");
+    const handleDelete = async () => {
+        if (!promotionToDelete) return;
+        try {
+            await deletePromotion(promotionToDelete).unwrap();
+            toast.success("Promotion deleted");
+            setPromotionToDelete(null);
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to delete promotion");
+        }
     };
 
-    const handleDelete = (couponId: string) => {
-        if (confirm("Are you sure you want to delete this coupon?")) {
-            setCoupons(prev => prev.filter(c => c.id !== couponId));
+    const formatDate = (d: string) => {
+        try {
+            const date = new Date(d);
+            return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        } catch {
+            return "-";
         }
     };
 
@@ -50,9 +77,11 @@ export default function PromotionsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Promotions/Coupons</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Promotions / Coupons</h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        {filteredCoupons.length} Records Found, Page 1 of 1
+                        {pagination
+                            ? `${pagination.totalItems} Records, Page ${pagination.currentPage} of ${pagination.totalPages}`
+                            : "Loading..."}
                     </p>
                 </div>
                 <div className="flex gap-2">
@@ -61,123 +90,195 @@ export default function PromotionsPage() {
                         size="sm"
                         onClick={() => setFilter("active")}
                     >
-                        Active Promotions
+                        Active
                     </Button>
                     <Button
-                        variant={filter === "expired" ? "default" : "outline"}
+                        variant={filter === "inactive" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setFilter("expired")}
+                        onClick={() => setFilter("inactive")}
                     >
-                        Expired Promotions
+                        Inactive
                     </Button>
                     <Button
                         variant={filter === "all" ? "default" : "outline"}
                         size="sm"
                         onClick={() => setFilter("all")}
                     >
-                        All Promotions
+                        All
                     </Button>
                 </div>
             </div>
 
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4 flex-wrap">
                 <Link href="/admin/promotions/new">
                     <Button>
                         <Plus className="w-4 h-4 mr-2" />
                         Create New Promotion
                     </Button>
                 </Link>
-                <div className="text-sm text-muted-foreground">
-                    Jump to Page: <input type="number" defaultValue={1} className="w-16 px-2 py-1 border rounded ml-2" />
-                    <Button size="sm" variant="outline" className="ml-2">Go</Button>
+                <div className="flex items-center gap-2">
+                    <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by code or name..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-8 w-64"
+                        />
+                    </div>
+                    {pagination && pagination.totalPages > 1 && (
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={page <= 1}
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            >
+                                Prev
+                            </Button>
+                            <span className="px-2 text-sm text-muted-foreground">
+                                {page} / {pagination.totalPages}
+                            </span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={page >= pagination.totalPages}
+                                onClick={() => setPage((p) => p + 1)}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
             <Card>
                 <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-primary text-primary-foreground hover:bg-primary">
-                                <TableHead className="text-primary-foreground">Promotion Code</TableHead>
-                                <TableHead className="text-primary-foreground">Type</TableHead>
-                                <TableHead className="text-primary-foreground">Value</TableHead>
-                                <TableHead className="text-primary-foreground">Recurring</TableHead>
-                                <TableHead className="text-primary-foreground">Uses</TableHead>
-                                <TableHead className="text-primary-foreground">Start Date</TableHead>
-                                <TableHead className="text-primary-foreground">Expiry Date</TableHead>
-                                <TableHead className="text-primary-foreground w-[200px]"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredCoupons.map((coupon) => (
-                                <TableRow key={coupon.id}>
-                                    <TableCell className="font-medium">{coupon.code}</TableCell>
-                                    <TableCell className="capitalize">{coupon.type}</TableCell>
-                                    <TableCell>
-                                        {coupon.type === "percentage" ? `${coupon.value}%` : `৳${coupon.value.toFixed(2)}`}
-                                    </TableCell>
-                                    <TableCell>
-                                        {coupon.recurring ? (
-                                            <Badge variant="default" className="bg-green-500">
-                                                ✓
-                                            </Badge>
-                                        ) : (
-                                            <span className="text-muted-foreground">-</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {coupon.uses}/{coupon.maxUses === 0 ? "∞" : coupon.maxUses}
-                                    </TableCell>
-                                    <TableCell>{coupon.startDate || "-"}</TableCell>
-                                    <TableCell>{coupon.expiryDate || "-"}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="h-8 w-8 p-0"
-                                                title="Duplicate"
-                                                onClick={() => handleDuplicate(coupon.id)}
-                                            >
-                                                <Copy className="w-4 h-4 text-green-600" />
-                                            </Button>
-                                            <Link href={`/admin/promotions/${coupon.id}`}>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 p-0"
-                                                    title="Edit"
-                                                >
-                                                    <Pencil className="w-4 h-4 text-blue-600" />
-                                                </Button>
-                                            </Link>
-                                            {coupon.status === "active" && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 px-2 text-xs"
-                                                    onClick={() => handleExpireNow(coupon.id)}
-                                                >
-                                                    Expire Now
-                                                </Button>
-                                            )}
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="h-8 w-8 p-0"
-                                                title="Delete"
-                                                onClick={() => handleDelete(coupon.id)}
-                                            >
-                                                <Trash2 className="w-4 h-4 text-red-600" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                    {isLoading ? (
+                        <div className="p-12 text-center text-muted-foreground">
+                            Loading promotions...
+                        </div>
+                    ) : error ? (
+                        <div className="p-12 text-center text-destructive">
+                            Failed to load promotions. Please try again.
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-primary text-primary-foreground hover:bg-primary">
+                                    <TableHead className="text-primary-foreground">Code</TableHead>
+                                    <TableHead className="text-primary-foreground">Name</TableHead>
+                                    <TableHead className="text-primary-foreground">Type</TableHead>
+                                    <TableHead className="text-primary-foreground">Value</TableHead>
+                                    <TableHead className="text-primary-foreground">Uses</TableHead>
+                                    <TableHead className="text-primary-foreground">Start</TableHead>
+                                    <TableHead className="text-primary-foreground">End</TableHead>
+                                    <TableHead className="text-primary-foreground">Status</TableHead>
+                                    <TableHead className="text-primary-foreground w-[180px]">
+                                        Actions
+                                    </TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {promotions.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
+                                            No promotions found.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    promotions.map((promo) => (
+                                        <TableRow key={promo._id}>
+                                            <TableCell className="font-mono font-medium">
+                                                {promo.code}
+                                            </TableCell>
+                                            <TableCell>{promo.name}</TableCell>
+                                            <TableCell className="capitalize">{promo.type}</TableCell>
+                                            <TableCell>
+                                                {promo.type === "percent"
+                                                    ? `${promo.value}%`
+                                                    : `${promo.currency || "BDT"} ${promo.value}`}
+                                            </TableCell>
+                                            <TableCell>
+                                                {promo.usageCount}/
+                                                {promo.usageLimit === 0 ? "∞" : promo.usageLimit}
+                                            </TableCell>
+                                            <TableCell>{formatDate(promo.startDate)}</TableCell>
+                                            <TableCell>{formatDate(promo.endDate)}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={promo.isActive ? "default" : "secondary"}>
+                                                    {promo.isActive ? "Active" : "Inactive"}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 p-0"
+                                                        title={promo.isActive ? "Deactivate" : "Activate"}
+                                                        onClick={() =>
+                                                            handleToggleActive(promo._id, promo.isActive)
+                                                        }
+                                                    >
+                                                        {promo.isActive ? (
+                                                            <PowerOff className="w-4 h-4 text-amber-600" />
+                                                        ) : (
+                                                            <Power className="w-4 h-4 text-green-600" />
+                                                        )}
+                                                    </Button>
+                                                    <Link href={`/admin/promotions/${promo._id}`}>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 p-0"
+                                                            title="Edit"
+                                                        >
+                                                            <Pencil className="w-4 h-4 text-blue-600" />
+                                                        </Button>
+                                                    </Link>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                                        title="Delete"
+                                                        onClick={() => setPromotionToDelete(promo._id)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
+
+            <AlertDialog
+                open={!!promotionToDelete}
+                onOpenChange={(open) => !open && setPromotionToDelete(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete promotion?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. The promotion will be permanently removed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -141,7 +141,7 @@ export default function ClientInvoices() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right font-semibold text-gray-900 dark:text-gray-100">
-                        {formatCurrency(invoice.total)}
+                        {formatCurrency(invoice.total, invoice.currency ?? "BDT")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <Link href={`/invoices/${invoice._id}`}>

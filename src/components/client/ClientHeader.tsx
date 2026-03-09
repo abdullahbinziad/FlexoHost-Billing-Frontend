@@ -52,7 +52,7 @@ export function ClientHeader({ onMenuClick }: ClientHeaderProps) {
 
   return (
     <header className={cn(
-      "fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-30",
+      "fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-30 print:hidden",
       "lg:transition-[left] lg:duration-300 lg:ease-in-out",
       headerLeft
     )}>

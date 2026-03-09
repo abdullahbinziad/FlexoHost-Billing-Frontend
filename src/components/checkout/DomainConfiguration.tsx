@@ -244,81 +244,50 @@ export function DomainConfiguration({
   const periodOptions = [1, 2, 3];
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-        Domain Configuration
+    <div className="space-y-4 min-w-0 overflow-hidden">
+      <h2 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">
+        Domain
       </h2>
 
-      {/* Selected Domain Summary Card */}
+      {/* Selected Domain Summary */}
       {selectedDomain ? (
-        <div className={cn(
-          "border rounded-lg p-6",
-          selectedAction === "transfer"
-            ? "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30"
-            : "bg-primary/5 dark:bg-primary/10 border-primary/20 dark:border-primary/30"
-        )}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className={cn(
-                "flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center",
-                selectedAction === "transfer"
-                  ? "bg-amber-100 dark:bg-amber-900/30"
-                  : "bg-primary/20"
-              )}>
-                {selectedAction === "transfer" ? (
-                  <ArrowRightLeft className="w-6 h-6 text-amber-600 dark:text-amber-400" strokeWidth={2.5} />
-                ) : (
-                  <Check className="w-6 h-6 text-primary" strokeWidth={3} />
-                )}
-              </div>
-              <div>
-                <p className={cn(
-                  "text-sm font-medium mb-1",
-                  selectedAction === "transfer"
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-primary"
-                )}>
-                  {selectedAction === "transfer" ? "Domain Transfer" : "Selected Domain"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                    {selectedDomain.domain}<span className={selectedAction === "transfer" ? "text-amber-600 dark:text-amber-400" : "text-primary"}>{selectedDomain.tld}</span>
-                  </h3>
-                </div>
-                {selectedDomain.period && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {selectedAction === "transfer"
-                      ? <>Extend <span className="font-semibold text-gray-900 dark:text-gray-100">1 Year</span> after Transfer</>
-                      : <>Registration Period: <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedDomain.period} {selectedDomain.period === 1 ? 'Year' : 'Years'}</span></>
-                    }
-                  </p>
-                )}
-              </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
             </div>
-
-            <Button
-              variant="outline"
-              onClick={() => onDomainSelect(undefined)}
-              className="text-gray-600 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 dark:hover:text-red-400 border-gray-300 dark:border-gray-700"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Change Domain
-            </Button>
+            <div className="min-w-0">
+              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                {selectedDomain.domain}<span className="text-primary">{selectedDomain.tld}</span>
+              </p>
+              {selectedDomain.period && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {selectedDomain.period} {selectedDomain.period === 1 ? "year" : "years"}
+                </p>
+              )}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => onDomainSelect(undefined)}
+            className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 shrink-0"
+          >
+            Change
+          </button>
         </div>
       ) : (
         <>
           {/* Domain Action Tabs */}
-          <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-1 -mx-1 px-1">
             {domainActions.map((action) => (
               <button
                 key={action.id}
                 onClick={() => onActionChange(action.id)}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium transition-colors relative",
+                  "text-xs sm:text-sm font-medium whitespace-nowrap shrink-0 pb-2 border-b-2 transition-colors",
                   selectedAction === action.id
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    ? "text-primary border-primary"
+                    : "text-gray-400 border-transparent hover:text-gray-600 dark:hover:text-gray-300"
                 )}
               >
                 {action.label}
@@ -330,25 +299,25 @@ export function DomainConfiguration({
           {(selectedAction === "register" || selectedAction === "transfer") && (
             <div className="space-y-3">
               {/* Domain Search Input */}
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+                <div className="flex-1 relative min-w-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    placeholder={selectedAction === "transfer" ? "Enter domain to transfer (e.g. mydomain)" : "Search for a new domain name (e.g. mybusiness)"}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    placeholder={selectedAction === "transfer" ? "mydomain.com" : "yourdomain.com"}
+                    className="w-full min-w-0 pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   />
                 </div>
 
-                {/* TLD Dropdown Select */}
-                <div className="relative" ref={tldDropdownRef}>
+                {/* TLD Dropdown */}
+                <div className="relative w-full sm:w-auto sm:min-w-[100px]" ref={tldDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setIsTldDropdownOpen(!isTldDropdownOpen)}
-                    className="flex items-center justify-between gap-2 px-4 py-3 min-w-[120px] border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                    className="flex items-center justify-between gap-2 px-3 py-2.5 w-full sm:w-auto sm:min-w-[100px] text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-primary"
                   >
                     <span className="text-sm font-medium">{selectedTld}</span>
                     <ChevronDown
@@ -361,59 +330,34 @@ export function DomainConfiguration({
 
                   {/* TLD Dropdown Menu */}
                   {isTldDropdownOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
-                      {/* TLD Search Input inside Dropdown */}
-                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                          <input
-                            type="text"
-                            value={tldSearchQuery}
-                            onChange={(e) => setTldSearchQuery(e.target.value)}
-                            placeholder="Search TLDs..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
+                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-1 w-full sm:w-64 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-md z-50">
+                      <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+                        <input
+                          type="text"
+                          value={tldSearchQuery}
+                          onChange={(e) => setTldSearchQuery(e.target.value)}
+                          placeholder="Search..."
+                          className="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       </div>
-
-                      {/* TLD List with Radio Buttons */}
-                      <div className="max-h-64 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto py-1">
                         {filteredTlds.length > 0 ? (
-                          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {filteredTlds.map((tld) => (
-                              <label
-                                key={tld.tld}
-                                className={cn(
-                                  "flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors",
-                                  selectedTld === tld.tld &&
-                                  "bg-primary/5 dark:bg-primary/10"
-                                )}
-                                onClick={() => handleTldSelect(tld.tld)}
-                              >
-                                <input
-                                  type="radio"
-                                  name="tld"
-                                  value={tld.tld}
-                                  checked={selectedTld === tld.tld}
-                                  onChange={() => handleTldSelect(tld.tld)}
-                                  className="w-4 h-4 text-primary border-gray-300 dark:border-gray-600 focus:ring-primary focus:ring-2"
-                                />
-                                <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {tld.tld}
-                                </span>
-                                {tld.isSpotlight && (
-                                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-primary/10 text-primary rounded-full">
-                                    {tld.label || "Recommended"}
-                                  </span>
-                                )}
-                              </label>
-                            ))}
-                          </div>
+                          filteredTlds.map((tld) => (
+                            <button
+                              key={tld.tld}
+                              type="button"
+                              onClick={() => handleTldSelect(tld.tld)}
+                              className={cn(
+                                "w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800",
+                                selectedTld === tld.tld && "bg-primary/5 text-primary font-medium"
+                              )}
+                            >
+                              {tld.tld}
+                            </button>
+                          ))
                         ) : (
-                          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                            No TLDs found matching &quot;{tldSearchQuery}&quot;
-                          </div>
+                          <p className="px-3 py-4 text-sm text-gray-500">No matches</p>
                         )}
                       </div>
                     </div>
@@ -422,63 +366,43 @@ export function DomainConfiguration({
 
                 <Button
                   onClick={handleSearch}
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  size="sm"
+                  className="w-full sm:w-auto shrink-0"
                   disabled={isSearchingApi || !searchQuery.trim()}
                 >
                   {isSearchingApi ? (
-                    <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <Search className="w-5 h-5" />
+                    <>
+                      <Search className="w-4 h-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Search</span>
+                    </>
                   )}
                 </Button>
               </div>
 
               {/* Domain Availability Result */}
               {searchResult && (
-                <div
-                  className={cn(
-                    "mt-4 p-4 rounded-lg border transition-all",
-                    searchResult.available
-                      ? "bg-primary/5 dark:bg-primary/10 border-primary/20 dark:border-primary/30"
-                      : selectedAction === "transfer"
-                        ? rawApiAvailable
-                          ? "bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/30"
-                          : "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800/30"
-                        : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800/30"
-                  )}
-                >
+                <div className="mt-3 p-3 sm:p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 overflow-hidden min-w-0 w-full max-w-full">
                   {searchResult.available ? (
-                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 w-full">
-                      {/* Domain Info and Availability */}
-                      <div className="flex items-center gap-4">
-                        <div className="flex-shrink-0 w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center shadow-sm">
-                          <Check
-                            className="w-6 h-6 text-primary"
-                            strokeWidth={3}
-                          />
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 w-full min-w-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
                         </div>
-
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold uppercase tracking-wider text-primary mb-0.5">
-                            Available
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 break-all">
+                            {searchResult.domain}<span className="text-primary">{searchResult.tld}</span>
                           </p>
-                          <p className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-baseline gap-1 break-words">
-                            <span>{searchResult.domain}</span>
-                            <span className="text-primary">{searchResult.tld}</span>
-                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Available</p>
                         </div>
                       </div>
 
-                      {/* Period Selector and Action */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 lg:gap-6 w-full lg:w-auto">
-
-                        {/* Compact Period Selector */}
-                        <div className="flex items-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700/50 rounded-lg p-1 shadow-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto min-w-0 flex-shrink-0">
+                        <div className="flex gap-1 flex-wrap">
                           {periodOptions.map((years) => {
                             const enabled = isPeriodEnabled(years);
                             const isSelected = selectedPeriod === years;
-
                             return (
                               <button
                                 key={years}
@@ -486,13 +410,11 @@ export function DomainConfiguration({
                                 disabled={!enabled}
                                 onClick={() => enabled && setSelectedPeriod(years)}
                                 className={cn(
-                                  "px-4 py-2 rounded-md transition-all text-sm font-semibold whitespace-nowrap",
-                                  enabled
-                                    ? "cursor-pointer"
-                                    : "opacity-40 cursor-not-allowed",
+                                  "flex-1 min-w-[60px] sm:flex-initial sm:min-w-0 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs font-medium transition-colors",
+                                  !enabled && "opacity-40 cursor-not-allowed",
                                   isSelected
-                                    ? "bg-primary text-primary-foreground shadow"
-                                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/50"
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-300"
                                 )}
                               >
                                 {years} {years === 1 ? "Year" : "Years"}
@@ -501,111 +423,73 @@ export function DomainConfiguration({
                           })}
                         </div>
 
-                        {/* Total Price & Action Button */}
-                        <div className="flex items-center justify-between sm:justify-start gap-5 pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-gray-800">
-                          <div className="text-right">
-                            <p className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        <div className="flex items-center justify-between sm:justify-start gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-gray-700">
+                          <div>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
                               {formatCurrency(getPeriodPrice(selectedPeriod))}
                             </p>
-                            {getSavings(selectedPeriod) ? (
-                              <p className="text-xs text-primary font-bold">
-                                Save {formatCurrency(getSavings(selectedPeriod)!)}
-                              </p>
-                            ) : (
-                              <p className="text-xs text-transparent select-none">Save</p>
+                            {getSavings(selectedPeriod) && (
+                              <p className="text-xs text-primary">Save {formatCurrency(getSavings(selectedPeriod)!)}</p>
                             )}
                           </div>
-
                           <Button
                             onClick={handleAddToCart}
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap shadow-md hover:shadow-lg transition-all"
-                            size="lg"
+                            size="sm"
+                            className="shrink-0"
                             disabled={!isPeriodEnabled(selectedPeriod)}
                           >
-                            <ShoppingCart className="w-5 h-5 mr-2" />
-                            Take Domain
+                            <ShoppingCart className="w-4 h-4 mr-1.5" />
+                            Add
                           </Button>
                         </div>
                       </div>
                     </div>
                   ) : selectedAction === "transfer" ? (
                     rawApiAvailable ? (
-                      /* ── Domain is NOT registered yet — can't transfer ── */
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                          <AlertCircle
-                            className="w-5 h-5 text-blue-600 dark:text-blue-400"
-                            strokeWidth={2.5}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
-                            Not Registered Yet
+                      <div className="flex items-center gap-3 min-w-0">
+                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 break-all">
+                            {searchResult.domain}<span className="text-gray-500">{searchResult.tld}</span>
                           </p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
-                            {searchResult.domain}
-                            <span className="text-gray-500">{searchResult.tld}</span>
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            This domain is not registered yet and cannot be transferred. You can register it instead.
+                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                            Not registered yet. You can register it instead.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      /* ── Domain IS registered — show transfer flow ── */
-                      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 w-full">
-                        {/* Domain Info */}
-                        <div className="flex items-center gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center shadow-sm">
-                            <ArrowRightLeft
-                              className="w-6 h-6 text-amber-600 dark:text-amber-400"
-                              strokeWidth={2.5}
-                            />
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 w-full min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <ArrowRightLeft className="w-4 h-4 text-primary" strokeWidth={2} />
                           </div>
-
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-0.5">
-                              Transfer Domain
+                          <div className="min-w-0 overflow-hidden">
+                            <p className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 break-all">
+                              {searchResult.domain}<span className="text-primary">{searchResult.tld}</span>
                             </p>
-                            <p className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-baseline gap-1 break-words">
-                              <span>{searchResult.domain}</span>
-                              <span className="text-amber-600 dark:text-amber-400">{searchResult.tld}</span>
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                              Extend 1 year after transfer
-                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">+ 1 year extension</p>
                           </div>
                         </div>
 
-                        {/* EPP Code + Price + Button */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 lg:gap-5 w-full lg:w-auto">
-                          {/* EPP Code Input */}
-                          <div className="flex-1 min-w-0 sm:min-w-[220px]">
-                            <input
-                              type="text"
-                              value={eppCode}
-                              onChange={(e) => setEppCode(e.target.value)}
-                              placeholder="EPP / Auth Code"
-                              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors font-mono tracking-wider text-sm"
-                            />
-                          </div>
-
-                          {/* Price & Action */}
-                          <div className="flex items-center justify-between sm:justify-start gap-5 pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-gray-800">
-                            <div className="text-right">
-                              <p className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                {formatCurrency(getPeriodPrice(1))}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">Transfer Price</p>
-                            </div>
-
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto min-w-0 flex-shrink-0">
+                          <input
+                            type="text"
+                            value={eppCode}
+                            onChange={(e) => setEppCode(e.target.value)}
+                            placeholder="EPP / Auth code"
+                            className="w-full sm:min-w-[140px] px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                          <div className="flex items-center justify-between sm:justify-start gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-gray-700">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm sm:text-base">
+                              {formatCurrency(getPeriodPrice(1))}
+                            </p>
                             <Button
                               onClick={handleAddToCart}
-                              className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap shadow-md hover:shadow-lg transition-all"
-                              size="lg"
+                              size="sm"
+                              className="shrink-0"
                               disabled={!isPeriodEnabled(1) || !eppCode.trim()}
                             >
-                              <ArrowRightLeft className="w-5 h-5 mr-2" />
+                              <ArrowRightLeft className="w-4 h-4 mr-1.5" />
                               Transfer
                             </Button>
                           </div>
@@ -613,24 +497,14 @@ export function DomainConfiguration({
                       </div>
                     )
                   ) : (
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                        <X
-                          className="w-5 h-5 text-red-600 dark:text-red-400"
-                          strokeWidth={3}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">
-                          Not Available
+                    <div className="flex items-center gap-3 min-w-0">
+                      <X className="w-5 h-5 text-red-500 shrink-0" />
+                      <div className="min-w-0 overflow-hidden">
+                        <p className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100 break-all">
+                          {searchResult.domain}<span className="text-gray-500">{searchResult.tld}</span>
                         </p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
-                          {searchResult.domain}
-                          <span className="text-gray-500">{searchResult.tld}</span>
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          This domain is already registered. Try a different name or
-                          extension.
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          Already registered. Try another name or extension.
                         </p>
                       </div>
                     </div>
@@ -640,11 +514,11 @@ export function DomainConfiguration({
             </div>
           )}
 
-          {/* Use Owned Domain Input */}
+          {/* Use Owned Domain */}
           {selectedAction === "use-owned" && (
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+              <div className="flex-1 relative min-w-0">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   value={ownedDomain}
@@ -654,16 +528,11 @@ export function DomainConfiguration({
                       const parts = ownedDomain.trim().split(".");
                       const domain = parts[0];
                       const tld = parts.length > 1 ? "." + parts.slice(1).join(".") : "";
-                      onDomainSelect({
-                        domain,
-                        tld,
-                        available: true,
-                        price: 0,
-                      });
+                      onDomainSelect({ domain, tld, available: true, price: 0 });
                     }
                   }}
-                  placeholder="Enter your domain name (e.g. example.com)"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="example.com"
+                  className="w-full min-w-0 pl-9 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
               <Button
@@ -672,18 +541,13 @@ export function DomainConfiguration({
                   const parts = ownedDomain.trim().split(".");
                   const domain = parts[0];
                   const tld = parts.length > 1 ? "." + parts.slice(1).join(".") : "";
-                  onDomainSelect({
-                    domain,
-                    tld,
-                    available: true,
-                    price: 0,
-                  });
+                  onDomainSelect({ domain, tld, available: true, price: 0 });
                 }}
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground whitespace-nowrap"
+                size="sm"
+                className="w-full sm:w-auto shrink-0"
                 disabled={!ownedDomain.trim()}
               >
-                Use Domain
+                Use
               </Button>
             </div>
           )}

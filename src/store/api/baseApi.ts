@@ -33,6 +33,8 @@ export const api = createApi({
     "Server",
     "ServerGroup",
     "TLD",
+    "Client",
+    "Promotion",
   ],
   endpoints: () => ({}),
 });

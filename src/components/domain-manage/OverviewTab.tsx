@@ -67,13 +67,13 @@ export function OverviewTab({ domain, onTabChange }: OverviewTabProps) {
             <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
               <span className="text-sm text-gray-600 dark:text-gray-400">First Payment Amount</span>
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(domain.billing.firstPaymentAmount)}
+                {formatCurrency(domain.billing.firstPaymentAmount, domain.billing?.currency)}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-800">
               <span className="text-sm text-gray-600 dark:text-gray-400">Recurring Amount</span>
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatCurrency(domain.billing.recurringAmount)} {domain.billing.billingCycle}
+                {formatCurrency(domain.billing.recurringAmount, domain.billing?.currency)} {domain.billing.billingCycle}
               </span>
             </div>
             <div className="flex justify-between items-center py-2">

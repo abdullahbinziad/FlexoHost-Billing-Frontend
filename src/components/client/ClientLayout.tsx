@@ -50,14 +50,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <ClientSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
           <div
             className={cn(
-              "ml-0",
+              "ml-0 print:ml-0",
               "lg:transition-[margin-left] lg:duration-300 lg:ease-in-out",
               contentMargin
             )}
           >
             <ClientHeader onMenuClick={toggleSidebar} />
-            <main className="pt-16 min-h-[calc(100vh-4rem)]">
-              <div className="p-4 sm:p-6">{children}</div>
+            <main className="pt-16 min-h-[calc(100vh-4rem)] print:pt-0">
+              <div className="p-4 sm:p-6 print:p-0">{children}</div>
             </main>
           </div>
         </div>

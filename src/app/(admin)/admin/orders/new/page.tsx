@@ -64,6 +64,7 @@ export default function AddNewOrderPage() {
     const [paymentMethod, setPaymentMethod] = useState("sslcommerz");
     const [status, setStatus] = useState("pending");
     const [promoCode, setPromoCode] = useState("");
+    const [currency] = useState<"USD" | "BDT">("USD");
 
     // Checkboxes
     const [confOrder, setConfOrder] = useState(true);
@@ -534,8 +535,8 @@ export default function AddNewOrderPage() {
                                                     </p>
                                                 </div>
                                                 <span className="font-medium">
-                                                    {p.priceOverride ? formatCurrency(parseFloat(p.priceOverride)) :
-                                                        (prod ? formatCurrency(prod.price * p.quantity) : formatCurrency(0))}
+                                                    {p.priceOverride ? formatCurrency(parseFloat(p.priceOverride), currency) :
+                                                        (prod ? formatCurrency(prod.price * p.quantity, currency) : formatCurrency(0, currency))}
                                                 </span>
                                             </div>
                                         );
@@ -551,7 +552,7 @@ export default function AddNewOrderPage() {
                                                 </p>
                                             </div>
                                             <span className="font-medium">
-                                                {d.priceOverride ? formatCurrency(parseFloat(d.priceOverride)) : formatCurrency(12.00 * parseInt(d.period))}
+                                                {d.priceOverride ? formatCurrency(parseFloat(d.priceOverride), currency) : formatCurrency(12.00 * parseInt(d.period), currency)}
                                             </span>
                                         </div>
                                     ))}
@@ -563,11 +564,11 @@ export default function AddNewOrderPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>Sub Total</span>
-                                    <span>{formatCurrency(totalAmount)}</span>
+                                    <span>{formatCurrency(totalAmount, currency)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>Tax (0%)</span>
-                                    <span>{formatCurrency(0)}</span>
+                                    <span>{formatCurrency(0, currency)}</span>
                                 </div>
                             </div>
                         </CardContent>
@@ -575,7 +576,7 @@ export default function AddNewOrderPage() {
                         <div className="bg-green-50 dark:bg-green-900/20 p-6 border-t border-green-100 dark:border-green-900/50">
                             <div className="flex justify-between items-center mb-6">
                                 <span className="text-2xl font-bold text-green-700 dark:text-green-400">Total</span>
-                                <span className="text-2xl font-bold text-green-700 dark:text-green-400">{formatCurrency(totalAmount)}</span>
+                                <span className="text-2xl font-bold text-green-700 dark:text-green-400">{formatCurrency(totalAmount, currency)}</span>
                             </div>
                             <Button className="w-full h-12 text-lg font-semibold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 text-white">
                                 Submit Order

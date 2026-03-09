@@ -47,7 +47,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             {/* Public Header */}
-            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 print:hidden">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-2">
                         <div className="relative h-10 w-40">
@@ -80,12 +80,12 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 </div>
             </header>
 
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-grow container mx-auto px-4 py-8 print:p-0 print:max-w-none">
                 {children}
             </main>
 
             {/* Simple Footer */}
-            <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-6">
+            <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-6 print:hidden">
                 <div className="container mx-auto px-4 text-center text-gray-500 text-sm">
                     &copy; {new Date().getFullYear()} FlexoHost. All rights reserved.
                 </div>

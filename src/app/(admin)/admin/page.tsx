@@ -4,18 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ServerGroupForm } from "@/components/admin/servers/ServerGroupForm";
-import { ServerGroup } from "@/types/admin";
-import { RefreshCw, Plus, Trash2, Edit } from "lucide-react";
-import {
-    useGetServersQuery,
-    useGetServerGroupsQuery,
-    useCreateServerGroupMutation,
-    useDeleteServerMutation,
-    useDeleteServerGroupMutation
-} from "@/store/api/serverApi";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { getServerGroups, SERVER_GROUP_OPTIONS, type ServerGroupOption } from "@/types/admin";
+import { RefreshCw, Plus, Trash2, Edit, Filter, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGetServersQuery, useDeleteServerMutation } from "@/store/api/serverApi";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -32,24 +25,17 @@ import {
 
 export default function ServerConfigPage() {
     const { data: servers = [], isLoading: isServersLoading, refetch: refetchServers } = useGetServersQuery();
-    const { data: serverGroups = [], isLoading: isGroupsLoading, refetch: refetchGroups } = useGetServerGroupsQuery();
-
-    const [createServerGroup] = useCreateServerGroupMutation();
     const [deleteServer] = useDeleteServerMutation();
-    const [deleteServerGroup] = useDeleteServerGroupMutation();
+    const [filterGroup, setFilterGroup] = useState<"all" | ServerGroupOption>("all");
 
-    const [isGroupFormOpen, setIsGroupFormOpen] = useState(false);
-
-    const handleCreateGroup = async (data: Omit<ServerGroup, "id">) => {
-        try {
-            await createServerGroup(data).unwrap();
-            toast.success("Server group created successfully");
-            setIsGroupFormOpen(false);
-        } catch (error) {
-            toast.error("Failed to create server group");
-            console.error(error);
-        }
+    const handleFilterChange = (value: string) => {
+        setFilterGroup(value as "all" | ServerGroupOption);
     };
+
+    const filteredServers = servers.filter((server) => {
+        const serverGroupsList = getServerGroups(server);
+        return filterGroup === "all" || serverGroupsList.includes(filterGroup);
+    });
 
     const handleDeleteServer = async (id: string) => {
         try {
@@ -61,25 +47,12 @@ export default function ServerConfigPage() {
         }
     };
 
-    const handleDeleteGroup = async (id: string) => {
-        try {
-            await deleteServerGroup(id).unwrap();
-            toast.success("Server group deleted successfully");
-        } catch (error) {
-            toast.error("Failed to delete server group");
-            console.error(error);
-        }
-    };
-
     const handleRefresh = () => {
         refetchServers();
-        refetchGroups();
         toast.info("Refreshed server data");
     };
 
-    const availableServersForGroup = servers.map(s => ({ id: s.id, name: s.name }));
-
-    if (isServersLoading || isGroupsLoading) {
+    if (isServersLoading) {
         return (
             <div className="flex items-center justify-center h-[500px]">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -103,17 +76,35 @@ export default function ServerConfigPage() {
                 </Button>
             </div>
 
-            <div className="flex gap-2">
-                <Link href="/admin/server-config/add">
-                    <Button>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add New Server
-                    </Button>
-                </Link>
-                <Button variant="outline" onClick={() => setIsGroupFormOpen(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create New Group
-                </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                <div className="flex gap-2">
+                    <Link href="/admin/server-config/add">
+                        <Button>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add New Server
+                        </Button>
+                    </Link>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Filter by group:</span>
+                    <Select value={filterGroup} onValueChange={handleFilterChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="All groups" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All groups</SelectItem>
+                            {SERVER_GROUP_OPTIONS.map((g) => (
+                                <SelectItem key={g} value={g}>{g}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {filterGroup !== "all" && (
+                        <Button variant="ghost" size="sm" onClick={() => setFilterGroup("all")} className="h-8 px-2">
+                            <X className="w-4 h-4 mr-1" /> Reset
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Servers Table */}
@@ -129,19 +120,21 @@ export default function ServerConfigPage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {servers.length === 0 ? (
+                    {filteredServers.length === 0 ? (
                         <div className="p-8 text-center text-muted-foreground">
-                            No servers configured yet. Click "Add New Server" to get started.
+                            {servers.length === 0
+                                ? "No servers configured yet. Click \"Add New Server\" to get started."
+                                : "No servers match the selected group filter."}
                         </div>
                     ) : (
                         <>
                             {/* cPanel Section */}
-                            {servers.some(s => s.module.type === "cpanel") && (
+                            {filteredServers.some(s => s.module.type === "cpanel") && (
                                 <div className="bg-muted/30 px-4 py-2 font-semibold text-sm border-b">
                                     cPanel
                                 </div>
                             )}
-                            {servers.filter(s => s.module.type === "cpanel").map((server) => (
+                            {filteredServers.filter(s => s.module.type === "cpanel").map((server) => (
                                 <ServerRow
                                     key={server.id}
                                     server={server}
@@ -150,12 +143,12 @@ export default function ServerConfigPage() {
                             ))}
 
                             {/* Virtualizor Section */}
-                            {servers.some(s => s.module.type === "virtualizor") && (
+                            {filteredServers.some(s => s.module.type === "virtualizor") && (
                                 <div className="bg-muted/30 px-4 py-2 font-semibold text-sm border-b">
                                     Virtualizor cloud
                                 </div>
                             )}
-                            {servers.filter(s => s.module.type === "virtualizor").map((server) => (
+                            {filteredServers.filter(s => s.module.type === "virtualizor").map((server) => (
                                 <ServerRow
                                     key={server.id}
                                     server={server}
@@ -163,7 +156,7 @@ export default function ServerConfigPage() {
                                 />
                             ))}
                             {/* Other/Generic Section */}
-                            {servers.filter(s => s.module.type !== "cpanel" && s.module.type !== "virtualizor").map((server) => (
+                            {filteredServers.filter(s => s.module.type !== "cpanel" && s.module.type !== "virtualizor").map((server) => (
                                 <ServerRow
                                     key={server.id}
                                     server={server}
@@ -174,79 +167,6 @@ export default function ServerConfigPage() {
                     )}
                 </CardContent>
             </Card>
-
-            {/* Groups Section */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg">Groups</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                        Server groups allow you to configure sets of servers to assign products to and have new orders rotate around servers within that group or fill until full.
-                    </p>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Group Name</TableHead>
-                                <TableHead>Fill Type</TableHead>
-                                <TableHead>Servers</TableHead>
-                                <TableHead></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {serverGroups.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                                        No server groups found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                serverGroups.map((group) => (
-                                    <TableRow key={group.id}>
-                                        <TableCell className="font-medium">{group.name}</TableCell>
-                                        <TableCell>
-                                            {group.fillType === "least-full"
-                                                ? "Add to the least full server"
-                                                : "Fill active server until full then switch to next least used"}
-                                        </TableCell>
-                                        <TableCell>{group.servers.join(", ")}</TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex gap-2 justify-end">
-                                                <Button size="sm" variant="ghost">Edit</Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button size="sm" variant="ghost" className="text-destructive">Delete</Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action cannot be undone. This will permanently delete the server group.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteGroup(group.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            {/* Server Group Form Modal */}
-            <ServerGroupForm
-                open={isGroupFormOpen}
-                onOpenChange={setIsGroupFormOpen}
-                onSubmit={handleCreateGroup}
-                availableServers={availableServersForGroup}
-            />
         </div>
     );
 }
@@ -259,8 +179,13 @@ function ServerRow({ server, onDelete }: { server: any, onDelete: () => void }) 
                     <Link href={`/admin/server-config/${server.id}`} className="text-primary hover:underline font-medium truncate block">
                         {server.name}
                     </Link>
+                    <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                        {getServerGroups(server).map((g) => (
+                            <span key={g}>{g}</span>
+                        ))}
+                    </div>
                     {server.module.type === "cpanel" && (
-                        <div className="text-xs text-muted-foreground mt-1 truncate">
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate">
                             {server.stats?.version && `v${server.stats.version}`}
                             {server.stats?.loadAverage && ` | Load: ${server.stats.loadAverage}`}
                         </div>
