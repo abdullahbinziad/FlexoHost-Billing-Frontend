@@ -10,7 +10,7 @@ import { jwtVerify } from "jose";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Define public routes that don't require authentication
+  // Public routes that don't require authentication
   const publicRoutes = [
     "/login",
     "/register",
@@ -19,22 +19,18 @@ export async function middleware(request: NextRequest) {
     "/checkout",
   ];
 
-  // Define admin routes (may have separate authentication)
-  const adminRoutes = ["/admin"];
-
   // Check if the current path is a public route
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-  // Check if the current path is an admin route
-  const isAdminRoute = adminRoutes.some((route) => pathname.startsWith(route));
+  // Admin area prefix
+  const isAdminRoute = pathname.startsWith("/admin");
 
-  // If it's a public route or admin route, allow access
-  if (isPublicRoute || isAdminRoute) {
+  // Always allow public routes to pass through
+  if (isPublicRoute) {
     return NextResponse.next();
   }
 
-  // For all other routes (client routes at root level), check authentication
-  // Check for authentication token in cookies
+  // For all protected routes, require authentication via JWT in cookies
   const token = request.cookies.get("auth_token")?.value;
 
   // If no token is found, redirect to login
@@ -63,7 +59,31 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Token is valid, allow access
+    const userRole = (payload.role as string) || "";
+    const adminRoles = ["superadmin", "admin", "staff"];
+    const isAdminUser = adminRoles.includes(userRole);
+
+    // Hard rule: clients (non-admin roles) must never access /admin
+    if (isAdminRoute && !isAdminUser) {
+      const redirectUrl = new URL("/", request.url);
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Hard rule: admin/staff users should not use the root client area as their dashboard.
+    // If an admin user hits the root ("/") or other non-admin, non-public routes,
+    // force them into the /admin area.
+    const isRoot = pathname === "/" || pathname === "";
+    const isAuthPage =
+      pathname.startsWith("/auth") ||
+      pathname.startsWith("/login") ||
+      pathname.startsWith("/register");
+
+    if (isAdminUser && !isAdminRoute && !isPublicRoute && !isAuthPage) {
+      const adminUrl = new URL("/admin", request.url);
+      return NextResponse.redirect(adminUrl);
+    }
+
+    // Token is valid and path is allowed
     // Add user info to request headers for downstream use
     const response = NextResponse.next();
     response.headers.set('x-user-id', payload.sub || '');
@@ -85,11 +105,12 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api (API routes)
+     * - uploads (proxied to backend, static files)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - img (public images)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|img).*)",
+    "/((?!api|uploads|_next/static|_next/image|favicon.ico|img).*)",
   ],
 };

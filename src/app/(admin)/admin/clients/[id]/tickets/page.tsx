@@ -1,127 +1,155 @@
 "use client";
 
-//demo
-
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Plus, MoreHorizontal, MessageSquare } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useGetTicketsQuery } from "@/store/api/ticketApi";
+import { formatDate } from "@/utils/format";
+
+const STATUS_LABELS: Record<string, string> = {
+  open: "Open",
+  answered: "Answered (waiting client)",
+  customer_reply: "Customer replied",
+  on_hold: "On hold",
+  in_progress: "In progress",
+  closed: "Closed",
+};
 
 export default function ClientTicketsPage() {
-    return (
-        <Card className="border-none shadow-none">
-            <CardHeader className="px-0 pt-0 pb-4 flex flex-row items-center justify-between">
-                <div className="flex flex-col gap-1">
-                    <CardTitle className="text-xl">Support Tickets</CardTitle>
-                    <p className="text-sm text-muted-foreground">Support requests and communication history</p>
-                </div>
-                <Button>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Open New Ticket
-                </Button>
-            </CardHeader>
-            <CardContent className="px-0">
-                <div className="rounded-md border bg-white dark:bg-gray-900">
-                    <Table>
-                        <TableHeader className="bg-gray-50 dark:bg-gray-800">
-                            <TableRow>
-                                <TableHead className="w-[100px]">Ticket #</TableHead>
-                                <TableHead>Subject</TableHead>
-                                <TableHead>Department</TableHead>
-                                <TableHead>Last Updated</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell className="font-medium text-blue-600">
-                                    <Link href="tickets/8921" className="hover:underline">
-                                        #8921
-                                    </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-gray-900 dark:text-gray-100">Server is very slow today</span>
-                                        <span className="text-xs text-gray-500">Service: Primary Hosting</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>Technical Support</TableCell>
-                                <TableCell>Just now</TableCell>
-                                <TableCell>
-                                    <Badge className="bg-green-500 hover:bg-green-600">Open</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" className="h-8">
-                                        View
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell className="font-medium text-blue-600">
-                                    <Link href="tickets/8500" className="hover:underline">
-                                        #8500
-                                    </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-gray-900 dark:text-gray-100">Billing Question about Invoice #2024-001</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>Billing</TableCell>
-                                <TableCell>2 days ago</TableCell>
-                                <TableCell>
-                                    <Badge variant="secondary" className="bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">Customer Reply</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" className="h-8">
-                                        View
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell className="font-medium text-blue-600">
-                                    <Link href="tickets/8100" className="hover:underline">
-                                        #8100
-                                    </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium text-gray-900 dark:text-gray-100 dark:text-gray-400 text-gray-500">Pre-sales question</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>Sales</TableCell>
-                                <TableCell>1 month ago</TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className="text-gray-500 border-gray-300">Closed</Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <Button variant="ghost" size="sm" className="h-8">
-                                        View
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-    );
+  const params = useParams();
+  const clientId = params?.id as string;
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+
+  const { data, isLoading, error } = useGetTicketsQuery(
+    { page, limit, clientId },
+    { skip: !clientId }
+  );
+
+  const tickets = data?.results ?? [];
+  const totalResults = data?.totalResults ?? 0;
+  const totalPages = data?.totalPages ?? 1;
+
+  return (
+    <Card className="border-none shadow-none">
+      <CardHeader className="px-0 pt-0 pb-4 flex flex-row items-center justify-between">
+        <div className="flex flex-col gap-1">
+          <CardTitle className="text-xl">Support Tickets</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Support requests and communication history for this client.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/tickets">
+            <Plus className="w-4 h-4 mr-2" />
+            Open New Ticket
+          </Link>
+        </Button>
+      </CardHeader>
+      <CardContent className="px-0 space-y-3">
+        <div className="rounded-md border bg-white dark:bg-gray-900">
+          <Table>
+            <TableHeader className="bg-gray-50 dark:bg-gray-800">
+              <TableRow>
+                <TableHead className="w-[100px]">Ticket #</TableHead>
+                <TableHead>Subject</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Last Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    Loading tickets...
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-destructive">
+                    Failed to load tickets.
+                  </TableCell>
+                </TableRow>
+              ) : tickets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    No tickets for this client yet.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                tickets.map((t) => (
+                  <TableRow key={t._id}>
+                    <TableCell className="font-medium text-blue-600">
+                      <Link
+                        href={`/admin/tickets/${t._id}`}
+                        className="hover:underline"
+                      >
+                        {t.ticketNumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{t.subject}</TableCell>
+                    <TableCell className="capitalize">{t.department}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          t.status === "closed" || t.status === "resolved"
+                            ? "outline"
+                            : "secondary"
+                        }
+                      >
+                        {STATUS_LABELS[t.status] ?? t.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right text-xs text-muted-foreground">
+                      {formatDate(t.lastRepliedAt || t.updatedAt || t.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center text-xs text-muted-foreground">
+            <span>
+              {totalResults} ticket{totalResults !== 1 ? "s" : ""} total
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-2 py-1 border rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                className="px-2 py-1 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

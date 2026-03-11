@@ -11,7 +11,11 @@ export function ClientLayoutContent({ children }: { children: React.ReactNode })
     const params = useParams();
     const id = params?.id as string;
 
-    const { data: client, isLoading, error } = useGetClientByIdQuery(id, { skip: !id });
+    const { data: client, isLoading, error } = useGetClientByIdQuery(id, {
+      skip: !id,
+      refetchOnFocus: false,
+      pollingInterval: 60_000,
+    });
 
     const getEmail = () =>
         client?.contactEmail || (client?.user as { email?: string })?.email || "—";
@@ -46,6 +50,7 @@ export function ClientLayoutContent({ children }: { children: React.ReactNode })
 
     const headerClient = {
         id: client.clientId ?? client._id,
+        _id: client._id,
         firstName: client.firstName,
         lastName: client.lastName,
         companyName: client.companyName,
@@ -53,6 +58,7 @@ export function ClientLayoutContent({ children }: { children: React.ReactNode })
         status: getStatus(),
         address: formatAddress(),
         created: client.createdAt ? formatDate(client.createdAt) : undefined,
+        supportPin: client.supportPin,
     };
 
     return (

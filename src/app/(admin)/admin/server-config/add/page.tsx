@@ -13,6 +13,10 @@ export default function AddServerPage() {
     const [addServer, { isLoading }] = useAddServerMutation();
 
     const handleSubmit = async (data: Omit<ServerConfig, "id">) => {
+        if (data.module?.type === "cpanel" && !(data.module?.apiToken ?? "").trim()) {
+            toast.error("API Token is required for cPanel servers (needed for account creation and package listing)");
+            return;
+        }
         try {
             await addServer(data).unwrap();
             toast.success("Server created successfully");

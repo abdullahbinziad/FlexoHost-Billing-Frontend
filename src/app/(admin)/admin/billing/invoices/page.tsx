@@ -62,6 +62,7 @@ export default function AdminInvoicesPage() {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
     const [statusFilter, setStatusFilter] = useState<string>("");
+    const [invoiceNumberDraft, setInvoiceNumberDraft] = useState("");
     const [invoiceNumber, setInvoiceNumber] = useState("");
 
     const { data, isLoading, error, refetch } = useGetAllInvoicesQuery({
@@ -99,8 +100,8 @@ export default function AdminInvoicesPage() {
     const formatCurrency = useFormatCurrency();
 
     const handleSearch = () => {
+        setInvoiceNumber(invoiceNumberDraft.trim());
         setPage(1);
-        refetch();
     };
 
     if (isLoading) {
@@ -134,10 +135,16 @@ export default function AdminInvoicesPage() {
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-muted-foreground">Invoice #</label>
                             <Input
-                                placeholder="Search by invoice number"
+                                placeholder="Exact invoice number (e.g. INV-2024-001)"
                                 className="bg-white dark:bg-background"
-                                value={invoiceNumber}
-                                onChange={(e) => setInvoiceNumber(e.target.value)}
+                                value={invoiceNumberDraft}
+                                onChange={(e) => setInvoiceNumberDraft(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleSearch();
+                                    }
+                                }}
                             />
                         </div>
                         <div className="space-y-2">
@@ -158,10 +165,10 @@ export default function AdminInvoicesPage() {
                     </div>
 
                     <div className="flex gap-2 items-end">
-                        <Button variant="outline" onClick={() => { setStatusFilter(""); setInvoiceNumber(""); setPage(1); refetch(); }}>
+                        <Button variant="outline" onClick={() => { setStatusFilter(""); setInvoiceNumberDraft(""); setInvoiceNumber(""); setPage(1); }}>
                             Reset
                         </Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSearch}>
+                        <Button type="button" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSearch}>
                             <Search className="w-4 h-4 mr-2" /> Search
                         </Button>
                     </div>

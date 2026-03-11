@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -9,7 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { loginRateLimiter, isValidEmail } from "@/lib/security";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
-
+import { API_ENDPOINTS } from "@/config/api";
 import { Suspense } from "react";
 
 function LoginForm() {
@@ -17,7 +17,7 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const { login, isLoading } = useAuth();
+  const { login, completeSocialLogin, isLoading } = useAuth();
   const { theme } = useTheme();
   const searchParams = useSearchParams();
 
@@ -25,18 +25,34 @@ function LoginForm() {
   const message = searchParams.get('message');
   const redirect = searchParams.get('redirect');
 
-  // Get message text
+  // Get message text (including OAuth error from query)
+  const errorQuery = searchParams.get("error");
   const getInfoMessage = () => {
-    if (message === 'login_required') {
-      return "Please log in to continue";
-    }
-    if (message === 'access_denied') {
-      return "Access denied. You need admin credentials to access this area.";
-    }
+    if (message === "login_required") return "Please log in to continue";
+    if (message === "access_denied") return "Access denied. You need admin credentials to access this area.";
+    if (errorQuery === "google_not_configured") return "Google sign-in is not configured.";
+    if (errorQuery === "missing_code" || errorQuery === "token_exchange_failed" || errorQuery === "no_access_token" || errorQuery === "userinfo_failed") return "Google sign-in failed. Please try again.";
     return "";
   };
 
   const infoMessage = getInfoMessage();
+  const showOAuthError = Boolean(errorQuery);
+
+  // Handle return from Google OAuth: /login#accessToken=...&redirect=...
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get("accessToken");
+    const redirectPath = params.get("redirect") || undefined;
+    if (accessToken) {
+      completeSocialLogin(accessToken, redirectPath).catch(() => {
+        setError("Sign-in failed. Please try again.");
+      });
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, [completeSocialLogin]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -112,9 +128,9 @@ function LoginForm() {
             Sign in to access your account
           </p>
 
-          {/* Info Message from URL */}
+          {/* Info / Error Message from URL */}
           {infoMessage && (
-            <div className="mb-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+            <div className={`mb-4 px-4 py-3 rounded-lg text-sm flex items-start gap-2 ${showOAuthError ? "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400" : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400"}`}>
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{infoMessage}</span>
             </div>
@@ -198,6 +214,38 @@ function LoginForm() {
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
+
+            {/* Divider */}
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300 dark:border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-gray-800 px-2 text-gray-500 dark:text-gray-400">Or continue with</span>
+              </div>
+            </div>
+
+            {/* Sign in with Google */}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2 border-gray-300 dark:border-gray-600"
+              disabled={isLoading}
+              onClick={() => {
+                const redirect = searchParams.get("redirect");
+                const state = redirect ? encodeURIComponent(redirect) : "";
+                const url = state ? `${API_ENDPOINTS.AUTH.GOOGLE}?state=${state}` : API_ENDPOINTS.AUTH.GOOGLE;
+                window.location.href = url;
+              }}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              Sign in with Google
             </Button>
           </form>
 

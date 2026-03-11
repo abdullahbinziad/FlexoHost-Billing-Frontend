@@ -48,6 +48,26 @@ export const serverApi = api.injectEndpoints({
             invalidatesTags: (result, error, id) => [{ type: "Server", id }, { type: "Server", id: "LIST" }],
         }),
 
+        getServerPackages: builder.query<{ packages: { name?: string; [k: string]: unknown }[] }, string>({
+            query: (serverId) => `/servers/${serverId}/packages`,
+            transformResponse: (response: ApiResponse<{ packages: { name?: string; [k: string]: unknown }[] }>) => ({
+                packages: response?.data?.packages ?? [],
+            }),
+            providesTags: (result, error, serverId) => [{ type: "Server", id: `${serverId}-packages` }],
+        }),
+
+        testServerConnection: builder.mutation<{ success: boolean; message?: string; error?: string }, string>({
+            query: (serverId) => ({
+                url: `/servers/${serverId}/test-connection`,
+                method: "POST",
+            }),
+            transformResponse: (response: ApiResponse<{ success?: boolean; message?: string; error?: string }>) => ({
+                success: response?.data?.success ?? false,
+                message: response?.data?.message,
+                error: response?.data?.error,
+            }),
+        }),
+
         // Server Groups
         getServerGroups: builder.query<ServerGroup[], void>({
             query: () => "/server-groups",
@@ -91,6 +111,8 @@ export const serverApi = api.injectEndpoints({
 export const {
     useGetServersQuery,
     useGetServerQuery,
+    useGetServerPackagesQuery,
+    useTestServerConnectionMutation,
     useAddServerMutation,
     useUpdateServerMutation,
     useDeleteServerMutation,

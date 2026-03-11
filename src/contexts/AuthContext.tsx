@@ -84,58 +84,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     /**
      * Get role-based default dashboard
+     * Admin/staff → /admin, client/others → /
      */
     const getRoleBasedDefault = (role: string): string => {
-        // User requested to always redirect to root by default
+        if (['superadmin', 'admin', 'staff'].includes(role)) {
+            return '/admin';
+        }
         return '/';
+    };
+
+    /**
+     * Redirect to complete-profile if user (client/user role) has not completed profile.
+     */
+    const getRedirectAfterLogin = (user: { role: string; profileCompleted?: boolean }, redirectPath: string | null): string => {
+        const needsProfile = ['client', 'user'].includes(user.role) && user.profileCompleted === false;
+        if (needsProfile) return '/complete-profile';
+        return getSmartRedirect(redirectPath, user.role);
     };
 
     /**
      * Validate and get smart redirect path based on user role
      */
     const getSmartRedirect = (redirectPath: string | null, userRole: string): string => {
-        // If no redirect parameter, redirect to root as requested
+        // If no redirect parameter, redirect based on role
         if (!redirectPath) {
-            console.log("No redirect parameter, redirecting to root");
-            return '/';
+            return getRoleBasedDefault(userRole);
         }
 
         const decodedPath = decodeURIComponent(redirectPath);
-        console.log("Validating redirect path:", decodedPath, "for role:", userRole);
 
         // Prevent auth page loops
         if (decodedPath.startsWith('/auth') ||
             decodedPath.startsWith('/login') ||
             decodedPath.startsWith('/register')) {
-            console.log("Redirect is auth page, using role-based default");
             return getRoleBasedDefault(userRole);
         }
 
         // Validate admin routes
         if (decodedPath.startsWith('/admin')) {
             if (['superadmin', 'admin', 'staff'].includes(userRole)) {
-                console.log("Admin user accessing admin route - allowed");
-                return decodedPath; // Admin can access admin routes
+                return decodedPath;
             }
-            console.log("Non-admin user trying to access admin route - redirecting to client");
-            return '/client'; // Client cannot access admin routes
+            return '/client';
         }
 
         // Validate client routes
         if (decodedPath.startsWith('/client')) {
             if (userRole === 'client') {
-                console.log("Client user accessing client route - allowed");
-                return decodedPath; // Client can access client routes
+                return decodedPath;
             }
-            // Admin users can also access client routes (for support/management)
             if (['superadmin', 'admin', 'staff'].includes(userRole)) {
-                console.log("Admin user accessing client route - allowed");
                 return decodedPath;
             }
         }
 
-        // Public route or home page
-        console.log("Public route or home page");
         return decodedPath;
     };
 
@@ -153,9 +155,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 redirectPath = urlParams.get("redirect");
             }
 
-            console.log("=== LOGIN ATTEMPT ===");
-            console.log("Redirect parameter:", redirectPath);
-
             // Real API call
             const response = await authenticationService.login({ email, password });
 
@@ -168,13 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 // Set user
                 setUser(user);
 
-                // Get smart redirect based on role and original intent
-                const finalRedirect = getSmartRedirect(redirectPath, user.role);
-
-                console.log("=== LOGIN SUCCESSFUL ===");
-                console.log("User role:", user.role);
-                console.log("Final redirect destination:", finalRedirect);
-                console.log("========================");
+                const finalRedirect = getRedirectAfterLogin(user, redirectPath);
 
                 if (redirectUrl !== "NO_REDIRECT") {
                     router.push(finalRedirect);
@@ -185,6 +178,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error: any) {
             console.error("Login failed:", error);
             throw new Error(error.message || "Login failed. Please check your credentials.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    /**
+     * Complete login after Google (or other OAuth) redirect. Call when landing on /login#accessToken=...&redirect=...
+     */
+    const completeSocialLogin = async (accessToken: string, redirectPath?: string): Promise<void> => {
+        try {
+            setIsLoading(true);
+            setAccessToken(accessToken);
+            const response = await authenticationService.verifyToken();
+            if (response.success && response.data?.user) {
+                setUser(response.data.user);
+                const finalRedirect = getRedirectAfterLogin(response.data.user, redirectPath || null);
+                router.push(finalRedirect);
+            } else {
+                clearAuthTokens();
+                setUser(null);
+                throw new Error("Invalid token");
+            }
+        } catch (error: any) {
+            console.error("Social login complete failed:", error);
+            clearAuthTokens();
+            setUser(null);
+            throw error;
         } finally {
             setIsLoading(false);
         }
@@ -382,6 +402,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        completeSocialLogin,
         register,
         registerClient,
         logout,

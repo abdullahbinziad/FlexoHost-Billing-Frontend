@@ -15,8 +15,6 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
     const { user } = useAuth();
     const { isCollapsed, isMounted } = useSidebar();
 
-    console.log("current user on header", user);
-
     // Calculate left position based on collapsed state
     const headerLeft = isMounted
         ? (isCollapsed ? "lg:left-16" : "lg:left-64")

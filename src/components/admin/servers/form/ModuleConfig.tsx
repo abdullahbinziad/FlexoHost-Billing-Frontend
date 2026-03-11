@@ -120,13 +120,20 @@ export function ModuleConfig({ formData, handleModuleChange }: ModuleConfigProps
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">API Token (Optional)</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">
+                            API Token {formData.module.type === "cpanel" ? "*" : "(optional)"}
+                        </Label>
                         <Textarea
-                            value={formData.module.apiToken}
+                            value={formData.module.apiToken ?? ""}
                             onChange={(e) => handleModuleChange("apiToken", e.target.value)}
                             className="h-[60px] min-h-[60px] resize-none font-mono text-xs bg-muted/30"
-                            placeholder="Paste your API token here..."
+                            placeholder="Paste your WHM API token (required for cPanel account creation)"
                         />
+                        {formData.module.type === "cpanel" && (
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                                Required for Run Module Create and listing packages. Get it from WHM → Setup Remote Access Key.
+                            </p>
+                        )}
                     </div>
                 </div>
 

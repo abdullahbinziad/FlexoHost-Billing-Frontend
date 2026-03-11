@@ -201,3 +201,23 @@
 .react-tel-input .selected-flag .arrow.up {
   @apply border-b-gray-500 dark:border-b-gray-400 !important;
 }
+
+/* Tiptap / ProseMirror rich text editor */
+.ProseMirror {
+  outline: none;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: hsl(var(--muted-foreground));
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+}
+.ProseMirror p {
+  margin: 0.25em 0;
+}

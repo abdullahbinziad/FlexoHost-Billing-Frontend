@@ -2,13 +2,12 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../index";
 
 import { getAccessToken } from "@/utils/tokenManager";
-
-const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+import { API_CONFIG } from "@/config/api";
 
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl,
+    baseUrl: API_CONFIG.BASE_URL,
     prepareHeaders: (headers, { getState }) => {
       // Get token from state or cookie
       const token = (getState() as RootState).auth?.token || getAccessToken();
@@ -17,7 +16,12 @@ export const api = createApi({
         headers.set("authorization", `Bearer ${token}`);
       }
 
-      headers.set("Content-Type", "application/json");
+      // NOTE: For FormData requests (file uploads), fetchBaseQuery
+      // will automatically set the correct Content-Type. We only
+      // force JSON when it's not already set.
+      if (!headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+      }
       return headers;
     },
   }),
@@ -35,6 +39,9 @@ export const api = createApi({
     "TLD",
     "Client",
     "Promotion",
+    "Transaction",
+    "Notification",
+    "Ticket",
   ],
   endpoints: () => ({}),
 });

@@ -8,9 +8,11 @@ import {
     Server,
     Tag,
     CreditCard,
+    MessageSquare,
 } from "lucide-react";
 import type { NavItem } from "@/types/navigation";
 
+// Standard order: Dashboard → Clients → Orders → Billing → Products → Support → Promotions → Domains → Server Config → Settings
 export const adminNavItems: NavItem[] = [
     {
         label: "Dashboard",
@@ -18,19 +20,23 @@ export const adminNavItems: NavItem[] = [
         icon: LayoutDashboard,
     },
     {
-        label: "Client",
+        label: "Clients",
         href: "/admin/clients",
         icon: Users,
         hasSubmenu: true,
         submenu: [
-            {
-                label: "View / Search Client",
-                href: "/admin/clients",
-            },
-            {
-                label: "Manage User",
-                href: "/admin/users",
-            },
+            { label: "View / Search Client", href: "/admin/clients" },
+            { label: "Manage User", href: "/admin/users" },
+        ],
+    },
+    {
+        label: "Orders",
+        href: "/admin/orders",
+        icon: ShoppingCart,
+        hasSubmenu: true,
+        submenu: [
+            { label: "All Orders", href: "/admin/orders" },
+            { label: "Add New Order", href: "/admin/orders/new" },
         ],
     },
     {
@@ -39,30 +45,8 @@ export const adminNavItems: NavItem[] = [
         icon: CreditCard,
         hasSubmenu: true,
         submenu: [
-            {
-                label: "Invoice",
-                href: "/admin/billing/invoices",
-            },
-            {
-                label: "Transaction",
-                href: "/admin/billing/transactions",
-            },
-        ],
-    },
-    {
-        label: "Order",
-        href: "/admin/orders",
-        icon: ShoppingCart,
-        hasSubmenu: true,
-        submenu: [
-            {
-                label: "All Order",
-                href: "/admin/orders",
-            },
-            {
-                label: "Add new Order",
-                href: "/admin/orders/new",
-            },
+            { label: "Invoices", href: "/admin/billing/invoices" },
+            { label: "Transactions", href: "/admin/billing/transactions" },
         ],
     },
     {
@@ -71,15 +55,14 @@ export const adminNavItems: NavItem[] = [
         icon: Package,
         hasSubmenu: true,
         submenu: [
-            {
-                label: "All Products",
-                href: "/admin/products",
-            },
-            {
-                label: "Add Products",
-                href: "/admin/products/add",
-            },
+            { label: "All Products", href: "/admin/products" },
+            { label: "Add Product", href: "/admin/products/add" },
         ],
+    },
+    {
+        label: "Support",
+        href: "/admin/tickets",
+        icon: MessageSquare,
     },
     {
         label: "Promotions",
@@ -92,25 +75,14 @@ export const adminNavItems: NavItem[] = [
         icon: Globe,
         hasSubmenu: true,
         submenu: [
-            {
-                label: "Pricing",
-                href: "/admin/domain-settings/pricing",
-            },
-            {
-                label: "Registrars",
-                href: "/admin/domain-settings/register",
-            },
+            { label: "Pricing", href: "/admin/domain-settings/pricing" },
+            { label: "Registrars", href: "/admin/domain-settings/register" },
         ],
     },
     {
         label: "Hosting Server Config",
         href: "/admin/server-config",
         icon: Server,
-    },
-    {
-        label: "Users",
-        href: "/admin/users",
-        icon: Users,
     },
     {
         label: "Settings",

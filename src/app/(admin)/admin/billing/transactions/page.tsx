@@ -21,36 +21,25 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useGetAllInvoicesQuery, useUpdateInvoiceStatusMutation, useSendInvoiceReminderMutation } from "@/store/api/invoiceApi";
-import { toast } from "sonner";
+import { useGetTransactionsQuery } from "@/store/api/transactionApi";
 import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS = [
-    { value: "PAID", label: "Paid" },
+    { value: "SUCCESS", label: "Successful" },
     { value: "", label: "All" },
-    { value: "UNPAID", label: "Unpaid" },
-    { value: "OVERDUE", label: "Overdue" },
+    { value: "FAILED", label: "Failed" },
     { value: "CANCELLED", label: "Cancelled" },
 ];
 
 const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-        case "PAID":
+        case "SUCCESS":
             return "bg-green-500 hover:bg-green-600";
-        case "UNPAID":
+        case "FAILED":
             return "bg-red-500 hover:bg-red-600";
-        case "OVERDUE":
-            return "bg-orange-500 hover:bg-orange-600";
         case "CANCELLED":
             return "bg-gray-500 hover:bg-gray-600";
         default:
@@ -61,47 +50,19 @@ const getStatusColor = (status: string) => {
 export default function AdminTransactionsPage() {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
-    const [statusFilter, setStatusFilter] = useState<string>("PAID");
-    const [invoiceNumber, setInvoiceNumber] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("SUCCESS");
 
-    const { data, isLoading, error, refetch } = useGetAllInvoicesQuery({
+    const { data, isLoading, error, refetch } = useGetTransactionsQuery({
         page,
         limit,
         ...(statusFilter && { status: statusFilter }),
-        ...(invoiceNumber && { invoiceNumber }),
     });
 
-    const [updateStatus, { isLoading: isUpdating }] = useUpdateInvoiceStatusMutation();
-    const [sendReminder, { isLoading: isSendingReminder }] = useSendInvoiceReminderMutation();
-
     const transactions = data?.results ?? [];
-
-    const handleUpdateStatus = async (invoiceId: string, status: string) => {
-        try {
-            await updateStatus({ id: invoiceId, status }).unwrap();
-            toast.success(`Invoice marked as ${status.toLowerCase()}`);
-        } catch {
-            toast.error("Failed to update invoice status");
-        }
-    };
-
-    const handleSendReminder = async (invoiceId: string) => {
-        try {
-            const result = await sendReminder(invoiceId).unwrap();
-            toast.success(result.message);
-        } catch {
-            toast.error("Failed to send reminder");
-        }
-    };
     const totalResults = data?.totalResults ?? 0;
     const totalPages = data?.totalPages ?? 1;
 
     const formatCurrency = useFormatCurrency();
-
-    const handleSearch = () => {
-        setPage(1);
-        refetch();
-    };
 
     if (isLoading) {
         return (
@@ -132,15 +93,6 @@ export default function AdminTransactionsPage() {
                 <div className="flex flex-col lg:flex-row gap-4 items-end">
                     <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-muted-foreground">Invoice #</label>
-                            <Input
-                                placeholder="Search by invoice number"
-                                className="bg-white dark:bg-background"
-                                value={invoiceNumber}
-                                onChange={(e) => setInvoiceNumber(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
                             <label className="text-sm font-medium text-muted-foreground">Status</label>
                             <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
                                 <SelectTrigger className="bg-white dark:bg-background">
@@ -158,11 +110,11 @@ export default function AdminTransactionsPage() {
                     </div>
 
                     <div className="flex gap-2 items-end">
-                        <Button variant="outline" onClick={() => { setStatusFilter("PAID"); setInvoiceNumber(""); setPage(1); refetch(); }}>
+                        <Button variant="outline" onClick={() => { setStatusFilter("SUCCESS"); setPage(1); refetch(); }}>
                             Reset
                         </Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSearch}>
-                            <Search className="w-4 h-4 mr-2" /> Search
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { setPage(1); refetch(); }}>
+                            <Search className="w-4 h-4 mr-2" /> Refresh
                         </Button>
                     </div>
                 </div>
@@ -233,18 +185,22 @@ export default function AdminTransactionsPage() {
                             transactions.map((tx) => (
                                 <TableRow key={tx._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <TableCell className="font-medium text-blue-600">
-                                        <Link href={`/admin/billing/invoices/${tx._id}`} className="hover:underline">
-                                            {tx.invoiceNumber}
-                                        </Link>
+                                        {tx.invoiceId ? (
+                                            <Link href={`/admin/billing/invoices/${tx.invoiceId._id}`} className="hover:underline">
+                                                {tx.invoiceId.invoiceNumber}
+                                            </Link>
+                                        ) : (
+                                            "—"
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-gray-600 dark:text-gray-300">
-                                        {tx.billedTo?.customerName || tx.billedTo?.companyName || "—"}
+                                        {tx.invoiceId?.billedTo?.customerName || tx.invoiceId?.billedTo?.companyName || "—"}
                                     </TableCell>
                                     <TableCell className="text-gray-500">
-                                        {formatDate(tx.updatedAt || tx.invoiceDate)}
+                                        {formatDate(tx.createdAt)}
                                     </TableCell>
                                     <TableCell className="text-gray-600 dark:text-gray-300">
-                                        {tx.paymentMethod || "—"}
+                                        {tx.gateway || "—"}
                                     </TableCell>
                                     <TableCell>
                                         <span
@@ -257,44 +213,17 @@ export default function AdminTransactionsPage() {
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right font-medium">
-                                        {formatCurrency(tx.total, tx.currency ?? "BDT")}
+                                        {formatCurrency(tx.amount, tx.currency ?? "BDT")}
                                     </TableCell>
                                     <TableCell className="text-right pr-4">
                                         <div className="flex items-center justify-end gap-2">
-                                            <Link href={`/admin/billing/invoices/${tx._id}`}>
-                                                <Button variant="outline" size="sm" className="gap-1">
-                                                    <Eye className="w-3 h-3" /> View
-                                                </Button>
-                                            </Link>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isUpdating || isSendingReminder}>
-                                                        <MoreHorizontal className="h-4 w-4" />
+                                            {tx.invoiceId && (
+                                                <Link href={`/admin/billing/invoices/${tx.invoiceId._id}`}>
+                                                    <Button variant="outline" size="sm" className="gap-1">
+                                                        <Eye className="w-3 h-3" /> View Invoice
                                                     </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    {tx.status !== "PAID" && (
-                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(tx._id, "PAID")}>
-                                                            <CheckCircle className="w-4 h-4 mr-2" /> Mark Paid
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {tx.status !== "UNPAID" && tx.status !== "OVERDUE" && (
-                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(tx._id, "UNPAID")}>
-                                                            <XCircle className="w-4 h-4 mr-2" /> Mark Unpaid
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {tx.status !== "CANCELLED" && (
-                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(tx._id, "CANCELLED")}>
-                                                            <Ban className="w-4 h-4 mr-2" /> Mark Cancelled
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                    {tx.status !== "PAID" && tx.status !== "CANCELLED" && (
-                                                        <DropdownMenuItem onClick={() => handleSendReminder(tx._id)}>
-                                                            <Mail className="w-4 h-4 mr-2" /> Send Reminder
-                                                        </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                                </Link>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

@@ -30,17 +30,18 @@ import { formatDate } from "@/utils/format";
 export default function ViewSearchClients() {
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(10);
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [companyName, setCompanyName] = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("any");
+    // Draft inputs
+    const [searchDraft, setSearchDraft] = useState("");
+    const [supportPinDraft, setSupportPinDraft] = useState("");
+    // Applied filters (only change on Search)
+    const [search, setSearch] = useState("");
+    const [supportPin, setSupportPin] = useState("");
 
-    const { data, isLoading, error, refetch } = useGetClientsQuery({
+    const { data, isLoading, error } = useGetClientsQuery({
         page,
         limit,
-        ...(firstName && { firstName }),
-        ...(lastName && { lastName }),
-        ...(companyName && { companyName }),
+        ...(search && { search }),
+        ...(supportPin && { supportPin }),
     });
 
     const clients = data?.clients ?? [];
@@ -49,7 +50,14 @@ export default function ViewSearchClients() {
 
     const handleSearch = () => {
         setPage(1);
-        refetch();
+        setSearch(searchDraft.trim());
+        setSupportPin(supportPinDraft.trim());
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
     };
 
     const getEmail = (client: (typeof clients)[0]) =>
@@ -86,57 +94,57 @@ export default function ViewSearchClients() {
 
             {/* Search Filter Section */}
             <Card className="p-4 bg-gray-50/50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-800">
-                <div className="flex flex-col lg:flex-row gap-4 items-end">
-                    <div className="flex-1 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-muted-foreground">First Name</label>
+                <div className="space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                        <div className="space-y-1.5 flex-1">
+                            <label className="text-xs font-medium text-muted-foreground">
+                                Search by Name / Company / Phone / Email
+                            </label>
                             <Input
-                                placeholder="Search by first name"
+                                placeholder="e.g. John, john@example.com, FlexoHost, +1 555 123..."
                                 className="bg-white dark:bg-background"
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
+                                value={searchDraft}
+                                onChange={(e) => setSearchDraft(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                            />
+                            {/* Future: extend this search to domains, services, etc. */}
+                        </div>
+                        <div className="space-y-1.5 flex-1">
+                            <label className="text-xs font-medium text-muted-foreground">
+                                Search by Support PIN (exact)
+                            </label>
+                            <Input
+                                placeholder="6-digit Support PIN"
+                                className="bg-white dark:bg-background"
+                                value={supportPinDraft}
+                                onChange={(e) =>
+                                    setSupportPinDraft(e.target.value.replace(/\D/g, "").slice(0, 6))
+                                }
+                                onKeyDown={handleKeyDown}
+                                inputMode="numeric"
+                                maxLength={6}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-muted-foreground">Last Name</label>
-                            <Input
-                                placeholder="Search by last name"
-                                className="bg-white dark:bg-background"
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                            />
+                        <div className="flex flex-wrap md:flex-nowrap justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setSearchDraft("");
+                                    setSupportPinDraft("");
+                                    setSearch("");
+                                    setSupportPin("");
+                                    setPage(1);
+                                }}
+                            >
+                                Reset
+                            </Button>
+                            <Button
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={handleSearch}
+                            >
+                                <Search className="w-4 h-4 mr-2" /> Search
+                            </Button>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-muted-foreground">Company Name</label>
-                            <Input
-                                placeholder="Search by company"
-                                className="bg-white dark:bg-background"
-                                value={companyName}
-                                onChange={(e) => setCompanyName(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-muted-foreground">Status</label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white dark:bg-background">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="any">Any</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="inactive">Inactive</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2 items-end">
-                        <Button variant="outline" onClick={() => { setFirstName(""); setLastName(""); setCompanyName(""); setPage(1); refetch(); }}>
-                            Reset
-                        </Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={handleSearch}>
-                            <Search className="w-4 h-4 mr-2" /> Search
-                        </Button>
                     </div>
                 </div>
             </Card>
@@ -210,9 +218,8 @@ export default function ViewSearchClients() {
                         ) : (
                             clients
                                 .filter((c) => {
-                                    if (statusFilter === "any") return true;
                                     const status = getStatus(c);
-                                    return statusFilter === "active" ? status === "Active" : status === "Inactive";
+                                    return true; // status filter can be added later if needed
                                 })
                                 .map((client) => (
                                     <TableRow key={client._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">

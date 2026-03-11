@@ -255,13 +255,15 @@ export const csrfTokenManager = new CSRFTokenManager();
 /**
  * Content Security Policy helpers
  */
+import { API_CONFIG } from "@/config/api";
+
 export const CSP_DIRECTIVES = {
     "default-src": ["'self'"],
     "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
     "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": ["'self'", "data:", "https:"],
+    "img-src": ["'self'", "data:", "https:", API_CONFIG.BACKEND_ORIGIN],
     "font-src": ["'self'", "data:"],
-    "connect-src": ["'self'", process.env.NEXT_PUBLIC_API_URL || ""],
+    "connect-src": ["'self'", API_CONFIG.BASE_URL],
     "frame-ancestors": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],

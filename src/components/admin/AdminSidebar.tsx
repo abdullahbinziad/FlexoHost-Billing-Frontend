@@ -59,13 +59,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     onToggleCollapse={toggleCollapse}
                 />
 
-                {/* Custom Header Text for Admin if expanded */}
-                {!displayCollapsed && (
-                    <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Admin Panel
-                    </div>
-                )}
-
                 {/* Navigation Items */}
                 <nav className="flex-1 overflow-y-auto py-4 px-3">
                     <ul className="space-y-1">

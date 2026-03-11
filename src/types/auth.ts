@@ -16,6 +16,8 @@ export interface User {
     role: UserRole;
     isActive: boolean;
     isEmailVerified: boolean;
+    /** Set after social signup when user completes the profile form (company, phone, address). */
+    profileCompleted?: boolean;
     lastLogin?: Date;
     createdAt: Date;
     updatedAt: Date;
@@ -169,6 +171,8 @@ export interface AuthState {
  */
 export interface AuthActions {
     login: (email: string, password: string, redirectUrl?: string) => Promise<void>;
+    /** Complete login after OAuth redirect; stores token, fetches user, redirects. */
+    completeSocialLogin: (accessToken: string, redirectPath?: string) => Promise<void>;
     register: (data: RegisterUserData) => Promise<void>;
     registerClient: (data: ClientRegistrationData) => Promise<void>;
     logout: () => Promise<void>;

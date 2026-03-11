@@ -33,6 +33,13 @@ export function ClientRouteGuard({ children }: ClientRouteGuardProps) {
             return;
         }
 
+        // Client/user with incomplete profile must complete profile first (except on complete-profile page)
+        const profileCompleted = (user as { profileCompleted?: boolean }).profileCompleted !== false;
+        if (!profileCompleted && !pathname.startsWith('/complete-profile')) {
+            router.push('/complete-profile');
+            return;
+        }
+
         // Client routes are accessible by both clients and admins
         // Admins can access client routes for support/management purposes
         // No role restriction needed here

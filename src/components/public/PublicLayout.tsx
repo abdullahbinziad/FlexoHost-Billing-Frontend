@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { CurrencySwitcher } from "@/components/shared/CurrencySwitcher";
 import { DarkModeToggle } from "@/components/shared/DarkModeToggle";
 import { useTheme } from "@/contexts/ThemeContext";
+import { shouldShowCurrencySwitcher } from "@/lib/currencyVisibility";
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -62,8 +63,8 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                     </Link>
 
                     <div className="flex items-center gap-4">
-                        {/* Currency Switcher */}
-                        <CurrencySwitcher />
+                        {/* Currency Switcher (only on purchase/pricing pages) */}
+                        {shouldShowCurrencySwitcher(pathname) && <CurrencySwitcher />}
 
                         {/* Dark Mode Toggle */}
                         <DarkModeToggle />

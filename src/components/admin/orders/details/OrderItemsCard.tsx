@@ -1,48 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type Creds = { username: string; password: string };
-
-function domainToUsername(domain: string) {
-    const clean = (domain || "")
-        .toLowerCase()
-        .replace(/^https?:\/\//, "")
-        .replace(/^www\./, "")
-        .split("/")[0];
-
-    const sld = clean.split(".")[0] || "user";
-    const base = sld.replace(/[^a-z0-9]/g, "");
-    return (base || "user").slice(0, 10);
-}
-
-function generatePassword(length = 14) {
-    const lower = "abcdefghjkmnpqrstuvwxyz";
-    const upper = "ABCDEFGHJKMNPQRSTUVWXYZ";
-    const nums = "23456789";
-    const sym = "!@#$%&*_-?";
-
-    const all = lower + upper + nums + sym;
-    const pick = (s: string) => s[Math.floor(Math.random() * s.length)];
-
-    let pwd = pick(lower) + pick(upper) + pick(nums) + pick(sym);
-    for (let i = pwd.length; i < length; i++) pwd += pick(all);
-
-    return pwd.split("").sort(() => Math.random() - 0.5).join("");
-}
-
-function buildDefaultCreds(domain: string): Creds {
-    const base = domainToUsername(domain);
-    const suffix = Math.floor(100 + Math.random() * 900);
-    return {
-        username: `${base}${suffix}`.slice(0, 16),
-        password: generatePassword(14),
-    };
-}
+const DOMAIN_REGISTRARS = ["Dynadot", "Namely", "ConnectReseller"] as const;
 
 interface OrderItemsCardProps {
     order: any;
@@ -50,39 +13,7 @@ interface OrderItemsCardProps {
 
 export function OrderItemsCard({ order }: OrderItemsCardProps) {
     const formatCurrency = useFormatCurrency();
-    const [itemCreds, setItemCreds] = useState<Record<number, Creds>>({});
-
-    useEffect(() => {
-        if (!order?.items?.length) return;
-
-        setItemCreds((prev) => {
-            const next = { ...prev };
-
-            (order.items || []).forEach((item: any, index: number) => {
-                if (item.type !== "HOSTING") return;
-
-                const domain =
-                    item.domain ||
-                    item.configSnapshot?.domainName ||
-                    item.configSnapshot?.primaryDomain ||
-                    "";
-
-                const existingUsername = item.username || "";
-                const existingPassword = item.password || "";
-
-                if (existingUsername && existingPassword) {
-                    next[index] = { username: existingUsername, password: existingPassword };
-                    return;
-                }
-
-                if (!next[index]) {
-                    next[index] = buildDefaultCreds(domain);
-                }
-            });
-
-            return next;
-        });
-    }, [order?.id, order?.items]);
+    const [selectedRegistrarByItem, setSelectedRegistrarByItem] = useState<Record<number, string>>({});
 
     return (
         <Card className="shadow-sm border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -172,103 +103,28 @@ export function OrderItemsCard({ order }: OrderItemsCardProps) {
                                         )}
                                     </div>
 
-                                    {/* HOSTING Config */}
-                                    {(item.type === "HOSTING" || item.username || item.password || item.server) && (
+                                    {/* HOSTING: read-only provisioning status (cPanel is created automatically when invoice is paid) */}
+                                    {item.type === "HOSTING" && (
                                         <div className="bg-blue-600/5 rounded-lg border border-blue-600/10 p-4 mt-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-gray-500">Username</label>
-                                                    <Input
-                                                        className="h-8 bg-white"
-                                                        value={itemCreds[index]?.username ?? item.username ?? ""}
-                                                        onChange={(e) =>
-                                                            setItemCreds((prev) => ({
-                                                                ...prev,
-                                                                [index]: {
-                                                                    ...(prev[index] ?? { username: "", password: "" }),
-                                                                    username: e.target.value,
-                                                                },
-                                                            }))
-                                                        }
-                                                    />
+                                            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+                                                <div>
+                                                    <span className="text-gray-500 uppercase tracking-wider">Primary domain</span>
+                                                    <span className="ml-2 font-medium text-gray-900 dark:text-gray-100 break-all">
+                                                        {item.domain ?? item._raw?.configSnapshot?.primaryDomain ?? "—"}
+                                                    </span>
                                                 </div>
-
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-gray-500">Password</label>
-                                                    <Input
-                                                        className="h-8 bg-white"
-                                                        value={itemCreds[index]?.password ?? item.password ?? ""}
-                                                        onChange={(e) =>
-                                                            setItemCreds((prev) => ({
-                                                                ...prev,
-                                                                [index]: {
-                                                                    ...(prev[index] ?? { username: "", password: "" }),
-                                                                    password: e.target.value,
-                                                                },
-                                                            }))
-                                                        }
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-1.5">
-                                                    <div className="flex items-center justify-between">
-                                                        <label className="text-xs font-medium text-gray-500">Server</label>
-                                                        {item.type === "HOSTING" && (
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-7 px-2 text-xs"
-                                                                onClick={() => {
-                                                                    const domain = item.domain || "";
-                                                                    setItemCreds((prev) => ({ ...prev, [index]: buildDefaultCreds(domain) }));
-                                                                }}
-                                                            >
-                                                                Generate
-                                                            </Button>
-                                                        )}
-                                                    </div>
-
-                                                    <Select defaultValue={item.server || "server1"}>
-                                                        <SelectTrigger className="h-8 bg-white">
-                                                            <SelectValue placeholder="Select Server" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="server1">Main Server 01</SelectItem>
-                                                            <SelectItem value="server2">Backup Server 02</SelectItem>
-                                                            <SelectItem value="server-usa">USA Node 01</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-wrap gap-6 mt-4 pt-3 border-t border-blue-600/10">
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id={`run-module-${index}`}
-                                                        defaultChecked
-                                                        className="data-[state=checked]:bg-blue-600 border-blue-600/30"
-                                                    />
-                                                    <label
-                                                        htmlFor={`run-module-${index}`}
-                                                        className="text-xs font-medium text-gray-700 dark:text-gray-300"
-                                                    >
-                                                        Run Module Create
-                                                    </label>
-                                                </div>
-
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id={`send-email-${index}`}
-                                                        defaultChecked
-                                                        className="data-[state=checked]:bg-blue-600 border-blue-600/30"
-                                                    />
-                                                    <label
-                                                        htmlFor={`send-email-${index}`}
-                                                        className="text-xs font-medium text-gray-700 dark:text-gray-300"
-                                                    >
-                                                        Send Welcome Email
-                                                    </label>
+                                                <div>
+                                                    {item.username ? (
+                                                        <span className="text-green-600 dark:text-green-400 font-medium">Provisioned • Account: {item.username}</span>
+                                                    ) : item.provisioningError ? (
+                                                        <span className="text-red-600 dark:text-red-400 font-medium" title={item.provisioningError}>
+                                                            Provisioning failed: {item.provisioningError}
+                                                        </span>
+                                                    ) : order.paymentStatus === "paid" ? (
+                                                        <span className="text-amber-600 dark:text-amber-400">Provisioning in progress…</span>
+                                                    ) : (
+                                                        <span className="text-gray-500">Auto-provisioned when invoice is paid</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -280,13 +136,21 @@ export function OrderItemsCard({ order }: OrderItemsCardProps) {
                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                 <div className="space-y-1.5">
                                                     <label className="text-xs font-medium text-gray-500">Domain Provider</label>
-                                                    <Select defaultValue="dynadot">
+                                                    <Select
+                                                        value={selectedRegistrarByItem[index] || DOMAIN_REGISTRARS[0]?.toLowerCase() || ""}
+                                                        onValueChange={(v) =>
+                                                            setSelectedRegistrarByItem((prev) => ({ ...prev, [index]: v }))
+                                                        }
+                                                    >
                                                         <SelectTrigger className="h-8 bg-white">
                                                             <SelectValue placeholder="Select Provider" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="dynadot">Dynadot</SelectItem>
-                                                            <SelectItem value="namilo">Nameilo</SelectItem>
+                                                            {DOMAIN_REGISTRARS.map((r) => (
+                                                                <SelectItem key={r} value={r.toLowerCase()}>
+                                                                    {r}
+                                                                </SelectItem>
+                                                            ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>

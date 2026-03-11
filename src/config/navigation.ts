@@ -7,11 +7,11 @@ import {
   CreditCard,
   Layers,
   MessageSquare,
-  FileText,
   Users,
 } from "lucide-react";
 import type { NavItem } from "@/types/navigation";
 
+// Standard order: Home → Services (Hosting, VPS, Domains, Emails, All Services) → Billing → Support → Account
 export const clientNavItems: NavItem[] = [
   {
     label: "Home",
@@ -24,23 +24,19 @@ export const clientNavItems: NavItem[] = [
     icon: Grid3x3,
   },
   {
+    label: "VPS",
+    href: "/vps",
+    icon: Server,
+  },
+  {
     label: "Domains",
     href: "/domains",
     icon: Globe,
     hasSubmenu: true,
     submenu: [
-      {
-        label: "Domain portfolio ",
-        href: "/domains",
-      },
-      {
-        label: "Get a new domain",
-        href: "/domains/register",
-      },
-      {
-        label: "Transfers",
-        href: "/domains/transfers",
-      },
+      { label: "Domain portfolio", href: "/domains" },
+      { label: "Get a new domain", href: "/domains/register" },
+      { label: "Transfers", href: "/domains/transfers" },
     ],
   },
   {
@@ -49,14 +45,10 @@ export const clientNavItems: NavItem[] = [
     icon: Mail,
   },
   {
-    label: "Tickets",
-    href: "/tickets",
-    icon: MessageSquare,
-  },
-  {
-    label: "VPS",
-    href: "/vps",
-    icon: Server,
+    label: "All Services",
+    href: "/all-services",
+    icon: Layers,
+    badge: "New",
   },
   {
     label: "Billing",
@@ -64,26 +56,14 @@ export const clientNavItems: NavItem[] = [
     icon: CreditCard,
     hasSubmenu: true,
     submenu: [
-      {
-        label: "Payment Methods",
-        href: "/billing/payment-methods",
-      },
-      {
-        label: "Billing History",
-        href: "/billing/history",
-      },
+      { label: "Invoices", href: "/invoices" },
+      { label: "Billing History", href: "/billing/history" },
     ],
   },
   {
-    label: "Invoices",
-    href: "/invoices",
-    icon: FileText,
-  },
-  {
-    label: "All Services",
-    href: "/all-services",
-    icon: Layers,
-    badge: "New",
+    label: "Tickets",
+    href: "/tickets",
+    icon: MessageSquare,
   },
   {
     label: "Account",

@@ -4,9 +4,8 @@ import { ApiResponse } from "@/types/api";
 export interface ClientListParams {
   page?: number;
   limit?: number;
-  firstName?: string;
-  lastName?: string;
-  companyName?: string;
+  search?: string;
+  supportPin?: string;
 }
 
 export interface ClientListResponse {
@@ -26,7 +25,32 @@ export interface ClientListItem {
   phoneNumber?: string;
   address?: { street?: string; city?: string; state?: string; postCode?: string; country?: string };
   user?: { email?: string; active?: boolean };
+  supportPin?: string;
   createdAt: string;
+}
+
+export interface SupportPinResponse {
+  supportPin: string;
+  lastGeneratedAt: string;
+}
+
+export interface SupportPinVerifyResponse {
+  client: ClientListItem;
+}
+
+export interface CompleteProfileRequest {
+  companyName?: string;
+  phoneNumber?: string;
+  address?: { street?: string; city?: string; state?: string; postCode?: string; country?: string };
+}
+
+export interface UpdateClientRequest {
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  contactEmail?: string;
+  phoneNumber?: string;
+  address?: { street?: string; city?: string; state?: string; postCode?: string; country?: string };
 }
 
 export const clientApi = api.injectEndpoints({
@@ -60,7 +84,83 @@ export const clientApi = api.injectEndpoints({
       transformResponse: (response: ApiResponse<{ client: ClientListItem }>) => response.data?.client ?? response.data,
       providesTags: (result, error, id) => [{ type: "Client", id }],
     }),
+    getMyClientProfile: builder.query<ClientListItem, void>({
+      query: () => `/clients/me`,
+      transformResponse: (response: ApiResponse<{ client: ClientListItem }>) => response.data?.client ?? response.data,
+      providesTags: [{ type: "Client", id: "ME" }],
+    }),
+    getMySupportPin: builder.query<SupportPinResponse, void>({
+      query: () => `/clients/me/support-pin`,
+      transformResponse: (response: ApiResponse<SupportPinResponse>) => response.data,
+      keepUnusedDataFor: 300,
+    }),
+    regenerateMySupportPin: builder.mutation<SupportPinResponse, void>({
+      query: () => ({
+        url: `/clients/me/support-pin/regenerate`,
+        method: "POST",
+      }),
+      transformResponse: (response: ApiResponse<SupportPinResponse>) => response.data,
+    }),
+    verifySupportPin: builder.mutation<SupportPinVerifyResponse, { pin: string }>({
+      query: ({ pin }) => ({
+        url: `/clients/verify-support-pin`,
+        method: "POST",
+        body: { pin },
+      }),
+      transformResponse: (response: ApiResponse<SupportPinVerifyResponse>) => response.data,
+    }),
+    completeProfile: builder.mutation<{ client: ClientListItem }, CompleteProfileRequest>({
+      query: (body) => ({
+        url: "/clients/me/complete-profile",
+        method: "PATCH",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<{ client: ClientListItem }>) => response.data,
+      invalidatesTags: [{ type: "Client", id: "LIST" }],
+    }),
+    updateClient: builder.mutation<{ client: ClientListItem }, { id: string; data: UpdateClientRequest }>({
+      query: ({ id, data }) => ({
+        url: `/clients/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      transformResponse: (response: ApiResponse<{ client: ClientListItem }>) => response.data,
+      invalidatesTags: (result, error, { id }) => [{ type: "Client", id }, { type: "Client", id: "LIST" }],
+    }),
+    regenerateSupportPinForClient: builder.mutation<SupportPinResponse, { clientId: string }>({
+      query: ({ clientId }) => ({
+        url: `/clients/${clientId}/support-pin/regenerate`,
+        method: "POST",
+      }),
+      transformResponse: (response: ApiResponse<SupportPinResponse>) => response.data,
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: "Client" as const, id: clientId },
+        { type: "Client", id: "LIST" },
+      ],
+      async onQueryStarted({ clientId }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            clientApi.util.updateQueryData("getClientById", clientId, (draft) => {
+              draft.supportPin = data.supportPin;
+            })
+          );
+        } catch {
+          // On error, invalidation will refetch; no need to patch
+        }
+      },
+    }),
   }),
 });
 
-export const { useGetClientsQuery, useGetClientByIdQuery } = clientApi;
+export const {
+  useGetClientsQuery,
+  useGetClientByIdQuery,
+  useGetMyClientProfileQuery,
+  useGetMySupportPinQuery,
+  useRegenerateMySupportPinMutation,
+  useVerifySupportPinMutation,
+  useRegenerateSupportPinForClientMutation,
+  useCompleteProfileMutation,
+  useUpdateClientMutation,
+} = clientApi;

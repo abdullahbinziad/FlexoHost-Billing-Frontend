@@ -37,9 +37,8 @@ export default function MePage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-    // User Management Form State
+    // User Management: email only (name not stored on user; password via modal)
     const [userForm, setUserForm] = useState({
-        name: "",
         email: "",
     });
 
@@ -49,6 +48,7 @@ export default function MePage() {
         lastName: "",
         companyName: "",
         contactEmail: "",
+        phoneNumber: "",
         address: {
             street: "",
             city: "",
@@ -65,31 +65,35 @@ export default function MePage() {
             // As requested, this comes specifically from the /clients API
             const clientResponse = await clientService.getClientProfile();
             if (clientResponse.success && clientResponse.data) {
-                // The API returns data nested in a 'client' property sometimes, or directly.
-                // Based on provided JSON: { data: { client: { ... } } }
-                // Use a type guard or check to be safe
-                const clientData = (clientResponse.data as any).client || clientResponse.data;
+                const raw = clientResponse.data as Record<string, unknown>;
+                // API returns { data: { client: { ... } } } so unwrap .client when present
+                const clientData = (raw?.client as Record<string, unknown>) || raw;
+                const phone =
+                    (clientData?.phoneNumber as string) ??
+                    (clientData?.phone_number as string) ??
+                    (clientData?.phone as string) ??
+                    "";
 
-                setClientProfile(clientData);
+                setClientProfile(clientData as Client);
                 setClientForm({
-                    firstName: clientData.firstName || "",
-                    lastName: clientData.lastName || "",
-                    companyName: clientData.companyName || "",
-                    contactEmail: clientData.contactEmail || "",
+                    firstName: (clientData?.firstName as string) || "",
+                    lastName: (clientData?.lastName as string) || "",
+                    companyName: (clientData?.companyName as string) || "",
+                    contactEmail: (clientData?.contactEmail as string) || "",
+                    phoneNumber: phone,
                     address: {
-                        street: clientData.address?.street || "",
-                        city: clientData.address?.city || "",
-                        state: clientData.address?.state || "",
-                        country: clientData.address?.country || "",
-                        postCode: clientData.address?.postCode || "",
+                        street: (clientData?.address as any)?.street || "",
+                        city: (clientData?.address as any)?.city || "",
+                        state: (clientData?.address as any)?.state || "",
+                        country: (clientData?.address as any)?.country || "",
+                        postCode: (clientData?.address as any)?.postCode || "",
                     }
                 });
             }
 
-            // Sync User Form with current user data (User Management Data Source)
+            // Sync User Form (email only; password change is via modal)
             if (user) {
                 setUserForm({
-                    name: user.name || "",
                     email: user.email || "",
                 });
             }
@@ -142,10 +146,10 @@ export default function MePage() {
         const toastId = toast.loading("Updating user profile...");
 
         try {
-            const response = await authenticationService.updateProfile(userForm);
+            const response = await authenticationService.updateProfile({ email: userForm.email });
 
             if (response.success) {
-                toast.success('User profile updated successfully', { id: toastId });
+                toast.success('Email updated successfully', { id: toastId });
                 // Refresh auth context to reflect changes
                 await checkAuth();
             } else {
@@ -169,6 +173,7 @@ export default function MePage() {
                 lastName: clientForm.lastName,
                 companyName: clientForm.companyName,
                 contactEmail: clientForm.contactEmail,
+                phoneNumber: clientForm.phoneNumber || undefined,
                 address: clientForm.address
             });
 
@@ -183,6 +188,7 @@ export default function MePage() {
                     lastName: clientData.lastName || "",
                     companyName: clientData.companyName || "",
                     contactEmail: clientData.contactEmail || "",
+                    phoneNumber: clientData.phoneNumber || "",
                     address: {
                         street: clientData.address?.street || "",
                         city: clientData.address?.city || "",
@@ -264,37 +270,25 @@ export default function MePage() {
                     <TabsTrigger value="account-management">Account Management</TabsTrigger>
                 </TabsList>
 
-                {/* USER MANAGEMENT TAB */}
+                {/* USER MANAGEMENT TAB — email and password only */}
                 <TabsContent value="user-management" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>User Profile</CardTitle>
-                            <CardDescription>Update your personal information and login details.</CardDescription>
+                            <CardTitle>Login &amp; Security</CardTitle>
+                            <CardDescription>Your login email and password. Name and other details are in Account Management.</CardDescription>
                         </CardHeader>
                         <form onSubmit={handleUserSubmit}>
                             <CardContent className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Full Name</Label>
-                                        <Input
-                                            id="name"
-                                            name="name"
-                                            value={userForm.name}
-                                            onChange={handleUserInputChange}
-                                            placeholder="John Doe"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Email Address</Label>
-                                        <Input
-                                            id="email"
-                                            name="email"
-                                            type="email"
-                                            value={userForm.email}
-                                            onChange={handleUserInputChange}
-                                            placeholder="john@example.com"
-                                        />
-                                    </div>
+                                <div className="space-y-2 max-w-md">
+                                    <Label htmlFor="email">Email Address</Label>
+                                    <Input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        value={userForm.email}
+                                        onChange={handleUserInputChange}
+                                        placeholder="john@example.com"
+                                    />
                                 </div>
 
                                 <div className="pt-4 border-t">
@@ -320,7 +314,7 @@ export default function MePage() {
                                     ) : (
                                         <>
                                             <Save className="mr-2 h-4 w-4" />
-                                            Save Changes
+                                            Save Email
                                         </>
                                     )}
                                 </Button>
@@ -383,6 +377,18 @@ export default function MePage() {
                                             placeholder="billing@company.com"
                                         />
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                                    <Input
+                                        id="phoneNumber"
+                                        name="phoneNumber"
+                                        type="tel"
+                                        value={clientForm.phoneNumber}
+                                        onChange={handleClientInputChange}
+                                        placeholder="+1 234 567 8900"
+                                    />
                                 </div>
 
                                 <div className="space-y-2">

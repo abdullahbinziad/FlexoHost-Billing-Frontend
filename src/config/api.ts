@@ -1,10 +1,22 @@
 /**
  * API Configuration
- * Centralized API endpoint configuration
+ * Centralized API configuration - single source for all API/backend URLs.
+ * Import API_CONFIG from here for reusable API calls across the application.
+ * Set NEXT_PUBLIC_API_URL in .env
  */
 
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
+const BACKEND_ORIGIN = (() => {
+    try {
+        return new URL(BASE_URL || 'http://localhost:5001/api/v1').origin;
+    } catch {
+        return 'http://localhost:5001';
+    }
+})();
+
 export const API_CONFIG = {
-    BASE_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api/v1',
+    BASE_URL,
+    BACKEND_ORIGIN,
     TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000'),
     VERSION: 'v1',
 } as const;
@@ -23,6 +35,8 @@ export const API_ENDPOINTS = {
         CHANGE_PASSWORD: '/auth/change-password',
         FORGOT_PASSWORD: '/auth/forgot-password',
         RESET_PASSWORD: '/auth/reset-password',
+        /** Full URL to start Google OAuth (redirects to backend). */
+        GOOGLE: `${(BASE_URL || 'http://localhost:5001/api/v1').replace(/\/$/, '')}/auth/google`,
     },
 
     // Client Management
