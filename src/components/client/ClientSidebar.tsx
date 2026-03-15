@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { clientNavItems } from "@/config/navigation";
+import { clientNavItems, filterClientNavByAccessAreas } from "@/config/navigation";
 import { useMenuNavigation } from "@/hooks/useMenuNavigation";
 import { useSidebar } from "@/hooks/useSidebar";
+import { useActiveClient } from "@/hooks/useActiveClient";
+import { useGetClientProfileActingAsQuery } from "@/store/api/clientApi";
 import { SidebarHeader } from "./sidebar/SidebarHeader";
 import { SidebarNavItem } from "./sidebar/SidebarNavItem";
 import { SidebarSubmenu } from "./sidebar/SidebarSubmenu";
@@ -16,13 +19,21 @@ interface ClientSidebarProps {
 
 export function ClientSidebar({ isOpen, onClose }: ClientSidebarProps) {
   const { isCollapsed, toggleCollapse, isMounted } = useSidebar();
+  const { isActingAs, activeClientId } = useActiveClient();
+  const { data: actingAsData } = useGetClientProfileActingAsQuery(activeClientId!, {
+    skip: !isActingAs || !activeClientId,
+  });
+  const navItems = useMemo(
+    () => filterClientNavByAccessAreas(clientNavItems, actingAsData?.accessAreas),
+    [actingAsData?.accessAreas]
+  );
   const {
     isSubmenuExpanded,
     isItemActive,
     hasActiveSubmenu,
     isSubmenuItemActive,
     handleMenuClick,
-  } = useMenuNavigation(clientNavItems);
+  } = useMenuNavigation(navItems);
 
   const handleLinkClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -67,7 +78,7 @@ export function ClientSidebar({ isOpen, onClose }: ClientSidebarProps) {
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <ul className="space-y-1">
-            {clientNavItems.map((item) => {
+            {navItems.map((item) => {
               const isActive = isItemActive(item);
               const hasActiveSub = hasActiveSubmenu(item);
               const isExpanded = isSubmenuExpanded(item.href);

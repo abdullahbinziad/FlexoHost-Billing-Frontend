@@ -2,6 +2,7 @@ export interface Order {
     id: string; // The mongodb _id
     customOrderId?: string; // The counter string like ORD-000001
     orderNumber: string; // The 10 digit random number string
+    clientId?: string;
     userId: string;
     userName: string;
     userEmail: string;

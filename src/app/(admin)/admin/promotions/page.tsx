@@ -24,6 +24,7 @@ import {
 } from "@/store/api/promotionApi";
 import { Plus, Search, Pencil, Trash2, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export default function PromotionsPage() {
     const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
@@ -88,21 +89,30 @@ export default function PromotionsPage() {
                     <Button
                         variant={filter === "active" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setFilter("active")}
+                        onClick={() => {
+                            setFilter("active");
+                            setPage(1);
+                        }}
                     >
                         Active
                     </Button>
                     <Button
                         variant={filter === "inactive" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setFilter("inactive")}
+                        onClick={() => {
+                            setFilter("inactive");
+                            setPage(1);
+                        }}
                     >
                         Inactive
                     </Button>
                     <Button
                         variant={filter === "all" ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setFilter("all")}
+                        onClick={() => {
+                            setFilter("all");
+                            setPage(1);
+                        }}
                     >
                         All
                     </Button>
@@ -122,33 +132,13 @@ export default function PromotionsPage() {
                         <Input
                             placeholder="Search by code or name..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setPage(1);
+                            }}
                             className="pl-8 w-64"
                         />
                     </div>
-                    {pagination && pagination.totalPages > 1 && (
-                        <div className="flex items-center gap-1">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={page <= 1}
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            >
-                                Prev
-                            </Button>
-                            <span className="px-2 text-sm text-muted-foreground">
-                                {page} / {pagination.totalPages}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={page >= pagination.totalPages}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -256,6 +246,17 @@ export default function PromotionsPage() {
                     )}
                 </CardContent>
             </Card>
+            {pagination ? (
+                <DataTablePagination
+                    page={page}
+                    totalPages={pagination.totalPages}
+                    totalItems={pagination.totalItems}
+                    pageSize={pagination.itemsPerPage}
+                    currentCount={promotions.length}
+                    itemLabel="records"
+                    onPageChange={setPage}
+                />
+            ) : null}
 
             <AlertDialog
                 open={!!promotionToDelete}

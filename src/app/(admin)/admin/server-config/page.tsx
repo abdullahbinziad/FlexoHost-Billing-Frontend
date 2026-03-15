@@ -13,9 +13,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { RefreshCw, Plus, Trash2, Edit, Filter, X } from "lucide-react";
-import { useGetServersQuery, useDeleteServerMutation } from "@/store/api/serverApi";
+import { useGetServersQuery, useDeleteServerMutation, useSyncServerAccountsMutation } from "@/store/api/serverApi";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { devLog } from "@/lib/devLog";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -44,12 +46,20 @@ type FilterLocation = "all" | (typeof SERVER_LOCATIONS)[number];
 export default function ServerConfigPage() {
     const { data: servers = [], isLoading, refetch } = useGetServersQuery();
     const [deleteServer] = useDeleteServerMutation();
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
 
     const [filterGroup, setFilterGroup] = useState<FilterGroup>("all");
     const [filterLocation, setFilterLocation] = useState<FilterLocation>("all");
 
-    const handleGroupChange = (value: string) => setFilterGroup(value as FilterGroup);
-    const handleLocationChange = (value: string) => setFilterLocation(value as FilterLocation);
+    const handleGroupChange = (value: string) => {
+        setFilterGroup(value as FilterGroup);
+        setPage(1);
+    };
+    const handleLocationChange = (value: string) => {
+        setFilterLocation(value as FilterLocation);
+        setPage(1);
+    };
 
     const handleDeleteServer = async (id: string) => {
         try {
@@ -57,7 +67,7 @@ export default function ServerConfigPage() {
             toast.success("Server deleted successfully");
         } catch (error) {
             toast.error("Failed to delete server");
-            console.error(error);
+            devLog(error);
         }
     };
 
@@ -69,6 +79,7 @@ export default function ServerConfigPage() {
     const resetFilters = () => {
         setFilterGroup("all");
         setFilterLocation("all");
+        setPage(1);
     };
 
     // Filter servers (server can be in multiple groups)
@@ -78,6 +89,8 @@ export default function ServerConfigPage() {
         const matchesLocation = filterLocation === "all" || server.location === filterLocation;
         return matchesGroup && matchesLocation;
     });
+    const paginatedServers = filteredServers.slice((page - 1) * pageSize, page * pageSize);
+    const totalPages = Math.ceil(filteredServers.length / pageSize) || 1;
 
     // Get unique groups and locations for filter options
     // These are now derived from constants, not server data
@@ -165,8 +178,8 @@ export default function ServerConfigPage() {
                     <div className="grid grid-cols-6 gap-4 font-semibold">
                         <div>Server Name</div>
                         <div>IP Address</div>
+                        <div>Accounts</div>
                         <div>WHMCS Usage Stats</div>
-                        <div>Remote Usage Stats</div>
                         <div>Status</div>
                         <div></div>
                     </div>
@@ -181,12 +194,12 @@ export default function ServerConfigPage() {
                     ) : (
                         <>
                             {/* cPanel Section */}
-                            {filteredServers.some((s) => s.module.type === "cpanel") && (
+                            {paginatedServers.some((s) => s.module.type === "cpanel") && (
                                 <div className="bg-muted/30 px-4 py-2 font-semibold text-sm border-b">
                                     cPanel
                                 </div>
                             )}
-                            {filteredServers
+                            {paginatedServers
                                 .filter((s) => s.module.type === "cpanel")
                                 .map((server) => (
                                     <ServerRow
@@ -197,12 +210,12 @@ export default function ServerConfigPage() {
                                 ))}
 
                             {/* Virtualizor Section */}
-                            {filteredServers.some((s) => s.module.type === "virtualizor") && (
+                            {paginatedServers.some((s) => s.module.type === "virtualizor") && (
                                 <div className="bg-muted/30 px-4 py-2 font-semibold text-sm border-b">
                                     Virtualizor cloud
                                 </div>
                             )}
-                            {filteredServers
+                            {paginatedServers
                                 .filter((s) => s.module.type === "virtualizor")
                                 .map((server) => (
                                     <ServerRow
@@ -213,7 +226,7 @@ export default function ServerConfigPage() {
                                 ))}
 
                             {/* Other/Generic Section - Grouped by request */}
-                            {filteredServers
+                            {paginatedServers
                                 .filter((s) => s.module.type !== "cpanel" && s.module.type !== "virtualizor")
                                 .map((server) => (
                                     <ServerRow
@@ -226,11 +239,43 @@ export default function ServerConfigPage() {
                     )}
                 </CardContent>
             </Card>
+            <DataTablePagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={filteredServers.length}
+                pageSize={pageSize}
+                currentCount={paginatedServers.length}
+                itemLabel="servers"
+                onPageChange={setPage}
+                onPageSizeChange={(value) => {
+                    setPageSize(value);
+                    setPage(1);
+                }}
+            />
         </div>
     );
 }
 
 function ServerRow({ server, onDelete }: { server: ServerConfig; onDelete: () => void }) {
+    const [syncAccounts, { isLoading: isSyncing }] = useSyncServerAccountsMutation();
+    const isCpanel = server.module?.type === "cpanel";
+    const accountsDisplay =
+        server.accountCount != null
+            ? `${server.accountCount} / ${server.maxAccounts ?? 200}`
+            : "—";
+
+    const handleSyncAccounts = async () => {
+        try {
+            const result = await syncAccounts(server.id).unwrap();
+            toast.success(`Accounts: ${result.count} / ${result.maxAccounts}`);
+        } catch (err: unknown) {
+            const message = err && typeof err === "object" && "data" in err
+                ? (err as { data?: { message?: string } }).data?.message
+                : "Failed to sync accounts";
+            toast.error(message ?? "Failed to sync accounts");
+        }
+    };
+
     return (
         <div className="border-b last:border-0 hover:bg-muted/5 transition-colors">
             <div className="grid grid-cols-6 gap-4 px-4 py-3 items-center">
@@ -249,8 +294,26 @@ function ServerRow({ server, onDelete }: { server: ServerConfig; onDelete: () =>
                     </div>
                 </div>
                 <div className="text-sm font-mono truncate">{server.ipAddress}</div>
+                <div className="text-sm flex items-center gap-2">
+                    {accountsDisplay}
+                    {isCpanel && (
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2"
+                            onClick={handleSyncAccounts}
+                            disabled={isSyncing}
+                            title="Sync account count from WHM"
+                        >
+                            {isSyncing ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                                <RefreshCw className="w-3.5 h-3.5" />
+                            )}
+                        </Button>
+                    )}
+                </div>
                 <div className="text-sm">{server.stats?.whmcsUsage || "-"}</div>
-                <div className="text-sm">{server.stats?.remoteUsage || "-"}</div>
                 <div>
                     <Badge
                         variant={server.isEnabled ? "default" : "secondary"}

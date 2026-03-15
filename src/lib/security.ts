@@ -259,11 +259,12 @@ import { API_CONFIG } from "@/config/api";
 
 export const CSP_DIRECTIVES = {
     "default-src": ["'self'"],
-    "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+    // unsafe-inline required for Next.js hydration; unsafe-eval removed for security
+    "script-src": ["'self'", "'unsafe-inline'"],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": ["'self'", "data:", "https:", API_CONFIG.BACKEND_ORIGIN],
     "font-src": ["'self'", "data:"],
-    "connect-src": ["'self'", API_CONFIG.BASE_URL],
+    "connect-src": ["'self'", API_CONFIG.BACKEND_ORIGIN],
     "frame-ancestors": ["'none'"],
     "base-uri": ["'self'"],
     "form-action": ["'self'"],

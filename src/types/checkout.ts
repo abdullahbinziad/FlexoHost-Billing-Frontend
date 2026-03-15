@@ -3,6 +3,7 @@
  */
 
 export type BillingCycle = "monthly" | "quarterly" | "semiAnnually" | "annually" | "biennially" | "triennially";
+export type CheckoutMode = "service" | "domain";
 
 export interface BillingCycleOption {
   id: BillingCycle;
@@ -113,9 +114,9 @@ export interface NewAccountInfo {
 }
 
 export interface CreateOrderPayload {
-  // ── Product ──
-  productId: string;
-  billingCycle: string;
+  // ── Product (required for service checkout, omitted for domain-only checkout) ──
+  productId?: string;
+  billingCycle?: string;
   currency: string;
 
   // ── Domain (conditional based on action) ──
@@ -127,6 +128,7 @@ export interface CreateOrderPayload {
       domainName: string;
       tld: string;
       period: number;
+      priceOverride?: number; // Admin: override domain price
     };
 
     // For TRANSFER
@@ -134,6 +136,7 @@ export interface CreateOrderPayload {
       domainName: string;
       tld: string;
       eppCode: string;
+      priceOverride?: number; // Admin: override domain price
     };
 
     // For USE-OWNED
@@ -143,17 +146,18 @@ export interface CreateOrderPayload {
     };
   };
 
-  // ── Server ──
-  serverLocation: string; // ID of the location
+  // ── Server (required for service checkout) ──
+  serverLocation?: string; // ID of the location
 
   // ── Payment ──
   paymentMethod: string; // ID of the payment method
 
-  // ── Client Identity (one of three modes) ──
+  // ── Client Identity (one of three modes, or admin-selected) ──
   client:
   | { type: "existing"; clientId: string }
   | { type: "new"; account: NewAccountInfo }
-  | { type: "guest" };
+  | { type: "guest" }
+  | { type: "admin_selected"; clientId: string };
 
   // ── Promotions ──
   coupon?: string;
@@ -161,4 +165,11 @@ export interface CreateOrderPayload {
 
   // ── Terms ──
   agreeToTerms: boolean;
+
+  // ── Admin options ──
+  sendEmail?: boolean; // Default true; when false, skip order/invoice emails
+  status?: string; // Optional initial status (admin only): PENDING_PAYMENT, ACTIVE, etc.
+  qty?: number; // Quantity for product (default 1)
+  productPriceOverride?: number; // Admin: override product price per unit
+  generateInvoice?: boolean; // Default true; when false (admin only), create order without invoice
 }

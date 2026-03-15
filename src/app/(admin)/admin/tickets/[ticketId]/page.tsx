@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import Image from "next/image";
 import { formatDate } from "@/utils/format";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import { buildAttachmentUrl } from "@/lib/safeAttachmentUrl";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { TicketReplyForm } from "@/components/ticket/TicketReplyForm";
@@ -33,17 +35,12 @@ import {
   TICKET_STATUS_LABELS,
 } from "@/components/ticket/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/ticket/TicketPriorityBadge";
+import { devLog } from "@/lib/devLog";
 
 const ADMIN_STATUS_LABELS: Record<string, string> = {
   ...TICKET_STATUS_LABELS,
   answered: "Answered (waiting client)",
   customer_reply: "Customer replied",
-};
-
-const buildAttachmentUrl = (relativeUrl: string) => {
-  if (!relativeUrl) return "";
-  if (relativeUrl.startsWith("http")) return relativeUrl;
-  return relativeUrl.startsWith("/") ? relativeUrl : `/${relativeUrl}`;
 };
 
 export default function AdminTicketDetailPage() {
@@ -75,7 +72,7 @@ export default function AdminTicketDetailPage() {
       refetch();
       toast.success(`Status updated to ${ADMIN_STATUS_LABELS[value] ?? value}.`);
     } catch (e) {
-      console.error(e);
+      devLog(e);
       toast.error("Failed to update status.");
     }
   };
@@ -239,7 +236,7 @@ export default function AdminTicketDetailPage() {
                     {m.messageHtml ? (
                       <div
                         className="prose prose-sm dark:prose-invert max-w-none [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border"
-                        dangerouslySetInnerHTML={{ __html: m.messageHtml }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(m.messageHtml) }}
                       />
                     ) : (
                       <p className="whitespace-pre-wrap">{m.message}</p>

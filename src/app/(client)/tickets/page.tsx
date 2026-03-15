@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
+import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { formatDate } from "@/utils/format";
 import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/ticket/TicketStatusBadge";
@@ -28,12 +29,14 @@ const CLIENT_STATUS_LABELS: Record<string, string> = {
 
 export default function ClientTickets() {
   const router = useRouter();
+  const { activeClientId } = useActiveClient();
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
 
   const { data, isLoading, error } = useGetTicketsQuery({
     page,
     limit,
+    ...(activeClientId ? { clientId: activeClientId } : {}),
   });
 
   const tickets = data?.results ?? [];

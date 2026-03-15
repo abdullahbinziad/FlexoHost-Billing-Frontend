@@ -12,14 +12,20 @@ import { EmailForwardingTab } from "./EmailForwardingTab";
 import { RenewTab } from "./RenewTab";
 import { RegisterNewTab } from "./RegisterNewTab";
 import { TransferTab } from "./TransferTab";
+import { useUpdateNameserversMutation, useRenewDomainMutation } from "@/store/api/domainApi";
+import { devLog } from "@/lib/devLog";
 import type { DomainDetails } from "@/types/domain-manage";
 
 interface DomainManagePageProps {
   domain: DomainDetails;
+  domainName: string;
 }
 
-export function DomainManagePage({ domain }: DomainManagePageProps) {
+export function DomainManagePage({ domain, domainName }: DomainManagePageProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [nameservers, setNameservers] = useState<string[]>(domain.nameservers ?? []);
+  const [updateNameservers] = useUpdateNameserversMutation();
+  const [renewDomain, { isLoading: isRenewing }] = useRenewDomainMutation();
 
   const breadcrumbs = [
     { label: "Portal Home", href: "/client" },
@@ -29,29 +35,30 @@ export function DomainManagePage({ domain }: DomainManagePageProps) {
   ];
 
   const handleAutoRenewalChange = (enabled: boolean) => {
-    // TODO: Implement auto-renewal change
-    console.log("Auto-renewal changed:", enabled);
+    // TODO: Backend PATCH /domains/:domain for auto-renewal when available
   };
 
-  const handleNameserversChange = (nameservers: string[]) => {
-    // TODO: Implement nameservers change
-    console.log("Nameservers changed:", nameservers);
+  const handleNameserversChange = async (newNameservers: string[]) => {
+    try {
+      await updateNameservers({ domainName, nameservers: newNameservers }).unwrap();
+      setNameservers(newNameservers);
+    } catch (err) {
+      devLog("Failed to update nameservers:", err);
+    }
   };
 
   const handleLockChange = (locked: boolean) => {
-    // TODO: Implement lock change
-    console.log("Registrar lock changed:", locked);
+    // TODO: Backend support for registrar lock when available
   };
 
-  const handleGetEppCode = () => {
-    // TODO: Implement EPP code retrieval
-    console.log("Get EPP code for:", domain.name);
-  };
-
-  const handleRenew = () => {
-    // TODO: Implement renew
-    console.log("Renew domain:", domain.id);
-    alert(`Renew domain: ${domain.name}`);
+  const handleRenew = async () => {
+    try {
+      await renewDomain({ domainName, years: 1 }).unwrap();
+      setActiveTab("renew");
+      // Cache invalidation will refetch domain details in the parent page
+    } catch (err) {
+      devLog("Renew failed:", err);
+    }
   };
 
   const renderTabContent = () => {
@@ -65,7 +72,7 @@ export function DomainManagePage({ domain }: DomainManagePageProps) {
       case "email-forwarding":
         return <EmailForwardingTab domain={domain} />;
       case "renew":
-        return <RenewTab domain={domain} onRenew={handleRenew} />;
+        return <RenewTab domain={domain} onRenew={handleRenew} isRenewing={isRenewing} />;
       case "register-new":
         return <RegisterNewTab />;
       case "transfer":
@@ -85,11 +92,11 @@ export function DomainManagePage({ domain }: DomainManagePageProps) {
 
       {/* Quick Actions Card */}
       <QuickActionsCard
-        domain={domain}
+        domain={{ ...domain, nameservers }}
+        domainName={domainName}
         onAutoRenewalChange={handleAutoRenewalChange}
         onLockChange={handleLockChange}
         onNameserversChange={handleNameserversChange}
-        onGetEppCode={handleGetEppCode}
       />
 
       {/* Main Content Layout */}

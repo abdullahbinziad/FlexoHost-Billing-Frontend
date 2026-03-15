@@ -4,6 +4,7 @@
  */
 
 import { apiClient, ApiResponse } from '@/lib/apiClient';
+import { devLog } from '@/lib/devLog';
 import { API_ENDPOINTS } from '@/config/api';
 import type {
     LoginCredentials,
@@ -59,7 +60,7 @@ class AuthenticationService {
             return response;
         } catch (error: any) {
             // Don't throw error on logout failure
-            console.error('Logout API error:', error);
+            devLog('Logout API error:', error);
             return { success: false, message: 'Logout failed' };
         }
     }
@@ -103,18 +104,23 @@ class AuthenticationService {
             );
             return response;
         } catch (error: any) {
+            // 401 = not logged in (expected on /login) - return clean response, don't throw
+            if (error?.status === 401) {
+                return { success: false, data: undefined };
+            }
             throw this.handleError(error);
         }
     }
 
     /**
-     * Refresh access token
+     * Refresh access token. Pass refreshToken when using token-based auth;
+     * when using cookie-only auth, omit it and the cookie will be sent via credentials.
      */
-    async refreshToken(refreshToken: string): Promise<ApiResponse<AuthTokens>> {
+    async refreshToken(refreshToken?: string): Promise<ApiResponse<AuthTokens>> {
         try {
             const response = await apiClient.post<AuthTokens>(
                 API_ENDPOINTS.AUTH.REFRESH_TOKEN,
-                { refreshToken }
+                refreshToken ? { refreshToken } : {}
             );
             return response;
         } catch (error: any) {
@@ -174,8 +180,10 @@ class AuthenticationService {
         const message = error?.message || 'An unexpected error occurred';
         const status = error?.status || 500;
 
-        // Log error for debugging
-        console.error('Auth API Error:', { message, status, error });
+        // Don't log 401 - expected when not logged in
+        if (status !== 401) {
+            devLog('Auth API Error:', { message, status, name: error?.name });
+        }
 
         return new Error(message);
     }

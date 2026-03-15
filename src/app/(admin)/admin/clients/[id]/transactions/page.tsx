@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useGetTransactionsQuery } from "@/store/api/transactionApi";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export default function ClientTransactionsPage() {
   const params = useParams();
@@ -102,32 +103,17 @@ export default function ClientTransactionsPage() {
             </TableBody>
           </Table>
         </div>
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-4 text-sm text-muted-foreground">
-            <span>
-              {totalResults} transaction{totalResults !== 1 ? "s" : ""} total
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <span>Page {page} of {totalPages}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+        <div className="mt-4">
+          <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalResults}
+            pageSize={limit}
+            currentCount={transactions.length}
+            itemLabel="transactions"
+            onPageChange={setPage}
+          />
+        </div>
       </CardContent>
     </Card>
   );

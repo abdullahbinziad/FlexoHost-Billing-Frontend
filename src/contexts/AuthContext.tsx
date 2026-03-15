@@ -10,6 +10,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useRouter } from "next/navigation";
 import { authenticationService } from "@/services/authentication.service";
 import { clientService } from "@/services/client.service";
+import { store } from "@/store";
+import { setCredentials, clearCredentials } from "@/store/slices/authSlice";
 import type {
     User,
     RegisterUserData,
@@ -26,8 +28,25 @@ import {
     clearAuthTokens,
     isTokenExpired,
 } from "@/utils/tokenManager";
+import { fetchCsrfToken, clearCsrfToken } from "@/lib/csrfToken";
+import { devLog } from "@/lib/devLog";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** Sync user and token to Redux so AdminSidebar and other components get permissions */
+function syncUserToRedux(user: User | null, token: string | null) {
+    if (!user) {
+        store.dispatch(clearCredentials());
+        return;
+    }
+    const authUser = {
+        id: user.id ?? (user as { _id?: string })._id ?? "",
+        email: user.email,
+        role: user.role as "superadmin" | "admin" | "staff" | "client" | "user",
+        roleData: (user as { roleData?: { permissions: string[]; hasFullAccess?: boolean } }).roleData,
+    };
+    store.dispatch(setCredentials({ token: token ?? getAccessToken(), user: authUser }));
+}
 
 /**
  * Authentication Provider Component
@@ -41,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
      * Check authentication status on mount
      */
     useEffect(() => {
+        fetchCsrfToken(); // Prefetch CSRF token for cookie-based auth
         checkAuth();
     }, []);
 
@@ -50,33 +70,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = useCallback(async () => {
         try {
             const token = getAccessToken();
-
-            if (!token) {
-                setIsLoading(false);
-                return;
-            }
-
-            // Check if token is expired
-            if (isTokenExpired(token)) {
-                // Try to refresh token
+            if (token && isTokenExpired(token)) {
                 await refreshToken();
                 return;
             }
 
-            // Verify token with backend
+            // Verify with backend (uses cookie via credentials or Authorization header)
             const response = await authenticationService.verifyToken();
 
             if (response.success && response.data?.user) {
-                setUser(response.data.user);
+                const u = response.data.user;
+                setUser(u);
+                syncUserToRedux(u, getAccessToken());
             } else {
-                // Token is invalid, clear it
                 clearAuthTokens();
                 setUser(null);
+                syncUserToRedux(null, null);
             }
         } catch (error) {
-            console.error("Auth check failed:", error);
+            devLog("Auth check failed:", error);
             clearAuthTokens();
             setUser(null);
+            syncUserToRedux(null, null);
         } finally {
             setIsLoading(false);
         }
@@ -96,7 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     /**
      * Redirect to complete-profile if user (client/user role) has not completed profile.
      */
-    const getRedirectAfterLogin = (user: { role: string; profileCompleted?: boolean }, redirectPath: string | null): string => {
+    const getRedirectAfterLogin = (user: { role: string; profileCompleted?: boolean } | null | undefined, redirectPath: string | null): string => {
+        if (!user || typeof user.role !== "string") {
+            return redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
+        }
         const needsProfile = ['client', 'user'].includes(user.role) && user.profileCompleted === false;
         if (needsProfile) return '/complete-profile';
         return getSmartRedirect(redirectPath, user.role);
@@ -112,6 +130,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const decodedPath = decodeURIComponent(redirectPath);
+
+        // Prevent open redirect: only allow relative paths (must start with / but not //)
+        if (!decodedPath.startsWith('/') || decodedPath.startsWith('//')) {
+            return getRoleBasedDefault(userRole);
+        }
 
         // Prevent auth page loops
         if (decodedPath.startsWith('/auth') ||
@@ -159,13 +182,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const response = await authenticationService.login({ email, password });
 
             if (response.success && response.data) {
-                const { user, accessToken } = response.data;
+                const { user, accessToken, refreshToken } = response.data;
 
-                // Set tokens
-                setAccessToken(accessToken);
+                if (!user || typeof user.role !== "string") {
+                    throw new Error("Invalid login response: user data missing");
+                }
 
-                // Set user
+                // Set tokens only when returned (cookie-only auth omits them; cookies are sent via credentials)
+                if (accessToken) setAccessToken(accessToken);
+                if (refreshToken) setRefreshToken(refreshToken);
+
+                // Set user and sync to Redux (for AdminSidebar permissions)
                 setUser(user);
+                syncUserToRedux(user, accessToken ?? null);
 
                 const finalRedirect = getRedirectAfterLogin(user, redirectPath);
 
@@ -176,7 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 throw new Error(response.message || "Login failed");
             }
         } catch (error: any) {
-            console.error("Login failed:", error);
+            devLog("Login failed:", error);
             throw new Error(error.message || "Login failed. Please check your credentials.");
         } finally {
             setIsLoading(false);
@@ -186,24 +215,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     /**
      * Complete login after Google (or other OAuth) redirect. Call when landing on /login#accessToken=...&redirect=...
      */
-    const completeSocialLogin = async (accessToken: string, redirectPath?: string): Promise<void> => {
+    const completeSocialLogin = async (accessToken: string, redirectPath?: string, refreshToken?: string): Promise<void> => {
         try {
             setIsLoading(true);
             setAccessToken(accessToken);
+            if (refreshToken) setRefreshToken(refreshToken);
             const response = await authenticationService.verifyToken();
             if (response.success && response.data?.user) {
-                setUser(response.data.user);
-                const finalRedirect = getRedirectAfterLogin(response.data.user, redirectPath || null);
+                const u = response.data.user;
+                setUser(u);
+                syncUserToRedux(u, accessToken);
+                const finalRedirect = getRedirectAfterLogin(u, redirectPath || null);
                 router.push(finalRedirect);
             } else {
                 clearAuthTokens();
                 setUser(null);
+                syncUserToRedux(null, null);
                 throw new Error("Invalid token");
             }
         } catch (error: any) {
-            console.error("Social login complete failed:", error);
+            devLog("Social login complete failed:", error);
             clearAuthTokens();
             setUser(null);
+            syncUserToRedux(null, null);
             throw error;
         } finally {
             setIsLoading(false);
@@ -221,13 +255,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const response = await authenticationService.register(data);
 
             if (response.success && response.data) {
-                const { user, accessToken } = response.data;
+                const { user, accessToken, refreshToken } = response.data;
 
-                // Set tokens
-                setAccessToken(accessToken);
+                // Set tokens only when returned (cookie-only auth omits them)
+                if (accessToken) setAccessToken(accessToken);
+                if (refreshToken) setRefreshToken(refreshToken);
 
-                // Set user
+                // Set user and sync to Redux
                 setUser(user);
+                syncUserToRedux(user, accessToken ?? null);
 
                 // Redirect to dashboard
                 router.push("/");
@@ -235,7 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 throw new Error(response.message || "Registration failed");
             }
         } catch (error: any) {
-            console.error("Registration failed:", error);
+            devLog("Registration failed:", error);
             throw new Error(error.message || "Registration failed. Please try again.");
         } finally {
             setIsLoading(false);
@@ -253,13 +289,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const response = await clientService.registerClient(data);
 
             if (response.success && response.data) {
-                const { user, accessToken } = response.data;
+                const { user, accessToken, refreshToken } = response.data;
 
-                // Set tokens
-                setAccessToken(accessToken);
+                // Set tokens only when returned (cookie-only auth omits them)
+                if (accessToken) setAccessToken(accessToken);
+                if (refreshToken) setRefreshToken(refreshToken);
 
-                // Set user
+                // Set user and sync to Redux
                 setUser(user);
+                syncUserToRedux(user, accessToken ?? null);
 
                 // Redirect to dashboard
                 router.push("/");
@@ -267,7 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 throw new Error(response.message || "Registration failed");
             }
         } catch (error: any) {
-            console.error("Client registration failed:", error);
+            devLog("Client registration failed:", error);
             throw new Error(error.message || "Registration failed. Please try again.");
         } finally {
             setIsLoading(false);
@@ -282,11 +320,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Call logout API to invalidate token on server
             await authenticationService.logout();
         } catch (error) {
-            console.error("Logout API call failed:", error);
+            devLog("Logout API call failed:", error);
         } finally {
             // Clear tokens and state regardless of API call result
             clearAuthTokens();
+            clearCsrfToken();
             setUser(null);
+            syncUserToRedux(null, null);
 
             // Redirect to login
             router.push("/login");
@@ -310,7 +350,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Logout after password change for security
             await logout();
         } catch (error: any) {
-            console.error("Password change failed:", error);
+            devLog("Password change failed:", error);
             throw new Error(error.message || "Failed to change password.");
         } finally {
             setIsLoading(false);
@@ -331,7 +371,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 throw new Error(response.message || "Failed to send reset email");
             }
         } catch (error: any) {
-            console.error("Forgot password failed:", error);
+            devLog("Forgot password failed:", error);
             throw new Error(error.message || "Failed to send reset email.");
         } finally {
             setIsLoading(false);
@@ -355,7 +395,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Redirect to login after successful reset
             router.push("/login?message=password_reset_success");
         } catch (error: any) {
-            console.error("Reset password failed:", error);
+            devLog("Reset password failed:", error);
             throw new Error(error.message || "Failed to reset password.");
         } finally {
             setIsLoading(false);
@@ -369,19 +409,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             const refreshTokenValue = getRefreshToken();
 
-            if (!refreshTokenValue) {
-                throw new Error("No refresh token available");
-            }
-
-            // Real API call
-            const response = await authenticationService.refreshToken(refreshTokenValue);
+            // Cookie-only auth: no token in storage; backend reads from HttpOnly cookie
+            const response = await authenticationService.refreshToken(refreshTokenValue ?? undefined);
 
             if (response.success && response.data) {
-                setAccessToken(response.data.accessToken);
-
-                if (response.data.refreshToken) {
-                    setRefreshToken(response.data.refreshToken);
-                }
+                if (response.data.accessToken) setAccessToken(response.data.accessToken);
+                if (response.data.refreshToken) setRefreshToken(response.data.refreshToken);
 
                 // Reload user data
                 await checkAuth();
@@ -389,10 +422,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 throw new Error("Token refresh failed");
             }
         } catch (error) {
-            console.error("Token refresh failed:", error);
+            devLog("Token refresh failed:", error);
             // If refresh fails, logout user
             clearAuthTokens();
             setUser(null);
+            syncUserToRedux(null, null);
             router.push("/login?error=session_expired");
         }
     };

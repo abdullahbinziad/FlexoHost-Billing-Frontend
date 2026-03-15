@@ -5,6 +5,8 @@
 
 import { API_CONFIG } from '@/config/api';
 import { getAccessToken } from '@/utils/tokenManager';
+import { getCsrfToken } from '@/lib/csrfToken';
+import { devLog } from '@/lib/devLog';
 
 export interface ApiResponse<T = any> {
     success: boolean;
@@ -29,6 +31,19 @@ class ApiClient {
         this.timeout = timeout;
     }
 
+    /** Resolve API URL - use as-is if absolute, otherwise resolve relative to current origin */
+    private getRequestUrl(endpoint: string): string {
+        const path = `${this.baseURL.replace(/\/$/, '')}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            return path;
+        }
+        if (typeof window !== 'undefined') {
+            return `${window.location.origin}${path.startsWith('/') ? path : `/${path}`}`;
+        }
+        const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        return `${origin.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+    }
+
     /**
      * Get authentication token from cookies
      */
@@ -47,7 +62,10 @@ class ApiClient {
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
         try {
-            const token = this.getAuthToken();
+            const [token, csrfToken] = await Promise.all([
+                Promise.resolve(this.getAuthToken()),
+                getCsrfToken(),
+            ]);
             const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
             };
@@ -61,30 +79,33 @@ class ApiClient {
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
+            if (csrfToken) {
+                headers['X-CSRF-Token'] = csrfToken;
+            }
 
-            const response = await fetch(`${this.baseURL}${endpoint}`, {
+            const response = await fetch(this.getRequestUrl(endpoint), {
                 ...options,
                 headers,
+                credentials: 'include',
                 signal: controller.signal,
             });
 
             clearTimeout(timeoutId);
 
-            // Try to parse JSON response, handle empty responses
+            // Read body as text first to avoid json() throwing on empty/invalid body
+            const text = await response.text();
             let data: any = {};
             const contentType = response.headers.get('content-type');
 
-            if (contentType && contentType.includes('application/json')) {
-                try {
-                    data = await response.json();
-                } catch (parseError) {
-                    console.error('Failed to parse JSON response:', parseError);
-                    data = {};
-                }
-            } else {
-                // Non-JSON response, try to get text
-                const text = await response.text();
-                if (text) {
+            if (text) {
+                if (contentType?.includes('application/json')) {
+                    try {
+                        data = JSON.parse(text);
+                    } catch (parseError) {
+                        devLog('Failed to parse JSON response:', parseError);
+                        data = { message: text };
+                    }
+                } else {
                     data = { message: text };
                 }
             }
@@ -94,7 +115,11 @@ class ApiClient {
                 let errorMessage = data.message || 'Request failed';
 
                 if (response.status === 403) {
-                    errorMessage = 'Access forbidden. Your session may have expired or is invalid. Please log out and log in again.';
+                    if (typeof data.message === 'string' && data.message.toLowerCase().includes('csrf')) {
+                        errorMessage = data.message;
+                    } else {
+                        errorMessage = 'Access forbidden. Your session may have expired or is invalid. Please log out and log in again.';
+                    }
                 } else if (response.status === 404) {
                     errorMessage = 'API endpoint not found. Please check the backend is running.';
                 } else if (response.status === 500) {
@@ -126,10 +151,21 @@ class ApiClient {
                 } as ApiError;
             }
 
-            // Handle network errors
-            if (error instanceof TypeError && error.message.includes('fetch')) {
+            // Handle network errors (Failed to fetch, CORS, connection refused, etc.)
+            const msg = error?.message || '';
+            if (
+                error instanceof TypeError ||
+                msg.includes('fetch') ||
+                msg.includes('NetworkError') ||
+                msg.includes('Failed to fetch')
+            ) {
+                const apiUrl = this.baseURL.startsWith('http')
+                    ? this.baseURL
+                    : typeof window !== 'undefined'
+                        ? `${window.location.origin}${this.baseURL}`
+                        : this.baseURL;
                 throw {
-                    message: 'Network error. Cannot connect to backend. Please ensure backend is running on ' + this.baseURL,
+                    message: `Cannot connect to backend. Ensure it is running at ${apiUrl}`,
                     status: 0,
                 } as ApiError;
             }
@@ -199,5 +235,8 @@ class ApiClient {
 }
 
 // Export singleton instance
-export const apiClient = new ApiClient(API_CONFIG.BASE_URL, API_CONFIG.TIMEOUT);
+export const apiClient = new ApiClient(
+    API_CONFIG.BASE_URL ?? '',
+    API_CONFIG.TIMEOUT ?? 30000
+);
 

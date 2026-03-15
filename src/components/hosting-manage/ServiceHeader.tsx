@@ -57,6 +57,11 @@ export function ServiceHeader({ service }: ServiceHeaderProps) {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {service.packageName}
           </p>
+          {service.serverLocation && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Server: {service.serverLocation}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div

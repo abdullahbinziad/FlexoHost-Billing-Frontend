@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import "react-phone-input-2/lib/style.css";
 import { countries } from "@/data/countries";
 import { Eye, EyeOff } from "lucide-react";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
     // Personal Information
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
@@ -502,5 +502,13 @@ export default function RegisterPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 dark:bg-gray-900" />}>
+            <RegisterPageContent />
+        </Suspense>
     );
 }

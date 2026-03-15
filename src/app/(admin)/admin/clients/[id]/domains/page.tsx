@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Plus, MoreHorizontal, Globe } from "lucide-react";
+import { Plus, MoreHorizontal, Globe, Shield, KeyRound } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -21,18 +22,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useGetClientServicesQuery } from "@/store/api/servicesApi";
+import { useGetDomainsByClientQuery } from "@/store/api/domainApi";
+import { formatDate } from "@/utils/format";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export default function ClientDomainsPage() {
   const params = useParams();
   const clientId = params?.id as string;
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
-  const { data, isLoading, error } = useGetClientServicesQuery(
-    { clientId, params: { type: "DOMAIN", limit: 100 } },
+  const { data, isLoading, error } = useGetDomainsByClientQuery(
+    { clientId, page, limit: pageSize },
     { skip: !clientId }
   );
 
-  const services = data?.services ?? [];
+  const domains = data?.domains ?? [];
+  const totalResults = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
   return (
     <Card className="border-none shadow-none">
@@ -42,9 +49,9 @@ export default function ClientDomainsPage() {
           <p className="text-sm text-muted-foreground">Manage registered domains</p>
         </div>
         <Button asChild>
-          <Link href="/admin/domains/register">
+          <Link href="/admin/orders/new">
             <Plus className="w-4 h-4 mr-2" />
-            Register New Domain
+            Order Domain
           </Link>
         </Button>
       </CardHeader>
@@ -54,9 +61,10 @@ export default function ClientDomainsPage() {
             <TableHeader className="bg-gray-50 dark:bg-gray-800">
               <TableRow>
                 <TableHead className="w-[40px]"></TableHead>
-                <TableHead>Domain / Identifier</TableHead>
-                <TableHead>Pricing</TableHead>
-                <TableHead>Next Due Date</TableHead>
+                <TableHead>Domain</TableHead>
+                <TableHead>Registrar</TableHead>
+                <TableHead>Nameservers</TableHead>
+                <TableHead>Expiry</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -64,25 +72,25 @@ export default function ClientDomainsPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     Loading domains...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-destructive">
+                  <TableCell colSpan={7} className="py-8 text-center text-destructive">
                     Failed to load domains.
                   </TableCell>
                 </TableRow>
-              ) : services.length === 0 ? (
+              ) : domains.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                     No domains for this client.
                   </TableCell>
                 </TableRow>
               ) : (
-                services.map((svc) => (
-                  <TableRow key={svc.id}>
+                domains.map((domain) => (
+                  <TableRow key={domain.id}>
                     <TableCell>
                       <div className="w-8 h-8 rounded bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600">
                         <Globe className="w-4 h-4" />
@@ -91,36 +99,60 @@ export default function ClientDomainsPage() {
                     <TableCell>
                       <div className="flex flex-col">
                         <Link
-                          href={`/admin/clients/${clientId}/domains/${svc.id}`}
+                          href={`/admin/clients/${clientId}/domains/${domain.serviceId ?? domain.id}`}
                           className="font-semibold text-blue-600 hover:underline"
                         >
-                          {svc.identifier || svc.name}
+                          {domain.name}
                         </Link>
-                        <span className="text-xs text-gray-500">Service: {svc.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {domain.serviceNumber ? `Service ${domain.serviceNumber}` : "Domain service"}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">
-                        {svc.pricing?.currency} {svc.pricing?.amount?.toFixed(2)}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-1 capitalize">
-                        {svc.pricing?.billingCycle}
-                      </span>
+                      <span className="font-medium">{domain.registrar || "—"}</span>
                     </TableCell>
-                    <TableCell>{svc.nextDueDate || "—"}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant={svc.status === "active" ? "default" : "secondary"}
-                        className={
-                          svc.status === "active"
-                            ? "bg-green-500 hover:bg-green-600"
-                            : svc.status === "expired"
-                            ? "bg-red-100 text-red-600 dark:bg-red-900/30"
-                            : ""
-                        }
-                      >
-                        {svc.status}
-                      </Badge>
+                      <div className="flex flex-col gap-1">
+                        {domain.nameservers?.length ? (
+                          domain.nameservers.slice(0, 2).map((ns) => (
+                            <span key={ns} className="text-xs text-gray-600 dark:text-gray-300">
+                              {ns}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-500">No nameservers saved</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{domain.expirationDate ? formatDate(domain.expirationDate, "short") : "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge
+                          variant={domain.status === "active" ? "default" : "secondary"}
+                          className={
+                            domain.status === "active"
+                              ? "bg-green-500 hover:bg-green-600"
+                              : domain.status === "expired"
+                              ? "bg-red-100 text-red-600 dark:bg-red-900/30"
+                              : ""
+                          }
+                        >
+                          {domain.status}
+                        </Badge>
+                        {domain.registrarLock ? (
+                          <Badge variant="outline" className="gap-1">
+                            <Shield className="w-3 h-3" />
+                            Locked
+                          </Badge>
+                        ) : null}
+                        {domain.hasEppCode ? (
+                          <Badge variant="outline" className="gap-1">
+                            <KeyRound className="w-3 h-3" />
+                            EPP
+                          </Badge>
+                        ) : null}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -131,7 +163,7 @@ export default function ClientDomainsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link href={`/admin/clients/${clientId}/domains/${svc.id}`}>
+                          <Link href={`/admin/clients/${clientId}/domains/${domain.serviceId ?? domain.id}`}>
                             <DropdownMenuItem>View Details</DropdownMenuItem>
                           </Link>
                         </DropdownMenuContent>
@@ -142,6 +174,21 @@ export default function ClientDomainsPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+        <div className="mt-4">
+          <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalResults}
+            pageSize={pageSize}
+            currentCount={domains.length}
+            itemLabel="domains"
+            onPageChange={setPage}
+            onPageSizeChange={(value) => {
+              setPageSize(value);
+              setPage(1);
+            }}
+          />
         </div>
       </CardContent>
     </Card>

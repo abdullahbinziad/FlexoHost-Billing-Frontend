@@ -5,6 +5,7 @@ import { ProductForm } from "@/components/admin/products/ProductForm";
 import { PageHeader } from "@/components/ui/page-header";
 import type { Product } from "@/types/admin";
 import { useGetProductQuery, useUpdateProductMutation } from "@/store/api/productApi";
+import { devLog } from "@/lib/devLog";
 import { toast } from "sonner";
 
 export default function EditProductPage() {
@@ -25,7 +26,7 @@ export default function EditProductPage() {
             toast.success("Product updated successfully!");
             router.push("/admin/products");
         } catch (error: any) {
-            console.error("Failed to update product:", error);
+            devLog("Failed to update product:", error);
             const errorMessage = error?.data?.message || error?.message || "Failed to update product. Please try again.";
             toast.error(errorMessage);
         }

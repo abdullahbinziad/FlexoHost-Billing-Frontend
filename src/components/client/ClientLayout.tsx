@@ -1,21 +1,83 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useDispatch } from "react-redux";
 import { cn } from "@/lib/utils";
 import { ClientSidebar } from "./ClientSidebar";
 import { ClientHeader } from "./ClientHeader";
 import { ClientRouteGuard } from "./ClientRouteGuard";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { PublicLayout } from "@/components/public/PublicLayout"; // Assuming path
-// You might need to move PublicLayout logic INLINE or import components from it 
-// to avoid full page wrap if `ClientLayout` is just a wrapper around children.
-// Actually, `PublicLayout` is a full wrapper. So we modify `ClientLayout` to choose.
+import { useActiveClient } from "@/hooks/useActiveClient";
+import { SharedAccessBanner } from "@/features/shared-with-me";
+import { PublicLayout } from "@/components/public/PublicLayout";
+import { setActingAs, clearActingAs as clearActingAsAction } from "@/store/slices/activeClientSlice";
+import { loadActingAs, clearActingAsStorage } from "@/store/slices/activeClientPersistence";
+import { useGetClientProfileActingAsQuery } from "@/store/api/clientApi";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const dispatch = useDispatch();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingActingAs, setPendingActingAs] = useState<{ clientId: string; ownerLabel: string } | null>(null);
   const { isCollapsed, isMounted } = useSidebar();
-  const { isAuthenticated, user, isLoading } = useAuth(); // Get auth state
+  const { isAuthenticated, user } = useAuth();
+  const { isActingAs, ownerLabel, clearActingAs, activeClientId } = useActiveClient();
+  const hasRehydrated = useRef(false);
+
+  const { data: actingAsProfile } = useGetClientProfileActingAsQuery(activeClientId!, {
+    skip: !isActingAs || !activeClientId,
+  });
+  const accessAreas = actingAsProfile?.accessAreas;
+
+  // When acting as: redirect if current path requires an area the grant doesn't allow
+  useEffect(() => {
+    if (!isActingAs || !accessAreas) return;
+    const path = pathname ?? "";
+    const noInvoices = path === "/invoices" && !accessAreas.invoices;
+    const noTickets = path === "/tickets" && !accessAreas.tickets;
+    const noOrders = path === "/billing/history" && !accessAreas.orders;
+    const noBilling = path === "/billing" && !accessAreas.invoices && !accessAreas.orders;
+    if (noInvoices || noTickets || noOrders || noBilling) {
+      router.replace("/");
+    }
+  }, [isActingAs, accessAreas, pathname, router]);
+
+  const handleSwitchBack = () => {
+    clearActingAs();
+    clearActingAsStorage();
+    router.push("/");
+  };
+
+  // Restore acting-as from localStorage and validate before applying
+  useEffect(() => {
+    if (!isAuthenticated || !user || hasRehydrated.current) return;
+    hasRehydrated.current = true;
+    const stored = loadActingAs();
+    if (stored?.clientId && typeof stored.ownerLabel === "string") {
+      setPendingActingAs({ clientId: stored.clientId, ownerLabel: stored.ownerLabel });
+    }
+  }, [isAuthenticated, user]);
+
+  const { data: actingAsProfileData, isError: actingAsProfileError, isSuccess: actingAsProfileSuccess } =
+    useGetClientProfileActingAsQuery(pendingActingAs?.clientId ?? "", {
+      skip: !pendingActingAs?.clientId,
+    });
+
+  useEffect(() => {
+    if (!pendingActingAs) return;
+    if (actingAsProfileSuccess && actingAsProfileData) {
+      dispatch(setActingAs({ clientId: pendingActingAs.clientId, ownerLabel: pendingActingAs.ownerLabel }));
+      setPendingActingAs(null);
+    }
+    if (actingAsProfileError) {
+      clearActingAsStorage();
+      dispatch(clearActingAsAction());
+      setPendingActingAs(null);
+    }
+  }, [pendingActingAs, actingAsProfileSuccess, actingAsProfileData, actingAsProfileError, dispatch]);
 
   // Close sidebar on window resize if it becomes desktop size
   useEffect(() => {
@@ -47,6 +109,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       {/* If authenticated, show full dashboard layout */}
       {isAuthenticated && user ? (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          {/* Acting-as banner: full width at the very top, above header */}
+          {isActingAs && ownerLabel && (
+            <div className="fixed top-0 left-0 right-0 z-40 h-14 flex items-center print:hidden">
+              <SharedAccessBanner
+                accountLabel={ownerLabel}
+                onSwitchBack={handleSwitchBack}
+                placement="top"
+              />
+            </div>
+          )}
           <ClientSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
           <div
             className={cn(
@@ -55,8 +127,13 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               contentMargin
             )}
           >
-            <ClientHeader onMenuClick={toggleSidebar} />
-            <main className="pt-16 min-h-[calc(100vh-4rem)] print:pt-0">
+            <ClientHeader onMenuClick={toggleSidebar} hasBanner={isActingAs && !!ownerLabel} />
+            <main
+              className={cn(
+                "min-h-[calc(100vh-4rem)] print:pt-0",
+                isActingAs && ownerLabel ? "pt-[7.5rem]" : "pt-16"
+              )}
+            >
               <div className="p-4 sm:p-6 print:p-0">{children}</div>
             </main>
           </div>

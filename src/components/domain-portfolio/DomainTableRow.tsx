@@ -96,7 +96,7 @@ export function DomainTableRow({
           <Button
             variant="default"
             size="sm"
-            onClick={() => onManage(domain.id)}
+            onClick={() => onManage(domain.name)}
             className="h-8"
           >
             Manage

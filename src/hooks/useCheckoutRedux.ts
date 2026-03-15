@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useMemo, useEffect } from "react";
 import type { RootState } from "@/store";
 import {
+  setCheckoutMode,
   setBillingCycle,
   setDomainAction,
   setSelectedDomain,
@@ -22,7 +23,6 @@ import {
   previousStep,
   setLoading,
   setError,
-  resetCheckout,
   clearCheckout,
   setProductId,
   setReferral,
@@ -30,6 +30,7 @@ import {
 } from "@/store/slices/checkoutSlice";
 import type {
   CheckoutFormData,
+  CheckoutMode,
   CreateOrderPayload,
   NewAccountInfo,
   BillingCycle,
@@ -45,12 +46,47 @@ import type {
 import { useCreateOrderMutation } from "@/store/api/checkoutApi";
 import { useGetTldsQuery } from "@/store/api/tldApi";
 
+interface UseCheckoutReduxOptions {
+  productName?: string;
+  checkoutMode?: CheckoutMode;
+}
+
+function areOrderSummariesEqual(
+  a: OrderSummary | null | undefined,
+  b: OrderSummary | null | undefined
+): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (
+    a.subtotal !== b.subtotal ||
+    a.discount !== b.discount ||
+    a.tax !== b.tax ||
+    a.total !== b.total ||
+    a.currency !== b.currency ||
+    a.items.length !== b.items.length
+  ) {
+    return false;
+  }
+
+  return a.items.every((item, index) => {
+    const other = b.items[index];
+    return (
+      item.id === other?.id &&
+      item.name === other?.name &&
+      item.type === other?.type &&
+      item.billingCycle === other?.billingCycle &&
+      item.price === other?.price &&
+      item.quantity === other?.quantity
+    );
+  });
+}
+
 export function useCheckoutRedux(
   billingCycleOptions: Array<{
     id: BillingCycle;
     price: number;
   }>,
-  productName: string = "Hosting Product"
+  options: string | UseCheckoutReduxOptions = "Hosting Product"
 ) {
   const dispatch = useDispatch();
   const checkout = useSelector((state: RootState) => state.checkout);
@@ -58,16 +94,21 @@ export function useCheckoutRedux(
   const { data: tldsData } = useGetTldsQuery();
   const [createOrder, { isLoading: isCreatingOrder }] =
     useCreateOrderMutation();
+  const resolvedOptions =
+    typeof options === "string" ? { productName: options } : options;
+  const productName = resolvedOptions.productName ?? "Hosting Product";
+  const checkoutMode = resolvedOptions.checkoutMode ?? checkout.mode ?? "service";
+  const isDomainOnly = checkoutMode === "domain";
 
   // Calculate order summary based on form data
   const orderSummary: OrderSummary = useMemo(() => {
     const items: OrderItem[] = [];
 
-    // Add hosting product
+    // Add hosting product for service checkout only
     const selectedCycle = billingCycleOptions.find(
       (opt) => opt.id === checkout.formData.billingCycle
     );
-    if (selectedCycle) {
+    if (!isDomainOnly && selectedCycle) {
       items.push({
         id: "hosting-1",
         name: productName,
@@ -111,16 +152,18 @@ export function useCheckoutRedux(
       });
     }
 
-    // Add addons
-    checkout.formData.selectedAddons?.forEach((addon) => {
-      items.push({
-        id: `addon-${addon.id}`,
-        name: addon.name,
-        type: "addon",
-        price: addon.promotionalPrice ?? addon.price,
-        quantity: 1,
+    // Add addons for service checkout only
+    if (!isDomainOnly) {
+      checkout.formData.selectedAddons?.forEach((addon) => {
+        items.push({
+          id: `addon-${addon.id}`,
+          name: addon.name,
+          type: "addon",
+          price: addon.promotionalPrice ?? addon.price,
+          quantity: 1,
+        });
       });
-    });
+    }
 
     const subtotal = items.reduce((sum, item) => sum + item.price, 0);
     const discount = checkout.formData.promoDiscount ?? 0;
@@ -135,15 +178,18 @@ export function useCheckoutRedux(
       total,
       currency: selectedCurrency.code,
     };
-  }, [checkout.formData, billingCycleOptions, productName, selectedCurrency.code, tldsData]);
+  }, [checkout.formData, billingCycleOptions, isDomainOnly, productName, selectedCurrency.code, tldsData]);
 
   // Update order summary in Redux when it changes
   useEffect(() => {
-    dispatch(setOrderSummary(orderSummary));
-  }, [orderSummary, dispatch]);
+    if (!areOrderSummariesEqual(checkout.orderSummary, orderSummary)) {
+      dispatch(setOrderSummary(orderSummary));
+    }
+  }, [checkout.orderSummary, orderSummary, dispatch]);
 
   // Actions
-  const actions = {
+  const actions = useMemo(() => ({
+    setCheckoutMode: (mode: CheckoutMode) => dispatch(setCheckoutMode(mode)),
     setBillingCycle: (cycle: BillingCycle) => dispatch(setBillingCycle(cycle)),
     setDomainAction: (action: DomainAction) => dispatch(setDomainAction(action)),
     setSelectedDomain: (domain: DomainSearchResult | undefined) =>
@@ -163,22 +209,21 @@ export function useCheckoutRedux(
     setPromoApplied: (code: string, discountAmount: number) =>
       dispatch(setPromoApplied({ code, discountAmount })),
     setAgreeToTerms: (agree: boolean) => dispatch(setAgreeToTerms(agree)),
-    setProductId: (id: string) => dispatch(setProductId(id)),
+    setProductId: (id: string | null) => dispatch(setProductId(id)),
     setReferral: (ref: string | null) => dispatch(setReferral(ref)),
     setNewAccountInfo: (info: NewAccountInfo | null) => dispatch(setNewAccountInfo(info)),
     setStep: (step: number) => dispatch(setStep(step)),
     nextStep: () => dispatch(nextStep()),
     previousStep: () => dispatch(previousStep()),
-    resetCheckout: () => dispatch(resetCheckout()),
     clearCheckout: () => dispatch(clearCheckout()),
-  };
+  }), [dispatch]);
 
   // Build the clean order payload from Redux state
   const buildOrderPayload = (): CreateOrderPayload | null => {
     const { formData } = checkout;
     const { productId, referral } = checkout;
 
-    if (!productId || !formData.billingCycle || !formData.serverLocation) {
+    if (!isDomainOnly && (!productId || !formData.billingCycle || !formData.serverLocation)) {
       return null;
     }
 
@@ -231,11 +276,11 @@ export function useCheckoutRedux(
     }
 
     return {
-      productId,
-      billingCycle: formData.billingCycle,
+      productId: isDomainOnly ? undefined : productId ?? undefined,
+      billingCycle: isDomainOnly ? undefined : formData.billingCycle,
       currency: selectedCurrency.code,
       domain,
-      serverLocation: formData.serverLocation.id,
+      serverLocation: isDomainOnly ? undefined : formData.serverLocation?.id,
       paymentMethod: formData.paymentMethod?.id ?? "sslcommerz",
       client,
       coupon: formData.promoCode || undefined,
@@ -254,11 +299,11 @@ export function useCheckoutRedux(
 
     // Domain is mandatory — must register, transfer, or use own domain
     if (!checkout.formData.selectedDomain) {
-      dispatch(setError("Please configure a domain name for your hosting product."));
+      dispatch(setError(isDomainOnly ? "Please select a domain to continue." : "Please configure a domain name for your hosting product."));
       return;
     }
 
-    if (!checkout.productId) {
+    if (!isDomainOnly && !checkout.productId) {
       dispatch(setError("Product not found. Please try again."));
       return;
     }
@@ -268,7 +313,7 @@ export function useCheckoutRedux(
       return;
     }
 
-    if (!checkout.formData.serverLocation) {
+    if (!isDomainOnly && !checkout.formData.serverLocation) {
       dispatch(setError("Please select a server location"));
       return;
     }
@@ -286,7 +331,7 @@ export function useCheckoutRedux(
       const result = await createOrder(payload).unwrap();
 
       // Clear checkout state on success
-      dispatch(resetCheckout());
+      dispatch(clearCheckout());
 
       // Redirect to the newly generated invoice page
       if (result.invoiceId) {
@@ -307,6 +352,7 @@ export function useCheckoutRedux(
   return {
     // State
     formData: checkout.formData,
+    mode: checkout.mode,
     orderSummary: checkout.orderSummary || orderSummary,
     isLoading: checkout.isLoading || isCreatingOrder,
     error: checkout.error,

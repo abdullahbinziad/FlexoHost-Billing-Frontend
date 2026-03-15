@@ -1,4 +1,5 @@
 import { api } from "./baseApi";
+import type { ApiResponse } from "@/types/api";
 import type {
   CreateOrderPayload,
   BillingCycleOption,
@@ -17,7 +18,7 @@ export interface CreateOrderResponse {
     total: number;
     currency: string;
   };
-  invoiceId: string;
+  invoiceId?: string; // Omitted when generateInvoice=false
 }
 
 export interface ValidatePromoCodeRequest {
@@ -38,6 +39,31 @@ export interface GetCheckoutDataResponse {
   availableAddons: Addon[];
   billingContacts: BillingContact[];
   paymentMethods: PaymentMethod[];
+}
+
+export interface DomainSearchApiResponse {
+  domain: string;
+  extension: string;
+  registrar?: string;
+  available?: boolean;
+  price?: number;
+  currency?: string;
+  premium?: boolean;
+  registrarResult?: {
+    domain?: string;
+    available?: boolean | "Yes" | "No" | string;
+    price?: number;
+    currency?: string;
+    premium?: boolean;
+  };
+  dynadotResult?: {
+    domain?: string;
+    available?: boolean | "Yes" | "No" | string;
+    price?: number;
+    currency?: string;
+    premium?: boolean;
+  };
+  tldData?: any;
 }
 
 export const checkoutApi = api.injectEndpoints({
@@ -71,20 +97,14 @@ export const checkoutApi = api.injectEndpoints({
       }),
     }),
 
-    searchDomain: builder.query<
-      { available: boolean; price: number; message?: string; pricing?: { USD: number; BDT: number } },
-      { domain: string; tld: string }
-    >({
-      query: ({ domain, tld }) => {
-        const fullDomain = `${domain}${tld}`;
-
-        console.log("Searching domain:", fullDomain);
-
+    searchDomain: builder.query<DomainSearchApiResponse, string>({
+      query: (fullDomain) => {
         return {
           url: `/domains/search`,
           params: { domain: fullDomain },
         };
       },
+      transformResponse: (response: ApiResponse<DomainSearchApiResponse>) => response.data,
     }),
   }),
 });

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { RichTextEditor } from "./RichTextEditor";
+import { devLog } from "@/lib/devLog";
 
 interface TicketReplyFormProps {
   ticketId: string;
@@ -58,7 +59,7 @@ export function TicketReplyForm({
       onSuccess?.();
       toast.success("Reply sent.");
     } catch (e) {
-      console.error(e);
+      devLog(e);
       toast.error("Failed to send reply.");
     }
   };

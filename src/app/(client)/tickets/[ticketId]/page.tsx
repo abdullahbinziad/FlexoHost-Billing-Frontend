@@ -11,23 +11,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, User, Headphones, CheckCircle } from "lucide-react";
 import { formatDate } from "@/utils/format";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
+import { buildAttachmentUrl } from "@/lib/safeAttachmentUrl";
 import { cn } from "@/lib/utils";
 import { TicketReplyForm } from "@/components/ticket/TicketReplyForm";
 import { toast } from "sonner";
 import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/ticket/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/ticket/TicketPriorityBadge";
+import { devLog } from "@/lib/devLog";
 
 const CLIENT_STATUS_LABELS: Record<string, string> = {
   ...TICKET_STATUS_LABELS,
   answered: "Answered (waiting on you)",
   customer_reply: "Your reply sent",
   resolved: "Resolved",
-};
-
-const buildAttachmentUrl = (relativeUrl: string) => {
-  if (!relativeUrl) return "";
-  if (relativeUrl.startsWith("http")) return relativeUrl;
-  return relativeUrl.startsWith("/") ? relativeUrl : `/${relativeUrl}`;
 };
 
 export default function ClientTicketDetailPage() {
@@ -57,7 +54,7 @@ export default function ClientTicketDetailPage() {
       refetch();
       toast.success("Ticket marked as resolved.");
     } catch (e) {
-      console.error(e);
+      devLog(e);
       toast.error("Failed to mark ticket as resolved.");
     }
   };
@@ -183,7 +180,7 @@ export default function ClientTicketDetailPage() {
                 {m.messageHtml ? (
                   <div
                     className="prose prose-sm dark:prose-invert max-w-none leading-relaxed [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border"
-                    dangerouslySetInnerHTML={{ __html: m.messageHtml }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(m.messageHtml) }}
                   />
                 ) : (
                   <p className="whitespace-pre-wrap leading-relaxed">{m.message}</p>

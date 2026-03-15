@@ -7,6 +7,7 @@ import { FileText, Eye, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
+import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetAllInvoicesQuery } from "@/store/api/invoiceApi";
 
 const getStatusColor = (status: string) => {
@@ -26,12 +27,14 @@ const getStatusColor = (status: string) => {
 
 export default function ClientInvoices() {
   const formatCurrency = useFormatCurrency();
+  const { activeClientId } = useActiveClient();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("");
 
   const { data, isLoading, error } = useGetAllInvoicesQuery({
     page,
     limit: 10,
+    ...(activeClientId ? { clientId: activeClientId } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
   });
 

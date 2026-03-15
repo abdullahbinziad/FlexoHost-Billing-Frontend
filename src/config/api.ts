@@ -5,10 +5,10 @@
  * Set NEXT_PUBLIC_API_URL in .env
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 const BACKEND_ORIGIN = (() => {
     try {
-        return new URL(BASE_URL || 'http://localhost:5001/api/v1').origin;
+        return new URL(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001').origin;
     } catch {
         return 'http://localhost:5001';
     }
@@ -36,7 +36,7 @@ export const API_ENDPOINTS = {
         FORGOT_PASSWORD: '/auth/forgot-password',
         RESET_PASSWORD: '/auth/reset-password',
         /** Full URL to start Google OAuth (redirects to backend). */
-        GOOGLE: `${(BASE_URL || 'http://localhost:5001/api/v1').replace(/\/$/, '')}/auth/google`,
+        GOOGLE: `${(BASE_URL as string | undefined)?.replace(/\/$/, '')}/auth/google`,
     },
 
     // Client Management

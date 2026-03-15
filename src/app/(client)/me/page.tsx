@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { GlobalLoader } from "@/components/shared/GlobalLoader";
 import Link from "next/link";
 import { Modal } from "@/components/shared/Modal";
+import { devLog } from "@/lib/devLog";
 
 export default function MePage() {
     const router = useRouter();
@@ -65,7 +66,7 @@ export default function MePage() {
             // As requested, this comes specifically from the /clients API
             const clientResponse = await clientService.getClientProfile();
             if (clientResponse.success && clientResponse.data) {
-                const raw = clientResponse.data as Record<string, unknown>;
+                const raw = clientResponse.data as unknown as Record<string, unknown>;
                 // API returns { data: { client: { ... } } } so unwrap .client when present
                 const clientData = (raw?.client as Record<string, unknown>) || raw;
                 const phone =
@@ -74,7 +75,7 @@ export default function MePage() {
                     (clientData?.phone as string) ??
                     "";
 
-                setClientProfile(clientData as Client);
+                setClientProfile(clientData as unknown as Client);
                 setClientForm({
                     firstName: (clientData?.firstName as string) || "",
                     lastName: (clientData?.lastName as string) || "",
@@ -100,7 +101,7 @@ export default function MePage() {
 
             if (!silent) toast.dismiss();
         } catch (error: any) {
-            console.error("Error fetching data", error);
+            devLog("Error fetching data", error);
             // Don't show error for client profile not found if it's a new user, 
             // but usually every user should have one if registered via client flow.
         } finally {

@@ -1,41 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 interface RegistrarConfigProps {
+    registrarKey: string;
     name: string;
     logoText?: string;
     description: string;
+    implemented: boolean;
     isActive: boolean;
-    onActivate: () => void;
-    onDeactivate: () => void;
+    isSaving?: boolean;
+    onSave: (payload: {
+        registrarKey: string;
+        isActive: boolean;
+        settings: Record<string, string | boolean | null>;
+    }) => Promise<void> | void;
     configFields: {
         label: string;
         type: "text" | "password" | "checkbox" | "textarea";
         value: string | boolean;
         helperText?: string;
+        placeholder?: string;
+        hasValue?: boolean;
         key: string;
     }[];
 }
 
 export function RegistrarConfigCard({
+    registrarKey,
     name,
     logoText,
     description,
+    implemented,
     isActive,
-    onActivate,
-    onDeactivate,
+    isSaving = false,
+    onSave,
     configFields,
 }: RegistrarConfigProps) {
-    const [isConfiguring, setIsConfiguring] = useState(true); // Default open as per image implies
+    const [isConfiguring, setIsConfiguring] = useState(isActive);
+    const [activeState, setActiveState] = useState(isActive);
     const [fields, setFields] = useState(configFields);
 
+    useEffect(() => {
+        setFields(configFields);
+    }, [configFields]);
+
+    useEffect(() => {
+        setActiveState(isActive);
+        setIsConfiguring(isActive);
+    }, [isActive]);
+
     const handleFieldChange = (key: string, value: string | boolean) => {
-        setFields(fields.map(f => f.key === key ? { ...f, value } : f));
+        setFields((current) => current.map((f) => (f.key === key ? { ...f, value } : f)));
+    };
+
+    const handleSave = async () => {
+        const settings = fields.reduce<Record<string, string | boolean | null>>((acc, field) => {
+            acc[field.key] = field.type === "checkbox" ? Boolean(field.value) : String(field.value ?? "");
+            return acc;
+        }, {});
+
+        await onSave({
+            registrarKey,
+            isActive: activeState,
+            settings,
+        });
     };
 
     return (
@@ -43,7 +76,7 @@ export function RegistrarConfigCard({
             {/* Header */}
             <div className={cn(
                 "flex items-center justify-between px-4 py-3",
-                isActive ? "bg-[#e8f5e9] dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800"
+                activeState ? "bg-[#e8f5e9] dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800"
             )}>
                 <div className="flex items-center gap-4">
                     <div className="w-24 h-10 bg-white dark:bg-gray-800 border flex items-center justify-center font-bold text-teal-500 text-lg rounded px-2">
@@ -56,31 +89,42 @@ export function RegistrarConfigCard({
                         <div className="text-xs text-gray-500 dark:text-gray-400">
                             {description}
                         </div>
+                        {!implemented ? (
+                            <div className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                                Coming soon: provider actions are not implemented yet.
+                            </div>
+                        ) : null}
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {!isActive && (
-                        <Button variant="ghost" size="sm" onClick={onActivate} className="text-green-600 hover:text-green-700 hover:bg-green-50">
-                            Activate
-                        </Button>
-                    )}
-                    {isActive && (
-                        <>
-                            <span className="text-gray-500 text-sm mr-2">Activate</span>
-                            <Button size="sm" variant="destructive" onClick={onDeactivate} className="h-8">
-                                Deactivate
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setIsConfiguring(!isConfiguring)} className="bg-white dark:bg-gray-800 h-8">
-                                Configure
-                            </Button>
-                        </>
-                    )}
+                    <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                        <Checkbox
+                            checked={activeState}
+                            disabled={!implemented || isSaving}
+                            onCheckedChange={(checked) => {
+                                setActiveState(Boolean(checked));
+                                if (checked) {
+                                    setIsConfiguring(true);
+                                }
+                            }}
+                        />
+                        Active
+                    </label>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!activeState || isSaving}
+                        onClick={() => setIsConfiguring(!isConfiguring)}
+                        className="bg-white dark:bg-gray-800 h-8"
+                    >
+                        Configure
+                    </Button>
                 </div>
             </div>
 
             {/* Configuration Form */}
-            {isActive && isConfiguring && (
+            {isConfiguring && (
                 <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-900/50">
                     <div className="bg-white dark:bg-gray-900 border rounded-sm">
                         {fields.map((field, index) => (
@@ -115,6 +159,7 @@ export function RegistrarConfigCard({
                                                 type={field.type}
                                                 value={field.value as string}
                                                 onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                                                placeholder={field.hasValue ? "Saved value" : field.placeholder}
                                                 className="max-w-md h-8"
                                             />
                                             {field.helperText && <span className="text-xs text-gray-500 dark:text-gray-500">{field.helperText}</span>}
@@ -126,8 +171,12 @@ export function RegistrarConfigCard({
                     </div>
 
                     <div className="flex justify-center mt-4">
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                            Save Changes
+                        <Button
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={handleSave}
+                            disabled={isSaving || (!implemented && activeState)}
+                        >
+                            {isSaving ? "Saving..." : "Save Changes"}
                         </Button>
                     </div>
                 </div>

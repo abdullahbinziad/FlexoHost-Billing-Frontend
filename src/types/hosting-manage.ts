@@ -7,6 +7,7 @@ import type { HostingService } from "./hosting";
 export interface HostingServiceDetails extends HostingService {
   domain: string;
   packageName: string;
+  rawStatus?: string;
   usage: {
     disk: {
       used: number; // in MB
@@ -28,6 +29,8 @@ export interface HostingServiceDetails extends HostingService {
     nextDueDate: string;
     currency?: string;
   };
+  /** Admin-only notes (private, stored in service.meta.adminNotes). */
+  adminNotes?: string;
 }
 
 export interface QuickShortcut {

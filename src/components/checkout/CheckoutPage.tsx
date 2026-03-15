@@ -108,6 +108,7 @@ export function CheckoutPage({
     setPromoCode,
     setPromoApplied,
     setAgreeToTerms,
+    setCheckoutMode,
     setProductId,
     setReferral,
     setNewAccountInfo,
@@ -115,16 +116,78 @@ export function CheckoutPage({
   } = useCheckoutRedux(billingCycleOptions, productName);
 
   const [validateCoupon] = useValidateCouponMutation();
+  const normalizedReferral = referral?.trim().toUpperCase();
+  const isReferralDiscountApplied =
+    Boolean(normalizedReferral) &&
+    formData.promoCode === normalizedReferral &&
+    (orderSummary?.discount ?? 0) > 0;
 
   // Store product ID in checkout state on mount
   useEffect(() => {
+    setCheckoutMode("service");
     if (product?._id || product?.id) {
       setProductId(product._id || product.id);
     }
     if (referral) {
       setReferral(referral);
     }
-  }, [product, referral, setProductId, setReferral]);
+  }, [product, referral, setCheckoutMode, setProductId, setReferral]);
+
+  useEffect(() => {
+    if (!normalizedReferral) return;
+    if ((orderSummary?.subtotal ?? 0) <= 0) return;
+    if (formData.promoCode && formData.promoCode !== normalizedReferral) return;
+    if (formData.promoCode === normalizedReferral && (formData.promoDiscount ?? 0) > 0) return;
+
+    let isCancelled = false;
+
+    const applyReferralDiscount = async () => {
+      try {
+        const domainTlds = formData.selectedDomain?.tld
+          ? [formData.selectedDomain.tld.startsWith(".") ? formData.selectedDomain.tld : `.${formData.selectedDomain.tld}`]
+          : [];
+        const domainPeriod = formData.selectedDomain?.period ?? 1;
+        const domainBillingCycle =
+          domainPeriod === 1 ? "annually" : domainPeriod === 2 ? "biennially" : "triennially";
+
+        const result = await validateCoupon({
+          code: normalizedReferral,
+          subtotal: orderSummary?.subtotal ?? 0,
+          currency: selectedCurrency.code,
+          clientId: formData.billingContact?.id,
+          productIds: product?._id || product?.id ? [String(product._id || product.id)] : undefined,
+          productTypes: product?.type ? [product.type] : undefined,
+          productBillingCycle: formData.billingCycle,
+          domainTlds,
+          domainBillingCycle: formData.selectedDomain ? domainBillingCycle : undefined,
+        }).unwrap();
+
+        if (!isCancelled && result.valid && result.discountAmount != null) {
+          setPromoApplied(normalizedReferral, result.discountAmount);
+        }
+      } catch {
+        // Ignore invalid referral discounts and leave checkout usable.
+      }
+    };
+
+    void applyReferralDiscount();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    normalizedReferral,
+    orderSummary?.subtotal,
+    formData.promoCode,
+    formData.promoDiscount,
+    formData.billingContact?.id,
+    formData.billingCycle,
+    formData.selectedDomain,
+    product,
+    selectedCurrency.code,
+    setPromoApplied,
+    validateCoupon,
+  ]);
 
   // Set default selections
   useEffect(() => {
@@ -168,6 +231,14 @@ export function CheckoutPage({
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
             {product ? `Configure ${product.name}` : "You're almost there! Complete your order"}
           </h1>
+          {isReferralDiscountApplied && normalizedReferral ? (
+            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10">
+              <p className="text-sm text-gray-800 dark:text-gray-200">
+                Referral discount applied from link code{" "}
+                <span className="font-semibold text-primary">{normalizedReferral}</span>.
+              </p>
+            </div>
+          ) : null}
           {error && (
             <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
               <p className="text-red-800 dark:text-red-400 text-sm">{error}</p>
@@ -221,7 +292,6 @@ export function CheckoutPage({
                   }
                 }}
                 onCreateNew={() => {
-                  console.log("Create new contact");
                 }}
                 onNewAccountChange={setNewAccountInfo}
               />
@@ -272,6 +342,8 @@ export function CheckoutPage({
                 setPromoCode(undefined);
               }}
               appliedPromoCode={formData.promoCode}
+              appliedDiscountLabel={isReferralDiscountApplied ? "Referral Discount Applied" : "Promo Code Applied"}
+              discountLineLabel={isReferralDiscountApplied ? "Referral Discount" : "Discount"}
             />
           </div>
         </div>

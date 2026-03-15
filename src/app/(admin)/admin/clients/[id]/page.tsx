@@ -1,12 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { FileText, ShoppingCart, Server, MessageSquare, ArrowRight } from "lucide-react";
+import { FileText, ShoppingCart, Server, MessageSquare, ArrowRight, Globe, HardDrive, Mail } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useGetAllInvoicesQuery } from "@/store/api/invoiceApi";
 import { useGetOrdersQuery } from "@/store/api/orderApi";
+import { useGetDomainsByClientQuery } from "@/store/api/domainApi";
 import { useGetClientServicesQuery } from "@/store/api/servicesApi";
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { formatDate } from "@/utils/format";
@@ -20,27 +22,42 @@ export default function ClientSummaryPage() {
     { skip: !clientId }
   );
   const { data: ordersData } = useGetOrdersQuery(
-    clientId ? { clientId } : undefined,
+    clientId ? { clientId, page: 1, limit: 1 } : undefined,
     { skip: !clientId }
   );
   const { data: servicesData } = useGetClientServicesQuery(
     { clientId, params: { limit: 100 } },
     { skip: !clientId }
   );
+  const { data: domainsData } = useGetDomainsByClientQuery({ clientId, page: 1, limit: 1 }, {
+    skip: !clientId,
+  });
   const { data: ticketsData } = useGetTicketsQuery(
     { clientId, limit: 5, page: 1 },
     { skip: !clientId }
   );
 
-  const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any)?.data ?? [];
-  const orderCount = Array.isArray(orders) ? orders.length : 0;
+  const orderCount = ordersData?.totalResults ?? 0;
   const invoices = invoicesData?.results ?? [];
-  const services = servicesData?.services ?? [];
+  const serviceCounts = useMemo(
+    () =>
+      (servicesData?.services ?? []).reduce(
+        (counts, service) => {
+          if (service.productType === "hosting") counts.hosting += 1;
+          if (service.productType === "vps") counts.vps += 1;
+          if (service.productType === "email") counts.email += 1;
+          return counts;
+        },
+        { hosting: 0, vps: 0, email: 0 }
+      ),
+    [servicesData?.services]
+  );
+  const domainCount = domainsData?.total ?? 0;
   const tickets = ticketsData?.results ?? [];
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Invoices</CardTitle>
@@ -73,16 +90,61 @@ export default function ClientSummaryPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Services</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Hosting</CardTitle>
             <Server className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{services.length}</div>
+            <div className="text-2xl font-bold">{serviceCounts.hosting}</div>
             <Link
-              href={`/admin/clients/${clientId}/products`}
+              href={`/admin/clients/${clientId}/hosting`}
               className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
             >
-              View all <ArrowRight className="h-3 w-3" />
+              View hosting <ArrowRight className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">VPS</CardTitle>
+            <HardDrive className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{serviceCounts.vps}</div>
+            <Link
+              href={`/admin/clients/${clientId}/vps`}
+              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+            >
+              View VPS <ArrowRight className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Email</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{serviceCounts.email}</div>
+            <Link
+              href={`/admin/clients/${clientId}/email-services`}
+              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+            >
+              View email services <ArrowRight className="h-3 w-3" />
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Domain</CardTitle>
+            <Globe className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{domainCount}</div>
+            <Link
+              href={`/admin/clients/${clientId}/domains`}
+              className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
+            >
+              View domains <ArrowRight className="h-3 w-3" />
             </Link>
           </CardContent>
         </Card>
@@ -146,7 +208,7 @@ export default function ClientSummaryPage() {
                 {tickets.slice(0, 5).map((t) => (
                   <li key={t._id} className="flex items-center justify-between text-sm">
                     <Link
-                      href={`/admin/tickets/${t._id}`}
+                      href={`/admin/clients/${clientId}/tickets/${t._id}`}
                       className="font-medium text-primary hover:underline"
                     >
                       #{t.ticketNumber} – {t.subject}

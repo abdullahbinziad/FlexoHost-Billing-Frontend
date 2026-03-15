@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { devLog } from "@/lib/devLog";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { A4_DIMENSIONS } from "./invoice.constants";
@@ -13,7 +14,7 @@ export function useInvoicePdf(invoiceRef: React.RefObject<HTMLDivElement | null>
 
     const invoiceElement = invoiceRef.current.querySelector("[data-invoice-container]") as HTMLElement;
     if (!invoiceElement) {
-      console.error("Invoice container not found");
+      devLog("Invoice container not found");
       return;
     }
 
@@ -60,7 +61,7 @@ export function useInvoicePdf(invoiceRef: React.RefObject<HTMLDivElement | null>
 
       pdf.save(`Invoice-${invoiceNumber}.pdf`);
     } catch (error) {
-      console.error("Error generating PDF:", error);
+      devLog("Error generating PDF:", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
       setIsGeneratingPDF(false);

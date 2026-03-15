@@ -3,29 +3,32 @@
 import { useState } from "react";
 import { RefreshCw, Lock, Unlock, Key, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLazyGetEppCodeQuery } from "@/store/api/domainApi";
 import type { DomainDetails } from "@/types/domain-manage";
 import { NameserversModal } from "./NameserversModal";
 import { EppCodeModal } from "./EppCodeModal";
 
 interface QuickActionsCardProps {
   domain: DomainDetails;
+  domainName: string;
   onAutoRenewalChange?: (enabled: boolean) => void;
   onLockChange?: (locked: boolean) => void;
   onNameserversChange?: (nameservers: string[]) => void;
-  onGetEppCode?: () => void;
 }
 
 export function QuickActionsCard({
   domain,
+  domainName,
   onAutoRenewalChange,
   onLockChange,
   onNameserversChange,
-  onGetEppCode,
 }: QuickActionsCardProps) {
   const [autoRenewal, setAutoRenewal] = useState(domain.autoRenewal);
   const [isLocked, setIsLocked] = useState(domain.registrarLock);
   const [isNameserversModalOpen, setIsNameserversModalOpen] = useState(false);
   const [isEppCodeModalOpen, setIsEppCodeModalOpen] = useState(false);
+  const [eppCode, setEppCode] = useState<string | null>(null);
+  const [getEppCode, { isLoading: isLoadingEpp }] = useLazyGetEppCodeQuery();
 
   const handleAutoRenewalToggle = (enabled: boolean) => {
     setAutoRenewal(enabled);
@@ -37,9 +40,15 @@ export function QuickActionsCard({
     onLockChange?.(locked);
   };
 
-  const handleGetEppCode = () => {
+  const handleGetEppCode = async () => {
+    setEppCode(null);
     setIsEppCodeModalOpen(true);
-    onGetEppCode?.();
+    try {
+      const result = await getEppCode(domainName).unwrap();
+      setEppCode(result.eppCode ?? "");
+    } catch {
+      setEppCode("Not Available");
+    }
   };
 
   return (
@@ -163,6 +172,8 @@ export function QuickActionsCard({
         isOpen={isEppCodeModalOpen}
         onClose={() => setIsEppCodeModalOpen(false)}
         domain={domain}
+        eppCode={eppCode}
+        isLoading={isLoadingEpp}
       />
     </>
   );

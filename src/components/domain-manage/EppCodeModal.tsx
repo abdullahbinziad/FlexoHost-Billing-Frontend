@@ -10,11 +10,19 @@ interface EppCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   domain: DomainDetails;
+  /** EPP code from API; when null and not loading, shows "Not Available". */
+  eppCode?: string | null;
+  isLoading?: boolean;
 }
 
-export function EppCodeModal({ isOpen, onClose, domain }: EppCodeModalProps) {
+export function EppCodeModal({ isOpen, onClose, domain, eppCode: eppCodeProp, isLoading }: EppCodeModalProps) {
   const [copied, setCopied] = useState(false);
-  const eppCode = domain.eppCode || "Not Available";
+  const eppCode =
+    isLoading
+      ? "Loading..."
+      : (eppCodeProp !== undefined && eppCodeProp !== null
+          ? eppCodeProp
+          : domain.eppCode || "Not Available");
 
   const handleCopy = () => {
     if (eppCode && eppCode !== "Not Available") {
@@ -42,7 +50,7 @@ export function EppCodeModal({ isOpen, onClose, domain }: EppCodeModalProps) {
                 {eppCode}
               </p>
             </div>
-            {eppCode !== "Not Available" && (
+            {eppCode !== "Not Available" && eppCode !== "Loading..." && (
               <Button
                 variant="secondary"
                 size="sm"

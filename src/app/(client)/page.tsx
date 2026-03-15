@@ -1,5 +1,7 @@
-import { VPSPage } from "@/components/vps/VPSPage";
+"use client";
 
-export default function ClientVPS() {
-  return <VPSPage />;
+import { ClientDashboard } from "@/components/client/dashboard";
+
+export default function ClientHomePage() {
+  return <ClientDashboard />;
 }

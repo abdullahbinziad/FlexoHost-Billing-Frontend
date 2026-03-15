@@ -2,6 +2,7 @@ const PURCHASE_EXACT_PATHS = [
   "/hosting",
   "/vps",
   "/checkout",
+  "/referrals",
 ] as const;
 
 const PURCHASE_DOMAIN_PATHS = [

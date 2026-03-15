@@ -49,8 +49,9 @@ export default function CompleteProfilePage() {
     }
   };
 
-  const displayName = user?.client
-    ? [user.client.firstName, user.client.lastName].filter(Boolean).join(" ") || user.email
+  const userWithClient = user as typeof user & { client?: { firstName?: string; lastName?: string } };
+  const displayName = userWithClient?.client
+    ? [userWithClient.client.firstName, userWithClient.client.lastName].filter(Boolean).join(" ") || user?.email
     : user?.email ?? "there";
 
   return (

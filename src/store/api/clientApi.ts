@@ -1,5 +1,6 @@
 import { api } from "./baseApi";
 import { ApiResponse } from "@/types/api";
+import type { GrantAccessAreas } from "@/types/grant-access";
 
 export interface ClientListParams {
   page?: number;
@@ -26,6 +27,7 @@ export interface ClientListItem {
   address?: { street?: string; city?: string; state?: string; postCode?: string; country?: string };
   user?: { email?: string; active?: boolean };
   supportPin?: string;
+  accountCreditCurrency?: string;
   createdAt: string;
 }
 
@@ -51,6 +53,17 @@ export interface UpdateClientRequest {
   contactEmail?: string;
   phoneNumber?: string;
   address?: { street?: string; city?: string; state?: string; postCode?: string; country?: string };
+}
+
+export interface SendClientEmailRequest {
+  clientId: string;
+  subject: string;
+  message: string;
+}
+
+export interface SendClientEmailResponse {
+  to: string;
+  subject: string;
 }
 
 export const clientApi = api.injectEndpoints({
@@ -88,6 +101,20 @@ export const clientApi = api.injectEndpoints({
       query: () => `/clients/me`,
       transformResponse: (response: ApiResponse<{ client: ClientListItem }>) => response.data?.client ?? response.data,
       providesTags: [{ type: "Client", id: "ME" }],
+    }),
+    /** Client profile when "acting as" another client (grantee). Returns client + accessAreas. */
+    getClientProfileActingAs: builder.query<
+      { client: ClientListItem; accessAreas?: GrantAccessAreas },
+      string
+    >({
+      query: (clientId) => `/clients/acting-as/${clientId}`,
+      transformResponse: (response: ApiResponse<{ client: ClientListItem; accessAreas?: GrantAccessAreas }>) => {
+        const data = response.data;
+        const client = data && typeof data === "object" && "client" in data ? data.client : (data as ClientListItem);
+        const accessAreas = data && typeof data === "object" && "accessAreas" in data ? data.accessAreas : undefined;
+        return { client: client ?? data, accessAreas };
+      },
+      providesTags: (result, _err, clientId) => [{ type: "Client", id: `ACTING-AS-${clientId}` }],
     }),
     getMySupportPin: builder.query<SupportPinResponse, void>({
       query: () => `/clients/me/support-pin`,
@@ -150,6 +177,18 @@ export const clientApi = api.injectEndpoints({
         }
       },
     }),
+    sendClientEmail: builder.mutation<SendClientEmailResponse, SendClientEmailRequest>({
+      query: ({ clientId, subject, message }) => ({
+        url: `/clients/${clientId}/email`,
+        method: "POST",
+        body: { subject, message },
+      }),
+      transformResponse: (response: ApiResponse<SendClientEmailResponse>) => response.data,
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: "Client", id: clientId },
+        "ActivityLog",
+      ],
+    }),
   }),
 });
 
@@ -157,10 +196,12 @@ export const {
   useGetClientsQuery,
   useGetClientByIdQuery,
   useGetMyClientProfileQuery,
+  useGetClientProfileActingAsQuery,
   useGetMySupportPinQuery,
   useRegenerateMySupportPinMutation,
   useVerifySupportPinMutation,
   useRegenerateSupportPinForClientMutation,
   useCompleteProfileMutation,
   useUpdateClientMutation,
+  useSendClientEmailMutation,
 } = clientApi;

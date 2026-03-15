@@ -14,15 +14,42 @@ export type RunModuleCreateItem = {
 export interface GetOrdersParams {
     clientId?: string;
     userId?: string;
+    search?: string;
+    status?: string;
+    paymentStatus?: string;
+    page?: number;
+    limit?: number;
+}
+
+export interface OrdersListResponse<T = any> {
+    results: T[];
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalResults: number;
+}
+
+export interface OrderConfigResponse {
+    serverLocations: Array<{ id: string; name: string }>;
+    paymentMethods: Array<{ id: string; name: string }>;
+    supportedCurrencies: string[];
 }
 
 export const orderApi = api.injectEndpoints({
     endpoints: (builder) => ({
-        getOrders: builder.query<any, GetOrdersParams | void>({
+        getOrderConfig: builder.query<OrderConfigResponse, void>({
+            query: () => "/orders/config",
+            transformResponse: (response: { data?: OrderConfigResponse }) =>
+                response?.data ?? (response as unknown as OrderConfigResponse),
+            providesTags: ["Order"],
+        }),
+        getOrders: builder.query<OrdersListResponse, GetOrdersParams | void>({
             query: (params) => ({
                 url: "/orders",
                 params: params ?? {},
             }),
+            transformResponse: (response: { data?: OrdersListResponse }) =>
+                response?.data ?? (response as unknown as OrdersListResponse),
             providesTags: ["Order"],
         }),
         getOrderById: builder.query<any, string>({
@@ -55,4 +82,4 @@ export const orderApi = api.injectEndpoints({
     overrideExisting: false,
 });
 
-export const { useGetOrdersQuery, useGetOrderByIdQuery, useUpdateOrderStatusMutation, useRunModuleCreateMutation } = orderApi;
+export const { useGetOrdersQuery, useGetOrderByIdQuery, useGetOrderConfigQuery, useUpdateOrderStatusMutation, useRunModuleCreateMutation } = orderApi;

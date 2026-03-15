@@ -114,8 +114,6 @@ export function useCheckout(
     }
 
     // Process checkout
-    console.log("Checkout data:", formData);
-    console.log("Order summary:", orderSummary);
     // TODO: Implement actual checkout API call
   };
 

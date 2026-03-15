@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import type { Product } from "@/types/admin";
 import { useRouter } from "next/navigation";
 import { useCreateProductMutation } from "@/store/api/productApi";
+import { devLog } from "@/lib/devLog";
 import { toast } from "sonner";
 
 export default function AddProductPage() {
@@ -17,7 +18,7 @@ export default function AddProductPage() {
             toast.success("Product created successfully!");
             router.push("/admin/products");
         } catch (error: any) {
-            console.error("Failed to create product:", error);
+            devLog("Failed to create product:", error);
             const errorMessage = error?.data?.message || error?.message || "Failed to create product. Please try again.";
             toast.error(errorMessage);
         }

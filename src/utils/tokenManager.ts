@@ -3,6 +3,8 @@
  * Handles secure token storage and retrieval
  */
 
+import { devLog } from '@/lib/devLog';
+
 const TOKEN_KEYS = {
     ACCESS_TOKEN: 'auth_token',
     REFRESH_TOKEN: 'refresh_token',
@@ -126,7 +128,7 @@ export function parseJWT(token: string): any {
         );
         return JSON.parse(jsonPayload);
     } catch (error) {
-        console.error('Failed to parse JWT:', error);
+        devLog('Failed to parse JWT:', error);
         return null;
     }
 }

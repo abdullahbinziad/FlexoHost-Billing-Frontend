@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, Search, User, Menu } from "lucide-react";
+import { Search, User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { DarkModeToggle } from "@/components/shared/DarkModeToggle";
+import { NotificationsDropdown } from "@/components/shared/NotificationsDropdown";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/hooks/useSidebar";
 
@@ -72,14 +73,7 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                     <DarkModeToggle />
 
                     {/* Notifications */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="relative"
-                    >
-                        <Bell className="w-5 h-5" />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                    </Button>
+                    <NotificationsDropdown />
 
                     {/* User Menu */}
                     <div className="flex items-center gap-2 lg:gap-3">

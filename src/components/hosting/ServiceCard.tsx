@@ -33,6 +33,12 @@ export function ServiceCard({ service, onManage }: ServiceCardProps) {
             {service.name}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">{service.identifier}</p>
+          {(service.serverLocation || service.productType) && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {service.productType === "vps" ? "VPS" : "Hosting"}
+              {service.serverLocation ? ` · ${service.serverLocation}` : ""}
+            </p>
+          )}
         </div>
 
         {/* Pricing Column */}

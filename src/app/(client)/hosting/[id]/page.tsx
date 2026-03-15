@@ -2,20 +2,28 @@
 
 import { useParams } from "next/navigation";
 import { HostingManagePage } from "@/components/hosting-manage/HostingManagePage";
-import { useGetMyClientProfileQuery } from "@/store/api/clientApi";
+import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetClientServiceByIdQuery } from "@/store/api/servicesApi";
 
 export default function HostingManage() {
   const params = useParams();
   const id = params?.id as string;
 
-  const { data: client } = useGetMyClientProfileQuery();
-  const clientId = client?._id ?? "";
+  const { activeClientId, isProfileLoading } = useActiveClient();
+  const clientId = activeClientId ?? "";
 
   const { data: service, isLoading, isError } = useGetClientServiceByIdQuery(
     { clientId, serviceId: id },
     { skip: !clientId || !id }
   );
+
+  if (isProfileLoading && !clientId) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
 
   if (!clientId || !id) {
     return (
@@ -55,5 +63,5 @@ export default function HostingManage() {
     );
   }
 
-  return <HostingManagePage service={service} />;
+  return <HostingManagePage clientId={clientId} service={service} />;
 }

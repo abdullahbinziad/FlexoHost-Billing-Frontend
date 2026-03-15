@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { devLog } from "@/lib/devLog";
 
 /**
- * Middleware for route protection
+ * Proxy for route protection
  * Protects client routes (root and nested routes) from unauthorized access
  * Production-ready with JWT verification
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes that don't require authentication
@@ -17,6 +18,7 @@ export async function middleware(request: NextRequest) {
     "/forgot-password",
     "/reset-password",
     "/checkout",
+    "/status",
   ];
 
   // Check if the current path is a public route
@@ -31,7 +33,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // For all protected routes, require authentication via JWT in cookies
-  const token = request.cookies.get("auth_token")?.value;
+  // Backend sets "jwt" cookie; frontend sets "auth_token" when token is in response body
+  const token =
+    request.cookies.get("auth_token")?.value ||
+    request.cookies.get("jwt")?.value;
 
   // If no token is found, redirect to login
   if (!token) {
@@ -72,7 +77,6 @@ export async function middleware(request: NextRequest) {
     // Hard rule: admin/staff users should not use the root client area as their dashboard.
     // If an admin user hits the root ("/") or other non-admin, non-public routes,
     // force them into the /admin area.
-    const isRoot = pathname === "/" || pathname === "";
     const isAuthPage =
       pathname.startsWith("/auth") ||
       pathname.startsWith("/login") ||
@@ -90,13 +94,21 @@ export async function middleware(request: NextRequest) {
     response.headers.set('x-user-role', (payload.role as string) || '');
     return response;
   } catch (error) {
-    console.error("JWT verification failed:", error);
+    const isExpired = (error as { code?: string })?.code === "ERR_JWT_EXPIRED";
+    if (!isExpired) {
+      devLog("JWT verification failed:", error);
+    }
 
-    // Token is invalid, redirect to login
+    // Token is invalid or expired, redirect to login and clear the bad cookie
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    loginUrl.searchParams.set("error", "invalid_token");
-    return NextResponse.redirect(loginUrl);
+    loginUrl.searchParams.set("error", isExpired ? "session_expired" : "invalid_token");
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.set("auth_token", "", { maxAge: 0, path: "/" });
+    response.cookies.set("jwt", "", { maxAge: 0, path: "/" });
+    response.cookies.set("refresh_token", "", { maxAge: 0, path: "/" });
+    response.cookies.set("refreshToken", "", { maxAge: 0, path: "/" });
+    return response;
   }
 }
 

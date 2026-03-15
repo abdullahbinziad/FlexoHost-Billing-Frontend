@@ -34,6 +34,8 @@ import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 const STATUS_OPTIONS = [
     { value: "", label: "All" },
@@ -113,9 +115,15 @@ export default function AdminInvoicesPage() {
     }
 
     if (error) {
+        const err = error as { status?: number; data?: { message?: string } };
+        const message =
+            err?.data?.message ||
+            (err?.status === 401 ? "Please log in to continue." : null) ||
+            (err?.status === 403 ? "You do not have permission to view invoices." : null) ||
+            "Failed to load invoices. Please try again.";
         return (
             <div className="p-6 text-center text-destructive">
-                Failed to load invoices. Please try again.
+                {message}
             </div>
         );
     }
@@ -175,46 +183,34 @@ export default function AdminInvoicesPage() {
                 </div>
             </Card>
 
-            {/* Results Info Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-white dark:bg-gray-900 p-2 rounded-md border border-dashed border-gray-200 dark:border-gray-800">
-                <span>
-                    {totalResults} Record{totalResults !== 1 ? "s" : ""} Found
-                    {totalResults > 0 && `, Showing ${(page - 1) * limit + 1} to ${Math.min(page * limit, totalResults)}`}
-                </span>
-                <div className="flex items-center gap-4 mt-2 sm:mt-0">
-                    {totalPages > 1 && (
-                        <div className="flex items-center gap-2">
-                            <span>Page:</span>
-                            <Select value={String(page)} onValueChange={(v) => setPage(Number(v))}>
-                                <SelectTrigger className="w-16 h-8 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                                        <SelectItem key={p} value={String(p)}>{p}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <span>Per page:</span>
-                        <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
-                            <SelectTrigger className="w-14 h-8 text-xs">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="25">25</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                                <SelectItem value="100">100</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
+            {totalResults > 0 && (
+                <DataTablePagination
+                    page={page}
+                    totalPages={totalPages}
+                    totalItems={totalResults}
+                    pageSize={limit}
+                    currentCount={invoices.length}
+                    itemLabel="records"
+                    onPageChange={setPage}
+                    onPageSizeChange={(value) => {
+                        setLimit(value);
+                        setPage(1);
+                    }}
+                    pageSizeOptions={[10, 25, 50, 100]}
+                />
+            )}
 
-            {/* Invoices Table */}
+            {totalResults === 0 ? (
+                <EmptyState
+                    icon={FileText}
+                    title="No invoices found"
+                    description={
+                        statusFilter || invoiceNumber
+                            ? "Try adjusting your filters or search criteria."
+                            : "Invoices will appear here once orders are placed and invoices are generated."
+                    }
+                />
+            ) : (
             <div className="rounded-md border bg-white dark:bg-gray-900">
                 <Table>
                     <TableHeader className="bg-blue-900">
@@ -229,15 +225,7 @@ export default function AdminInvoicesPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {invoices.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                                    <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                    No invoices found.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            invoices.map((invoice) => (
+                        {invoices.map((invoice) => (
                                 <TableRow key={invoice._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <TableCell className="font-medium text-blue-600">
                                         <Link href={`/admin/billing/invoices/${invoice._id}`} className="hover:underline">
@@ -301,11 +289,11 @@ export default function AdminInvoicesPage() {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
+                            ))}
                     </TableBody>
                 </Table>
             </div>
+            )}
         </div>
     );
 }

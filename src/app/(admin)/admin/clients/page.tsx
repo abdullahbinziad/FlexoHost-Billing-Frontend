@@ -26,6 +26,7 @@ import {
 import { useGetClientsQuery } from "@/store/api/clientApi";
 import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export default function ViewSearchClients() {
     const [page, setPage] = useState(1);
@@ -149,44 +150,20 @@ export default function ViewSearchClients() {
                 </div>
             </Card>
 
-            {/* Results Info Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-white dark:bg-gray-900 p-2 rounded-md border border-dashed border-gray-200 dark:border-gray-800">
-                <span>
-                    {total} Record{total !== 1 ? "s" : ""} Found
-                    {total > 0 && `, Showing ${(page - 1) * limit + 1} to ${Math.min(page * limit, total)}`}
-                </span>
-                <div className="flex items-center gap-4 mt-2 sm:mt-0">
-                    {pages > 1 && (
-                        <div className="flex items-center gap-2">
-                            <span>Page:</span>
-                            <Select value={String(page)} onValueChange={(v) => setPage(Number(v))}>
-                                <SelectTrigger className="w-16 h-8 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
-                                        <SelectItem key={p} value={String(p)}>{p}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <span>Per page:</span>
-                        <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
-                            <SelectTrigger className="w-14 h-8 text-xs">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="25">25</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                                <SelectItem value="100">100</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
+            <DataTablePagination
+                page={page}
+                totalPages={pages}
+                totalItems={total}
+                pageSize={limit}
+                currentCount={clients.length}
+                itemLabel="records"
+                onPageChange={setPage}
+                onPageSizeChange={(value) => {
+                    setLimit(value);
+                    setPage(1);
+                }}
+                pageSizeOptions={[10, 25, 50, 100]}
+            />
 
             {/* Clients Table */}
             <div className="rounded-md border bg-white dark:bg-gray-900">

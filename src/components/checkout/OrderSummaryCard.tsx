@@ -9,14 +9,16 @@ import type { OrderSummary, BillingCycle, ServerLocation } from "@/types/checkou
 
 interface OrderSummaryCardProps {
   summary: OrderSummary;
-  billingCycle: BillingCycle;
-  serverLocation: ServerLocation;
+  billingCycle?: BillingCycle;
+  serverLocation?: ServerLocation;
   agreeToTerms: boolean;
   onAgreeToTermsChange: (agree: boolean) => void;
   onCheckout: () => void;
   onPromoCodeApply?: (code: string) => Promise<boolean>;
   onPromoCodeRemove?: () => void;
   appliedPromoCode?: string;
+  appliedDiscountLabel?: string;
+  discountLineLabel?: string;
   hasDomain?: boolean;
 }
 
@@ -30,6 +32,8 @@ export function OrderSummaryCard({
   onPromoCodeApply,
   onPromoCodeRemove,
   appliedPromoCode,
+  appliedDiscountLabel = "Promo Code Applied",
+  discountLineLabel = "Discount",
   hasDomain = false,
 }: OrderSummaryCardProps) {
   const formatCurrency = useFormatCurrency();
@@ -88,7 +92,7 @@ export function OrderSummaryCard({
                     {item.billingCycle}
                   </p>
                 )}
-                {item.type === "hosting" && (
+                {item.type === "hosting" && serverLocation && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Server Location: {serverLocation.country}
                   </p>
@@ -110,7 +114,7 @@ export function OrderSummaryCard({
                   <Check className="w-4 h-4 text-primary" />
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      Promo Code Applied
+                      {appliedDiscountLabel}
                     </p>
                     <p className="text-xs text-primary font-semibold">{appliedPromoCode}</p>
                   </div>
@@ -201,7 +205,7 @@ export function OrderSummaryCard({
           </div>
           {summary.discount && summary.discount > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Discount</span>
+              <span className="text-gray-600 dark:text-gray-400">{discountLineLabel}</span>
               <span className="text-primary font-medium">
                 -{formatCurrency(summary.discount)}
               </span>

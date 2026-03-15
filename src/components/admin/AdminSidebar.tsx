@@ -1,13 +1,17 @@
 "use client";
 
+import { useMemo } from "react";
+import { useSelector } from "react-redux";
 import { cn } from "@/lib/utils";
 import { adminNavItems } from "@/config/adminNavigation";
+import { filterAdminNavByRole } from "@/types/navigation";
 import { useMenuNavigation } from "@/hooks/useMenuNavigation";
 import { useSidebar } from "@/hooks/useSidebar";
 import { SidebarHeader } from "@/components/client/sidebar/SidebarHeader";
 import { SidebarNavItem } from "@/components/client/sidebar/SidebarNavItem";
 import { SidebarSubmenu } from "@/components/client/sidebar/SidebarSubmenu";
 import { SidebarFooter } from "@/components/client/sidebar/SidebarFooter";
+import type { RootState } from "@/store";
 
 interface AdminSidebarProps {
     isOpen: boolean;
@@ -15,6 +19,9 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+    const user = useSelector((s: RootState) => s.auth?.user ?? null);
+    const navItems = useMemo(() => filterAdminNavByRole(adminNavItems, user), [user]);
+
     const { isCollapsed, toggleCollapse, isMounted } = useSidebar();
     const {
         isSubmenuExpanded,
@@ -22,7 +29,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         hasActiveSubmenu,
         isSubmenuItemActive,
         handleMenuClick,
-    } = useMenuNavigation(adminNavItems);
+    } = useMenuNavigation(navItems);
 
     const handleLinkClick = () => {
         if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -62,7 +69,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 {/* Navigation Items */}
                 <nav className="flex-1 overflow-y-auto py-4 px-3">
                     <ul className="space-y-1">
-                        {adminNavItems.map((item) => {
+                        {navItems.map((item) => {
                             const isActive = isItemActive(item);
                             const hasActiveSub = hasActiveSubmenu(item);
                             const isExpanded = isSubmenuExpanded(item.href);

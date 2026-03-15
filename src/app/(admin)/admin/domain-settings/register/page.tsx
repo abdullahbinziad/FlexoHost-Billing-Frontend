@@ -1,8 +1,46 @@
 "use client";
 
 import { RegistrarConfigCard } from "@/components/admin/domain-settings/RegistrarConfigCard";
+import {
+    useGetAdminRegistrarConfigsQuery,
+    useUpdateAdminRegistrarConfigMutation,
+} from "@/store/api/domainApi";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DomainRegisterConfig() {
+    const { data: registrars = [], isLoading, isError } = useGetAdminRegistrarConfigsQuery();
+    const [updateRegistrarConfig, { isLoading: isSaving }] = useUpdateAdminRegistrarConfigMutation();
+
+    const handleSave = async (payload: {
+        registrarKey: string;
+        isActive: boolean;
+        settings: Record<string, string | boolean | null>;
+    }) => {
+        try {
+            const result = await updateRegistrarConfig(payload).unwrap();
+            toast.success(`${result.name} configuration updated`);
+        } catch (error: any) {
+            toast.error(error?.data?.message || "Failed to update registrar configuration");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-[320px] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="rounded-lg border border-dashed p-6 text-sm text-destructive">
+                Failed to load registrar configuration.
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -12,82 +50,20 @@ export default function DomainRegisterConfig() {
             </div>
 
             <div className="space-y-4">
-                <RegistrarConfigCard
-                    name="Namely Partner"
-                    logoText="namely"
-                    description="Namely Partner API Integration for domain registration and management"
-                    isActive={true}
-                    onActivate={() => { }}
-                    onDeactivate={() => { }}
-                    configFields={[
-                        {
-                            key: "apiKey",
-                            label: "ApiKey",
-                            type: "text",
-                            value: "pk_A2brTCFXDPWaK4ZSnjXNrTfNyMMMc8hNrPFMLDjq", // Use mock value from image
-                            helperText: "Enter your Namely Partner API Key. Connection will be validated on first API call."
-                        },
-                        {
-                            key: "testMode",
-                            label: "TestMode",
-                            type: "checkbox",
-                            value: false,
-                            helperText: "Enable test mode (use test environment)"
-                        },
-                        {
-                            key: "docUrl",
-                            label: "DocumentListUrl",
-                            type: "text",
-                            value: "",
-                            helperText: "URL for Required Documents list (will be shown as a link in domain registration form)"
-                        }
-                    ]}
-                />
-
-                <RegistrarConfigCard
-                    name="Dynadot"
-                    logoText="Dynadot"
-                    description="Don't have a Dynadot Account yet? Get one here: www.dynadot.com"
-                    isActive={true}
-                    onActivate={() => { }}
-                    onDeactivate={() => { }}
-                    configFields={[
-                        {
-                            key: "apiKey",
-                            label: "API Key",
-                            type: "password",
-                            value: "********************************",
-                            helperText: "Enter your Dynadot API Key here"
-                        },
-                        {
-                            key: "username",
-                            label: "Username",
-                            type: "text",
-                            value: "flexsoftr",
-                            helperText: "Enter your Dynadot Reseller Account Username here"
-                        },
-                        {
-                            key: "coupon",
-                            label: "Coupon",
-                            type: "textarea",
-                            value: "OCTCOM25\nFALLMOVE25",
-                            helperText: "Enter your Dynadot Coupons, one coupon per line (Split by new line). Only the first valid coupon will be used for the order. If no valid coupon found for the order, the order will be processed without any coupon."
-                        }
-                    ]}
-                />
-
-                <RegistrarConfigCard
-                    name="GoDaddy"
-                    logoText="GoDaddy"
-                    description="GoDaddy Domain Registrar Integration"
-                    isActive={false}
-                    onActivate={() => { }}
-                    onDeactivate={() => { }}
-                    configFields={[
-                        { key: "key", label: "API Key", type: "text", value: "" },
-                        { key: "secret", label: "API Secret", type: "password", value: "" }
-                    ]}
-                />
+                {registrars.map((registrar) => (
+                    <RegistrarConfigCard
+                        key={registrar.key}
+                        registrarKey={registrar.key}
+                        name={registrar.name}
+                        logoText={registrar.logoText}
+                        description={registrar.description}
+                        implemented={registrar.implemented}
+                        isActive={registrar.isActive}
+                        isSaving={isSaving}
+                        onSave={handleSave}
+                        configFields={registrar.configFields}
+                    />
+                ))}
             </div>
         </div>
     );

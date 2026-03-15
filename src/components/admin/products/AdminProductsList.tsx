@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { devLog } from "@/lib/devLog";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ import {
     useDeleteProductMutation,
     useToggleProductVisibilityMutation,
 } from "@/store/api/productApi";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 
 interface AdminProductsListProps {
@@ -57,6 +59,8 @@ export function AdminProductsList({
     addProductHref,
     editProductHref,
 }: AdminProductsListProps) {
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedType, setSelectedType] = useState<string>("all");
     const [selectedGroup, setSelectedGroup] = useState<string>("all");
@@ -92,6 +96,8 @@ export function AdminProductsList({
             return matchesSearch && matchesType && matchesGroup;
         }
     );
+    const paginatedProducts = filteredProducts.slice((page - 1) * pageSize, page * pageSize);
+    const totalPages = Math.ceil(filteredProducts.length / pageSize) || 1;
 
     /**
      * Handle product visibility toggle
@@ -101,7 +107,7 @@ export function AdminProductsList({
             await toggleVisibility({ id, isHidden: !currentHiddenState }).unwrap();
             toast.success(currentHiddenState ? "Product is now visible" : "Product is now hidden");
         } catch (error: any) {
-            console.error("Failed to toggle visibility:", error);
+            devLog("Failed to toggle visibility:", error);
             toast.error(error?.data?.message || "Failed to update product visibility");
         }
     };
@@ -117,7 +123,7 @@ export function AdminProductsList({
             toast.success("Product deleted successfully!");
             setProductToDelete(null);
         } catch (error: any) {
-            console.error("Failed to delete product:", error);
+            devLog("Failed to delete product:", error);
             toast.error(error?.data?.message || "Failed to delete product");
         }
     };
@@ -171,13 +177,19 @@ export function AdminProductsList({
                     <Input
                         placeholder="Search products..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            setPage(1);
+                        }}
                         className="pl-8"
                     />
                 </div>
 
                 {/* Product Type Filter */}
-                <Select value={selectedType} onValueChange={setSelectedType}>
+                <Select value={selectedType} onValueChange={(value) => {
+                    setSelectedType(value);
+                    setPage(1);
+                }}>
                     <SelectTrigger className="w-[200px]">
                         <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder="Filter by type" />
@@ -192,7 +204,10 @@ export function AdminProductsList({
                 </Select>
 
                 {/* Category Filter */}
-                <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                <Select value={selectedGroup} onValueChange={(value) => {
+                    setSelectedGroup(value);
+                    setPage(1);
+                }}>
                     <SelectTrigger className="w-[200px]">
                         <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder="Filter by category" />
@@ -236,7 +251,7 @@ export function AdminProductsList({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredProducts.map((product) => (
+                            paginatedProducts.map((product) => (
                                 <TableRow key={product.id}>
                                     <TableCell className="font-medium">
                                         <div>{product.name}</div>
@@ -287,6 +302,19 @@ export function AdminProductsList({
                     </TableBody>
                 </Table>
             </div>
+            <DataTablePagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={filteredProducts.length}
+                pageSize={pageSize}
+                currentCount={paginatedProducts.length}
+                itemLabel="products"
+                onPageChange={setPage}
+                onPageSizeChange={(value) => {
+                    setPageSize(value);
+                    setPage(1);
+                }}
+            />
 
 
             {/* Delete Confirmation Dialog */}

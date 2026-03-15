@@ -24,7 +24,6 @@ export function VPSManagePage({ service }: VPSManagePageProps) {
     ];
 
     const handlePowerAction = (action: string) => {
-        console.log(`Sending ${action} signal to VPS ${service.id}`);
     };
 
     return (

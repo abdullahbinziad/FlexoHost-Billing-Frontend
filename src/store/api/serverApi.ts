@@ -68,6 +68,22 @@ export const serverApi = api.injectEndpoints({
             }),
         }),
 
+        syncServerAccounts: builder.mutation<
+            { count: number; maxAccounts: number; syncedAt: string },
+            string
+        >({
+            query: (serverId) => ({
+                url: `/servers/${serverId}/sync-accounts`,
+                method: "POST",
+            }),
+            transformResponse: (response: ApiResponse<{ count: number; maxAccounts: number; syncedAt: string }>) =>
+                response.data ?? { count: 0, maxAccounts: 0, syncedAt: "" },
+            invalidatesTags: (_result, _error, serverId) => [
+                { type: "Server", id: serverId },
+                { type: "Server", id: "LIST" },
+            ],
+        }),
+
         // Server Groups
         getServerGroups: builder.query<ServerGroup[], void>({
             query: () => "/server-groups",
@@ -113,6 +129,7 @@ export const {
     useGetServerQuery,
     useGetServerPackagesQuery,
     useTestServerConnectionMutation,
+    useSyncServerAccountsMutation,
     useAddServerMutation,
     useUpdateServerMutation,
     useDeleteServerMutation,

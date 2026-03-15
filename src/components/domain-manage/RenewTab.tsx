@@ -9,9 +9,10 @@ import type { DomainDetails } from "@/types/domain-manage";
 interface RenewTabProps {
   domain: DomainDetails;
   onRenew?: () => void;
+  isRenewing?: boolean;
 }
 
-export function RenewTab({ domain, onRenew }: RenewTabProps) {
+export function RenewTab({ domain, onRenew, isRenewing }: RenewTabProps) {
   const formatCurrency = useFormatCurrency();
   return (
     <div className="space-y-4">
@@ -47,9 +48,10 @@ export function RenewTab({ domain, onRenew }: RenewTabProps) {
             onClick={onRenew}
             className="w-full"
             size="lg"
+            disabled={isRenewing}
           >
             <RefreshCw className="w-5 h-5" />
-            Renew Domain Now
+            {isRenewing ? "Renewing..." : "Renew Domain Now"}
           </Button>
         </div>
       </div>

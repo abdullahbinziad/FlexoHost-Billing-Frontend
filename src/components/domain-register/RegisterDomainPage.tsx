@@ -1,38 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PromotionalBanner } from "@/components/shared/PromotionalBanner";
-import { DomainSearchModeSelector } from "./DomainSearchModeSelector";
-import { DomainSearchBar } from "./DomainSearchBar";
+import { useCheckoutRedux } from "@/hooks/useCheckoutRedux";
+import { DomainConfiguration } from "@/components/checkout/DomainConfiguration";
 import { TldPricingGrid } from "./TldPricingGrid";
 import { Badge } from "@/components/ui/badge";
-import { Globe, Search, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { DomainAction } from "@/types/checkout";
+import { ArrowRight, Globe, Search, Sparkles } from "lucide-react";
 
-type SearchMode = "find" | "ai-generate";
+interface RegisterDomainPageProps {
+  initialAction?: Extract<DomainAction, "register" | "transfer">;
+}
 
-export function RegisterDomainPage() {
-  // Local state for search mode (UI-only)
-  const [searchMode, setSearchMode] = useState<SearchMode>("find");
-  // Local state for search results (will be replaced with API later)
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+export function RegisterDomainPage({
+  initialAction = "register",
+}: RegisterDomainPageProps) {
+  const router = useRouter();
+  const {
+    formData,
+    setCheckoutMode,
+    setProductId,
+    setDomainAction,
+    setSelectedDomain,
+  } = useCheckoutRedux([], {
+    productName: "Domain Registration",
+    checkoutMode: "domain",
+  });
 
-  const handleSearch = (domain: string) => {
-    // TODO: Replace with actual API call
-    console.log("Searching for domain:", domain);
-    // Simulate search results
-    setSearchResults([
-      {
-        domain: domain,
-        available: true,
-        tld: ".com",
-        price: 0.01,
-      },
-    ]);
-  };
+  useEffect(() => {
+    setCheckoutMode("domain");
+    setProductId(null);
+    if (formData.domainAction !== initialAction) {
+      setDomainAction(initialAction);
+      setSelectedDomain(undefined);
+    }
+  }, [
+    formData.domainAction,
+    initialAction,
+    setCheckoutMode,
+    setDomainAction,
+    setProductId,
+    setSelectedDomain,
+  ]);
 
-  const handleTldSelect = (tld: string) => {
-    // TODO: Handle TLD selection
-    console.log("Selected TLD:", tld);
+  const selectedDomainName = formData.selectedDomain
+    ? `${formData.selectedDomain.domain}${formData.selectedDomain.tld}`
+    : null;
+  const isTransferMode = initialAction === "transfer";
+  const badgeLabel = isTransferMode ? "Domain Transfer" : "Domain Registration";
+  const title = isTransferMode
+    ? "Transfer your domain to FlexoHost"
+    : "Find your perfect domain name";
+  const description = isTransferMode
+    ? "Move your domain to us with a live availability check, transfer pricing, and invoice-ready checkout."
+    : "Secure your brand identity with our powerful domain search. Choose from over 1000+ TLDs and get started instantly.";
+  const promoTitle = isTransferMode
+    ? "Transfer special: move your domain and keep everything managed in one place"
+    : "New Year deal: Get domain + free business email";
+  const promoDescription = isTransferMode
+    ? "Start your transfer with the EPP code from your current registrar, then complete checkout and invoicing in one flow."
+    : "Choose a domain with .ai, .io, .net, or .org for 2 years or longer and get 1 year of free email.";
+
+  const handleActionChange = (action: DomainAction) => {
+    if (action === "transfer" && initialAction !== "transfer") {
+      router.push("/domains/transfers");
+      return;
+    }
+    if (action === "register" && initialAction !== "register") {
+      router.push("/domains/register");
+      return;
+    }
+    setDomainAction(action);
   };
 
   return (
@@ -40,92 +82,80 @@ export function RegisterDomainPage() {
       {/* Hero Section */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 pb-16 pt-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="max-w-4xl mx-auto text-center space-y-4">
+          <div className="max-w-5xl mx-auto text-center space-y-5">
             <div className="flex justify-center">
               <Badge variant="secondary" className="mb-4">
                 <Globe className="w-3 h-3 mr-1" />
-                Domain Registration
+                {badgeLabel}
               </Badge>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-              Find your perfect domain name
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+              {title}
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Secure your brand identity with our powerful domain search. Choose
-              from over 1000+ TLDs and get started instantly.
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto">
+              {description}
             </p>
           </div>
 
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-1 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-              <div className="p-4 md:p-6 space-y-6">
-                <DomainSearchModeSelector
-                  mode={searchMode}
-                  onModeChange={setSearchMode}
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="p-5 md:p-8 space-y-7">
+                <DomainConfiguration
+                  selectedAction={formData.domainAction || "register"}
+                  selectedDomain={formData.selectedDomain}
+                  onActionChange={handleActionChange}
+                  onDomainSelect={setSelectedDomain}
+                  allowedActions={["register", "transfer"]}
                 />
-                <div className="relative">
-                  <DomainSearchBar onSearch={handleSearch} />
-                </div>
+
+                {selectedDomainName ? (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 dark:border-primary/30 dark:bg-primary/10">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-primary">
+                          Ready for checkout
+                        </p>
+                        <p className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">
+                          {selectedDomainName}
+                        </p>
+                      </div>
+                      <Button asChild size="lg" className="min-w-[220px]">
+                        <Link href="/checkout?mode=domain">
+                          Continue to Checkout
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap justify-center gap-4 text-sm text-gray-500">
+            <div className="mt-5 flex flex-wrap justify-center gap-5 text-sm md:text-base text-gray-500">
               <span className="flex items-center"><Search className="w-3 h-3 mr-1" /> Instant Availability Check</span>
-              <span className="flex items-center"><Sparkles className="w-3 h-3 mr-1" /> AI Suggestions</span>
+              <span className="flex items-center"><Sparkles className="w-3 h-3 mr-1" /> Live TLD Pricing</span>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
-        {/* Search Results Section */}
-        {searchResults.length > 0 && (
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Search Results
-              </h2>
-              <Badge variant="outline">{searchResults.length} found</Badge>
-            </div>
-            <div className="space-y-4">
-              {/* Placeholder for results list */}
-              {searchResults.map((result, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
-                      <Globe className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">{result.domain}</div>
-                      <div className="text-sm text-green-600 dark:text-green-400 font-medium">Available</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">${result.price}</div>
-                    <div className="text-xs text-gray-500">/year</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Pricing Grid */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
               Popular Extensions
             </h3>
-            <a href="#" className="text-sm text-brand-primary-600 hover:text-brand-primary-700 font-medium">View full price list &rarr;</a>
+            <Badge variant="outline">Dynamic</Badge>
           </div>
           <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
-            <TldPricingGrid onTldSelect={handleTldSelect} />
+            <TldPricingGrid />
           </div>
         </div>
 
         {/* Promotional Banner */}
         <PromotionalBanner
-          title="New Year deal: Get domain + free business email"
-          description="Choose a domain with .ai, .io, .net, or .org for 2 years or longer and get 1 year of free email."
+          title={promoTitle}
+          description={promoDescription}
           variant="default"
         />
       </div>

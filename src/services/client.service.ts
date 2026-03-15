@@ -4,6 +4,7 @@
  */
 
 import { apiClient, ApiResponse } from '@/lib/apiClient';
+import { devLog } from '@/lib/devLog';
 import { API_ENDPOINTS } from '@/config/api';
 import type {
     ClientRegistrationData,
@@ -69,7 +70,7 @@ class ClientService {
         const status = error?.status || 500;
 
         // Log error for debugging
-        console.error('Client API Error:', { message, status, error });
+        devLog('Client API Error:', { message, status, error });
 
         return new Error(message);
     }

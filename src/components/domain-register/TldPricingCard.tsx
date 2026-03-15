@@ -2,21 +2,19 @@
 
 import { cn } from "@/lib/utils";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
-import type { TldPricing } from "@/data/mockTlds";
+
+interface TldPricingCardData {
+  tld: string;
+  price: number;
+}
 
 interface TldPricingCardProps {
-  tld: TldPricing;
+  tld: TldPricingCardData;
   onSelect?: (tld: string) => void;
 }
 
 export function TldPricingCard({ tld, onSelect }: TldPricingCardProps) {
   const formatCurrency = useFormatCurrency();
-  const hasDiscount = tld.originalPrice > tld.discountedPrice;
-  const discountPercentage = hasDiscount
-    ? Math.round(
-      ((tld.originalPrice - tld.discountedPrice) / tld.originalPrice) * 100
-    )
-    : 0;
 
   return (
     <div
@@ -29,19 +27,10 @@ export function TldPricingCard({ tld, onSelect }: TldPricingCardProps) {
       <div className="text-center">
         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3">{tld.tld}</h3>
         <div className="space-y-1.5">
-          {hasDiscount && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 line-through">
-              {formatCurrency(tld.originalPrice)}
-            </p>
-          )}
           <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            {formatCurrency(tld.discountedPrice)}
+            {formatCurrency(tld.price)}
           </p>
-          {hasDiscount && discountPercentage > 0 && (
-            <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
-              Save {discountPercentage}%
-            </p>
-          )}
+          <p className="text-xs text-gray-500 dark:text-gray-400">from / year</p>
         </div>
       </div>
     </div>

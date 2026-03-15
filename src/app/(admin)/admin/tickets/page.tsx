@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
+import { MessageSquare, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -19,6 +19,7 @@ import { formatDate } from "@/utils/format";
 import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/ticket/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/ticket/TicketPriorityBadge";
 import { cn } from "@/lib/utils";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 const ADMIN_STATUS_LABELS: Record<string, string> = {
   ...TICKET_STATUS_LABELS,
@@ -185,36 +186,15 @@ export default function AdminTicketsPage() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {totalResults} ticket{totalResults !== 1 ? "s" : ""} total
-          </p>
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Prev
-            </Button>
-            <span className="min-w-[100px] text-center text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <DataTablePagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={totalResults}
+        pageSize={limit}
+        currentCount={tickets.length}
+        itemLabel="tickets"
+        onPageChange={setPage}
+      />
     </div>
   );
 }

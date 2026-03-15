@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type {
   CheckoutFormData,
+  CheckoutMode,
   BillingCycle,
   DomainAction,
   ServerLocation,
@@ -13,6 +14,7 @@ import type {
 } from "@/types/checkout";
 
 interface CheckoutState {
+  mode: CheckoutMode;
   formData: Partial<CheckoutFormData>;
   orderSummary: OrderSummary | null;
   isLoading: boolean;
@@ -24,6 +26,7 @@ interface CheckoutState {
 }
 
 const initialState: CheckoutState = {
+  mode: "service",
   formData: {
     billingCycle: "triennially",
     domainAction: "register",
@@ -44,6 +47,9 @@ const checkoutSlice = createSlice({
   name: "checkout",
   initialState,
   reducers: {
+    setCheckoutMode: (state, action: PayloadAction<CheckoutMode>) => {
+      state.mode = action.payload;
+    },
     // Form Data Updates
     setBillingCycle: (state, action: PayloadAction<BillingCycle>) => {
       state.formData.billingCycle = action.payload;
@@ -141,6 +147,7 @@ const checkoutSlice = createSlice({
     },
     // Reset Checkout
     resetCheckout: (state) => {
+      state.mode = initialState.mode;
       state.formData = initialState.formData;
       state.orderSummary = null;
       state.error = null;
@@ -152,6 +159,7 @@ const checkoutSlice = createSlice({
 });
 
 export const {
+  setCheckoutMode,
   setBillingCycle,
   setDomainAction,
   setSelectedDomain,

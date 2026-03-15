@@ -10,11 +10,14 @@ import { ServiceCard } from "./ServiceCard";
 interface ActiveServicesListProps {
   services: HostingService[];
   onManage: (serviceId: string) => void;
+  /** Optional section title (e.g. "Hosting", "VPS"). Default: "Your Active Hosting Services". */
+  title?: string;
 }
 
 export function ActiveServicesList({
   services,
   onManage,
+  title = "Your Active Hosting Services",
 }: ActiveServicesListProps) {
   // Local state for filter dropdown (UI-only)
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -41,7 +44,7 @@ export function ActiveServicesList({
       <div className="p-6 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between gap-4 mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Your Active Hosting Services  
+            {title}
           </h2>
           <div className="flex items-center gap-2">
             {/* Search Bar */}

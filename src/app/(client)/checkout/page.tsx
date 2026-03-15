@@ -4,10 +4,12 @@ import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { CheckoutPage } from "@/components/checkout/CheckoutPage";
+import { DomainCheckoutPage } from "@/components/checkout/DomainCheckoutPage";
 import { useGetStoreProductQuery } from "@/store/api/storeApi";
 import { setCurrency } from "@/store/slices/currencySlice";
 import { useAuth } from "@/hooks/useAuth";
 import type { ServerLocation, BillingContact, PaymentMethod, Addon } from "@/types/checkout";
+import { devLog } from "@/lib/devLog";
 
 // Mock server locations data (as requested)
 const mockServerLocations: ServerLocation[] = [
@@ -50,6 +52,7 @@ export default function Checkout() {
   const { user, isAuthenticated } = useAuth();
 
   const productId = searchParams.get("product_id") || searchParams.get("product");
+  const mode = searchParams.get("mode");
   const billingCurrency = searchParams.get("billing_currency") || searchParams.get("currency");
   const billingCycle = searchParams.get("billing_cycle") || searchParams.get("period");
   const referral = searchParams.get("referral") || searchParams.get("ref");
@@ -64,19 +67,26 @@ export default function Checkout() {
   // Fetch Product Data
   const { data: product, isLoading, error } = useGetStoreProductQuery(
     productId as string,
-    { skip: !productId }
+    { skip: !productId || mode === "domain" }
   );
 
   // Redirect if no product ID or error
   useEffect(() => {
+    if (mode === "domain") {
+      return;
+    }
     if (!productId) {
       router.push("/");
     } else if (error) {
       // Optional: Show toast or error before redirecting
-      console.error("Failed to load product", error);
+      devLog("Failed to load product", error);
       router.push("/");
     }
-  }, [productId, error, router]);
+  }, [mode, productId, error, router]);
+
+  if (mode === "domain") {
+    return <DomainCheckoutPage />;
+  }
 
   if (isLoading) {
     return (

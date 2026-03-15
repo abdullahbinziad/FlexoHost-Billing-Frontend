@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,22 +20,48 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useCreateTicketMutation } from "@/store/api/ticketApi";
+import { useGetClientServicesQuery } from "@/store/api/servicesApi";
+import { useGetAllInvoicesQuery } from "@/store/api/invoiceApi";
+import { useActiveClient } from "@/hooks/useActiveClient";
 import { toast } from "sonner";
 import { MessageSquarePlus, Paperclip, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { devLog } from "@/lib/devLog";
+
+const NONE = "__none__";
 
 export default function NewTicketPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { activeClientId } = useActiveClient();
   const [subject, setSubject] = useState("");
   const [department, setDepartment] =
     useState<"technical" | "billing" | "sales" | "support">("support");
   const [priority, setPriority] =
     useState<"low" | "normal" | "high" | "urgent">("normal");
   const [message, setMessage] = useState("");
+  const [serviceId, setServiceId] = useState<string>(NONE);
+  const [invoiceId, setInvoiceId] = useState<string>(NONE);
   const [attachments, setAttachments] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const { data: servicesData } = useGetClientServicesQuery(
+    { clientId: activeClientId ?? "", params: { limit: 100 } },
+    { skip: !activeClientId }
+  );
+  const { data: invoicesData } = useGetAllInvoicesQuery(
+    { clientId: activeClientId ?? "", limit: 50, page: 1 },
+    { skip: !activeClientId }
+  );
   const [createTicket, { isLoading }] = useCreateTicketMutation();
+
+  // Pre-fill from URL: ?serviceId=xxx or ?invoiceId=xxx (e.g. from hosting/invoice page)
+  useEffect(() => {
+    const sid = searchParams.get("serviceId");
+    const iid = searchParams.get("invoiceId");
+    if (sid) setServiceId(sid);
+    if (iid) setInvoiceId(iid);
+  }, [searchParams]);
 
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -60,11 +86,13 @@ export default function NewTicketPage() {
         priority,
         message,
         attachments,
+        ...(serviceId && serviceId !== NONE && { serviceId }),
+        ...(invoiceId && invoiceId !== NONE && { invoiceId }),
       }).unwrap();
       toast.success("Ticket created successfully.");
       router.push(`/tickets/${ticket._id}`);
     } catch (err) {
-      console.error(err);
+      devLog(err);
       toast.error("Failed to create ticket.");
     }
   };
@@ -105,6 +133,58 @@ export default function NewTicketPage() {
                 placeholder="e.g. Website is down, billing question..."
                 className="h-11"
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <label
+                  htmlFor="related-service"
+                  className="text-sm font-medium leading-none"
+                >
+                  Related service (optional)
+                </label>
+                <Select
+                  value={serviceId}
+                  onValueChange={setServiceId}
+                >
+                  <SelectTrigger id="related-service" className="h-11">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>None</SelectItem>
+                    {(servicesData?.services ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.identifier} – {s.name || s.productType}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="related-invoice"
+                  className="text-sm font-medium leading-none"
+                >
+                  Related invoice (optional)
+                </label>
+                <Select
+                  value={invoiceId}
+                  onValueChange={setInvoiceId}
+                >
+                  <SelectTrigger id="related-invoice" className="h-11">
+                    <SelectValue placeholder="None" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>None</SelectItem>
+                    {(invoicesData?.results ?? []).map((inv) => (
+                      <SelectItem key={inv._id} value={inv._id}>
+                        #{inv.invoiceNumber} – {inv.status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -173,12 +253,12 @@ export default function NewTicketPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none">
-                Screenshots / Attachments
+                Attachments (images, PDF, logs)
               </label>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.pdf,.txt,.log"
                 multiple
                 className="hidden"
                 onChange={handleFilesChange}

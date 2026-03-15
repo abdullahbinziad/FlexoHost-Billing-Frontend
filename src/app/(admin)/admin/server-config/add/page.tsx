@@ -1,6 +1,7 @@
 "use client";
 
 import { ServerForm } from "@/components/admin/servers/ServerForm";
+import { devLog } from "@/lib/devLog";
 import { ServerConfig } from "@/types/admin";
 import { PageHeader } from "@/components/ui/page-header";
 import { useRouter } from "next/navigation";
@@ -23,7 +24,7 @@ export default function AddServerPage() {
             router.push("/admin/server-config");
         } catch (error) {
             toast.error("Failed to create server");
-            console.error(error);
+            devLog(error);
         }
     };
 

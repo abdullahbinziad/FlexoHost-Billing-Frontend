@@ -19,6 +19,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { uploadFile } from "@/store/api/uploadApi";
+import { devLog } from "@/lib/devLog";
 import { toast } from "sonner";
 
 interface RichTextEditorProps {
@@ -51,7 +52,7 @@ export function RichTextEditor({
           const url = await uploadImage(file);
           editor.commands.setImage({ src: url, alt: file.name });
         } catch (e) {
-          console.error(e);
+          devLog(e);
           toast.error("Failed to upload image");
         }
       }
@@ -67,7 +68,7 @@ export function RichTextEditor({
           const url = await uploadImage(file);
           editor.commands.setImage({ src: url, alt: file.name });
         } catch (e) {
-          console.error(e);
+          devLog(e);
           toast.error("Failed to upload image");
         }
       }
@@ -112,7 +113,7 @@ export function RichTextEditor({
       const url = await uploadImage(file);
       editor.commands.setImage({ src: url, alt: file.name });
     } catch (err) {
-      console.error(err);
+      devLog(err);
       toast.error("Failed to upload image");
     }
   };

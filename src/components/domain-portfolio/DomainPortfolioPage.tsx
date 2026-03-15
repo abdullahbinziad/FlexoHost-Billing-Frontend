@@ -1,38 +1,37 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-// import { useGetDomainsQuery, useUpdateDomainMutation } from "@/store/api/domainApi";
+import { useActiveClient } from "@/hooks/useActiveClient";
+import { useGetDomainsQuery, useUpdateDomainMutation } from "@/store/api/domainApi";
 import { DomainPortfolioHeader } from "./DomainPortfolioHeader";
 import { PromotionalBanner } from "@/components/shared/PromotionalBanner";
 import { DomainProtectionCard } from "./DomainProtectionCard";
 import { DomainSearchAndFilter } from "./DomainSearchAndFilter";
 import { DomainTable } from "./DomainTable";
-import type { Domain, DomainTableFilters, DomainProtectionOffer } from "@/types/domain";
-import { mockDomains, mockProtectionOffer } from "@/data/mockDomains";
+import type { Domain, DomainTableFilters } from "@/types/domain";
+import { mockProtectionOffer } from "@/data/mockDomains";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export function DomainPortfolioPage() {
   const router = useRouter();
+  const { activeClientId, isProfileLoading } = useActiveClient();
+  const { data, isLoading, error } = useGetDomainsQuery(undefined, { skip: !activeClientId });
+  const [updateDomain] = useUpdateDomainMutation();
 
-  // TODO: Replace with Redux/RTK Query when backend is ready
-  // const { data, isLoading, error } = useGetDomainsQuery();
-  // const [updateDomain] = useUpdateDomainMutation();
-
-  // Static data for frontend development
-  const domains = mockDomains;
-  const isLoading = false;
-  const error = null;
-
-  // Local state: UI-only interactions
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [filters, setFilters] = useState<DomainTableFilters>({
     search: "",
     sortBy: "name",
     sortOrder: "asc",
   });
 
-  // Local state for auto-renewal updates (simulating API call)
-  const [domainsState, setDomainsState] = useState<Domain[]>(domains);
+  const [domainsState, setDomainsState] = useState<Domain[]>([]);
+  useEffect(() => {
+    if (data?.domains) setDomainsState(data.domains);
+  }, [data?.domains]);
 
   // Filter and sort domains
   const filteredDomains = useMemo(() => {
@@ -70,6 +69,8 @@ export function DomainPortfolioPage() {
 
     return result;
   }, [domainsState, filters]);
+  const paginatedDomains = filteredDomains.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.ceil(filteredDomains.length / pageSize) || 1;
 
   // Handlers
   const handleSelectDomain = (domainId: string, selected: boolean) => {
@@ -86,37 +87,33 @@ export function DomainPortfolioPage() {
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      setSelectedDomains(new Set(filteredDomains.map((d) => d.id)));
+      setSelectedDomains(new Set(paginatedDomains.map((d) => d.id)));
     } else {
       setSelectedDomains(new Set());
     }
   };
 
   const handleToggleAutoRenewal = async (domainId: string, enabled: boolean) => {
-    // TODO: Replace with actual API call
-    // try {
-    //   await updateDomain({ domainId, autoRenewal: enabled }).unwrap();
-    // } catch (error) {
-    //   console.error("Failed to update auto-renewal:", error);
-    // }
-
-    // Static update for frontend
     setDomainsState((prev) =>
-      prev.map((domain) =>
-        domain.id === domainId ? { ...domain, autoRenewal: enabled } : domain
-      )
+      prev.map((d) => (d.id === domainId ? { ...d, autoRenewal: enabled } : d))
     );
+    try {
+      await updateDomain({ domainId, autoRenewal: enabled }).unwrap();
+    } catch {
+      setDomainsState((prev) =>
+        prev.map((d) => (d.id === domainId ? { ...d, autoRenewal: !enabled } : d))
+      );
+    }
   };
 
   const handleRenew = (domainId: string) => {
-    // TODO: Open renew modal or navigate to renew page
-    console.log("Renew domain:", domainId);
-    alert(`Renew domain: ${domainsState.find((d) => d.id === domainId)?.name}`);
+    const domain = domainsState.find((d) => d.id === domainId);
+    if (domain?.name) router.push(`/domains/register?renew=${encodeURIComponent(domain.name)}`);
+    else alert("Domain not found");
   };
 
-  const handleManage = (domainId: string) => {
-    // Navigate to domain management page
-    router.push(`/domains/${domainId}`);
+  const handleManage = (domainName: string) => {
+    router.push(`/domains/${encodeURIComponent(domainName)}`);
   };
 
   const handleAddDomain = () => {
@@ -126,22 +123,29 @@ export function DomainPortfolioPage() {
 
   const handleGetProtection = () => {
     // TODO: Open protection purchase modal
-    console.log("Get protection for:", mockProtectionOffer.domain);
     alert(`Get protection for: ${mockProtectionOffer.domain}`);
   };
 
-  if (isLoading) {
+  if (isProfileLoading || (activeClientId && isLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-500">Loading domains...</p>
+        <p className="text-gray-500 dark:text-gray-400">Loading domains...</p>
+      </div>
+    );
+  }
+
+  if (!activeClientId) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-gray-500 dark:text-gray-400">Client profile not found. Please complete your profile.</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-800">Error loading domains. Please try again.</p>
+      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <p className="text-red-800 dark:text-red-200">Error loading domains. Please try again.</p>
       </div>
     );
   }
@@ -157,9 +161,15 @@ export function DomainPortfolioPage() {
         offer={mockProtectionOffer}
         onGetNow={handleGetProtection}
       />
-      <DomainSearchAndFilter filters={filters} onFiltersChange={setFilters} />
+      <DomainSearchAndFilter
+        filters={filters}
+        onFiltersChange={(nextFilters) => {
+          setFilters(nextFilters);
+          setPage(1);
+        }}
+      />
       <DomainTable
-        domains={filteredDomains}
+        domains={paginatedDomains}
         selectedDomains={selectedDomains}
         filters={filters}
         onSelectDomain={handleSelectDomain}
@@ -175,6 +185,19 @@ export function DomainPortfolioPage() {
               prev.sortBy === sortBy && prev.sortOrder === "asc" ? "desc" : "asc",
           }))
         }
+      />
+      <DataTablePagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={filteredDomains.length}
+        pageSize={pageSize}
+        currentCount={paginatedDomains.length}
+        itemLabel="domains"
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
       />
     </div>
   );

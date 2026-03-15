@@ -1,22 +1,36 @@
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import type { NavItem } from "@/types/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { NavItem, SubMenuItem } from "@/types/navigation";
 
 export function useMenuNavigation(navItems: NavItem[]) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams?.toString() ?? "";
   const router = useRouter();
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
 
+  const matchesHref = (href: string): boolean => {
+    const [path, query] = href.split("?");
+    if (pathname !== path && !pathname.startsWith(path + "/")) return false;
+    if (query && search !== query) return false;
+    return true;
+  };
+
   useEffect(() => {
+    const hrefMatches = (href: string) => {
+      const [path] = href.split("?");
+      return pathname === path || pathname.startsWith(path + "/");
+    };
     const shouldAutoExpand = (item: NavItem): boolean => {
       if (!item.submenu) return false;
       if (pathname === item.href || pathname.startsWith(item.href + "/")) {
         return true;
       }
-      return item.submenu.some(
-        (subItem) =>
-          pathname === subItem.href || pathname.startsWith(subItem.href + "/")
-      );
+      const checkSub = (sub: SubMenuItem): boolean => {
+        if (hrefMatches(sub.href)) return true;
+        return sub.submenu?.some(checkSub) ?? false;
+      };
+      return item.submenu.some(checkSub);
     };
 
     const initiallyExpanded = new Set<string>();
@@ -27,7 +41,7 @@ export function useMenuNavigation(navItems: NavItem[]) {
     });
     setExpandedMenus(initiallyExpanded);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, search]);
 
   const toggleSubmenu = (item: NavItem) => {
     const isCurrentlyExpanded = expandedMenus.has(item.href);
@@ -72,31 +86,18 @@ export function useMenuNavigation(navItems: NavItem[]) {
 
   const hasActiveSubmenu = (item: NavItem): boolean => {
     if (!item.submenu) return false;
-    return item.submenu.some((subItem) => {
-      if (pathname === item.href) {
-        return subItem.href === item.submenu?.[0]?.href;
-      }
-      return (
-        pathname === subItem.href || pathname.startsWith(subItem.href + "/")
-      );
-    });
+    const checkSub = (sub: SubMenuItem): boolean => {
+      if (matchesHref(sub.href)) return true;
+      return sub.submenu?.some(checkSub) ?? false;
+    };
+    return item.submenu.some(checkSub);
   };
 
   const isSubmenuItemActive = (
     subItemHref: string,
     parentItem: NavItem
   ): boolean => {
-    if (pathname === parentItem.href) {
-      return subItemHref === parentItem.submenu?.[0]?.href;
-    }
-
-    if (subItemHref === parentItem.href) {
-      return pathname === subItemHref;
-    }
-
-    return (
-      pathname === subItemHref || pathname.startsWith(subItemHref + "/")
-    );
+    return matchesHref(subItemHref);
   };
 
   return {

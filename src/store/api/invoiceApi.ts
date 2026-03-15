@@ -73,6 +73,30 @@ export const invoiceApi = api.injectEndpoints({
             providesTags: ["Invoice"],
         }),
 
+        getDashboardStats: builder.query<
+            {
+                baseCurrency: string;
+                totalRevenueInBase: number;
+                unpaidInBase: number;
+                paidCount: number;
+                unpaidCount: number;
+                hasLegacyData?: boolean;
+                displayCurrency?: string;
+                displayFxRate?: number;
+                displayTotals?: { totalRevenue: number; unpaid: number };
+            },
+            { displayCurrency?: string }
+        >({
+            query: (params) => ({
+                url: "/invoices/stats",
+                params: params?.displayCurrency
+                    ? { displayCurrency: params.displayCurrency }
+                    : undefined,
+            }),
+            transformResponse: (response: any) => response.data,
+            providesTags: ["Invoice"],
+        }),
+
         deleteInvoice: builder.mutation<void, string>({
             query: (id) => ({
                 url: `/invoices/${id}`,
@@ -182,6 +206,7 @@ export const invoiceApi = api.injectEndpoints({
 export const {
     useGetInvoiceByIdQuery,
     useGetAllInvoicesQuery,
+    useGetDashboardStatsQuery,
     useUpdateInvoiceStatusMutation,
     useDeleteInvoiceMutation,
     usePayInvoiceMutation,

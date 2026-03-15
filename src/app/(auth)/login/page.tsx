@@ -17,7 +17,10 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const { login, completeSocialLogin, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login, completeSocialLogin } = useAuth();
+  // Only disable when user is actively submitting - not during initial auth check
+  // (auth check can hang if backend is unreachable, leaving form stuck disabled)
   const { theme } = useTheme();
   const searchParams = useSearchParams();
 
@@ -30,26 +33,30 @@ function LoginForm() {
   const getInfoMessage = () => {
     if (message === "login_required") return "Please log in to continue";
     if (message === "access_denied") return "Access denied. You need admin credentials to access this area.";
+    if (errorQuery === "session_expired") return "Your session has expired. Please sign in again.";
+    if (errorQuery === "invalid_token") return "Your session is invalid. Please sign in again.";
     if (errorQuery === "google_not_configured") return "Google sign-in is not configured.";
     if (errorQuery === "missing_code" || errorQuery === "token_exchange_failed" || errorQuery === "no_access_token" || errorQuery === "userinfo_failed") return "Google sign-in failed. Please try again.";
     return "";
   };
 
   const infoMessage = getInfoMessage();
-  const showOAuthError = Boolean(errorQuery);
+  const showOAuthError = Boolean(errorQuery && !["session_expired", "invalid_token"].includes(errorQuery));
 
-  // Handle return from Google OAuth: /login#accessToken=...&redirect=...
+  // Handle return from Google OAuth: /login#accessToken=...&refreshToken=...&redirect=...
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash.slice(1);
     if (!hash) return;
     const params = new URLSearchParams(hash);
     const accessToken = params.get("accessToken");
+    const refreshToken = params.get("refreshToken") || undefined;
     const redirectPath = params.get("redirect") || undefined;
     if (accessToken) {
-      completeSocialLogin(accessToken, redirectPath).catch(() => {
+      setIsSubmitting(true);
+      completeSocialLogin(accessToken, redirectPath, refreshToken).catch(() => {
         setError("Sign-in failed. Please try again.");
-      });
+      }).finally(() => setIsSubmitting(false));
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
   }, [completeSocialLogin]);
@@ -78,6 +85,7 @@ function LoginForm() {
     }
 
     try {
+      setIsSubmitting(true);
       await login(email, password, redirect || undefined);
       // Clear rate limit on successful login
       loginRateLimiter.clearAttempts(email);
@@ -97,6 +105,8 @@ function LoginForm() {
         const minutesLeft = Math.ceil(timeUntilReset / 60000);
         setError(`Too many failed attempts. Account locked for ${minutesLeft} minute(s).`);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -152,7 +162,7 @@ function LoginForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 placeholder="you@example.com"
-                disabled={isLoading}
+                disabled={isSubmitting}
               />
             </div>
 
@@ -172,7 +182,7 @@ function LoginForm() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 pr-10"
                   placeholder="••••••••"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 />
                 <Button
                   type="button"
@@ -211,9 +221,9 @@ function LoginForm() {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
 
             {/* Divider */}
@@ -231,7 +241,7 @@ function LoginForm() {
               type="button"
               variant="outline"
               className="w-full flex items-center justify-center gap-2 border-gray-300 dark:border-gray-600"
-              disabled={isLoading}
+              disabled={isSubmitting}
               onClick={() => {
                 const redirect = searchParams.get("redirect");
                 const state = redirect ? encodeURIComponent(redirect) : "";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Info, Lightbulb, Plus, X as XIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { DomainPricingModal } from "./DomainPricingModal";
 import { DomainPricingRow } from "./DomainPricingRow";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 import { defaultPricingDetail, defaultCurrencyPricing } from "@/lib/domain-constants";
 
@@ -40,6 +41,8 @@ export function DomainPricingTable() {
     const [deleteTld] = useDeleteTldMutation();
 
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(20);
 
     // New TLD State
     const [newTldName, setNewTldName] = useState("");
@@ -49,9 +52,15 @@ export function DomainPricingTable() {
     const [isPricingOpen, setIsPricingOpen] = useState(false);
     const [currentEditingTld, setCurrentEditingTld] = useState<TLD | null>(null);
 
+    const paginatedTlds = useMemo(
+        () => tlds.slice((page - 1) * pageSize, page * pageSize),
+        [page, pageSize, tlds]
+    );
+    const totalPages = Math.ceil(tlds.length / pageSize) || 1;
+
     const toggleSelectAll = (checked: boolean) => {
         if (checked) {
-            setSelectedIds(new Set(tlds.map(t => t._id)));
+            setSelectedIds(new Set(paginatedTlds.map((t) => t._id)));
         } else {
             setSelectedIds(new Set());
         }
@@ -200,7 +209,10 @@ export function DomainPricingTable() {
                         <TableRow className="hover:bg-slate-900 dark:hover:bg-slate-950">
                             <TableHead className="w-[40px] text-white">
                                 <Checkbox
-                                    checked={tlds.length > 0 && selectedIds.size === tlds.length}
+                                    checked={
+                                        paginatedTlds.length > 0 &&
+                                        paginatedTlds.every((tld) => selectedIds.has(tld._id))
+                                    }
                                     onCheckedChange={toggleSelectAll}
                                     className="border-white data-[state=checked]:bg-white data-[state=checked]:text-slate-900"
                                 />
@@ -212,7 +224,7 @@ export function DomainPricingTable() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {tlds.map((tld) => (
+                        {paginatedTlds.map((tld) => (
                             <DomainPricingRow
                                 key={tld._id}
                                 tld={tld}
@@ -267,6 +279,21 @@ export function DomainPricingTable() {
                     </TableBody>
                 </Table>
             </div>
+
+            <DataTablePagination
+                page={page}
+                totalPages={totalPages}
+                totalItems={tlds.length}
+                pageSize={pageSize}
+                currentCount={paginatedTlds.length}
+                itemLabel="TLDs"
+                onPageChange={setPage}
+                onPageSizeChange={(value) => {
+                    setPageSize(value);
+                    setPage(1);
+                }}
+                pageSizeOptions={[20, 50, 100]}
+            />
 
             {/* Pricing Modal */}
             <DomainPricingModal

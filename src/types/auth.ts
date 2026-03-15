@@ -76,6 +76,7 @@ export interface LoginCredentials {
 export interface LoginResponse {
     user: User;
     accessToken: string;
+    refreshToken?: string;
     message?: string;
 }
 
@@ -121,6 +122,7 @@ export interface ClientRegistrationResponse {
     client: Client;
     user: User;
     accessToken: string;
+    refreshToken?: string;
     message?: string;
 }
 
@@ -172,7 +174,7 @@ export interface AuthState {
 export interface AuthActions {
     login: (email: string, password: string, redirectUrl?: string) => Promise<void>;
     /** Complete login after OAuth redirect; stores token, fetches user, redirects. */
-    completeSocialLogin: (accessToken: string, redirectPath?: string) => Promise<void>;
+    completeSocialLogin: (accessToken: string, redirectPath?: string, refreshToken?: string) => Promise<void>;
     register: (data: RegisterUserData) => Promise<void>;
     registerClient: (data: ClientRegistrationData) => Promise<void>;
     logout: () => Promise<void>;

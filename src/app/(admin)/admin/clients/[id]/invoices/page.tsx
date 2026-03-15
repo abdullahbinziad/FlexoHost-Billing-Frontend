@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { Plus, MoreHorizontal, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -21,26 +21,60 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useGetAllInvoicesQuery } from "@/store/api/invoiceApi";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All" },
+  { value: "UNPAID", label: "Unpaid" },
+  { value: "PAID", label: "Paid" },
+  { value: "OVERDUE", label: "Overdue" },
+  { value: "CANCELLED", label: "Cancelled" },
+];
 
 export default function ClientInvoicesPage() {
   const params = useParams();
   const clientId = params?.id as string;
   const formatCurrency = useFormatCurrency();
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [invoiceNumberDraft, setInvoiceNumberDraft] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
   const limit = 20;
 
   const { data, isLoading, error } = useGetAllInvoicesQuery({
     clientId,
     page,
     limit,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    invoiceNumber: invoiceNumber || undefined,
   });
 
   const invoices = data?.results ?? [];
   const totalResults = data?.totalResults ?? 0;
   const totalPages = data?.totalPages ?? 1;
+
+  const handleSearch = () => {
+    setInvoiceNumber(invoiceNumberDraft.trim());
+    setPage(1);
+  };
+
+  const handleReset = () => {
+    setStatusFilter("all");
+    setInvoiceNumberDraft("");
+    setInvoiceNumber("");
+    setPage(1);
+  };
 
   return (
     <Card className="border-none shadow-none">
@@ -52,11 +86,62 @@ export default function ClientInvoicesPage() {
         <Button asChild>
           <Link href="/admin/billing/invoices">
             <Plus className="w-4 h-4 mr-2" />
-            Create Invoice
+            Open Invoice Center
           </Link>
         </Button>
       </CardHeader>
       <CardContent className="px-0">
+        <div className="mb-4 rounded-lg border bg-muted/20 p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div className="flex-1">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Invoice #
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Exact invoice number"
+                  value={invoiceNumberDraft}
+                  onChange={(e) => setInvoiceNumberDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
+                />
+                <Button type="button" variant="outline" onClick={handleSearch}>
+                  <Search className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="w-full lg:w-[180px]">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Status
+              </label>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="button" variant="outline" onClick={handleReset}>
+              Reset
+            </Button>
+          </div>
+        </div>
         <div className="rounded-md border bg-white dark:bg-gray-900">
           <Table>
             <TableHeader className="bg-gray-50 dark:bg-gray-800">
@@ -140,32 +225,17 @@ export default function ClientInvoicesPage() {
             </TableBody>
           </Table>
         </div>
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-4 text-sm text-muted-foreground">
-            <span>
-              {totalResults} invoice{totalResults !== 1 ? "s" : ""} total
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                Previous
-              </Button>
-              <span>Page {page} of {totalPages}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        )}
+        <div className="mt-4">
+          <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalResults}
+            pageSize={limit}
+            currentCount={invoices.length}
+            itemLabel="invoices"
+            onPageChange={setPage}
+          />
+        </div>
       </CardContent>
     </Card>
   );

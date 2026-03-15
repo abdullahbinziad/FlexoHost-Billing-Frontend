@@ -26,6 +26,8 @@ import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { EmptyState } from "@/components/shared/EmptyState";
 
 const STATUS_OPTIONS = [
     { value: "SUCCESS", label: "Successful" },
@@ -73,9 +75,15 @@ export default function AdminTransactionsPage() {
     }
 
     if (error) {
+        const err = error as { status?: number; data?: { message?: string } };
+        const message =
+            err?.data?.message ||
+            (err?.status === 401 ? "Please log in to continue." : null) ||
+            (err?.status === 403 ? "You do not have permission to view transactions." : null) ||
+            "Failed to load transactions. Please try again.";
         return (
             <div className="p-6 text-center text-destructive">
-                Failed to load transactions. Please try again.
+                {message}
             </div>
         );
     }
@@ -120,46 +128,34 @@ export default function AdminTransactionsPage() {
                 </div>
             </Card>
 
-            {/* Results Info Bar */}
-            <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground bg-white dark:bg-gray-900 p-2 rounded-md border border-dashed border-gray-200 dark:border-gray-800">
-                <span>
-                    {totalResults} Record{totalResults !== 1 ? "s" : ""} Found
-                    {totalResults > 0 && `, Showing ${(page - 1) * limit + 1} to ${Math.min(page * limit, totalResults)}`}
-                </span>
-                <div className="flex items-center gap-4 mt-2 sm:mt-0">
-                    {totalPages > 1 && (
-                        <div className="flex items-center gap-2">
-                            <span>Page:</span>
-                            <Select value={String(page)} onValueChange={(v) => setPage(Number(v))}>
-                                <SelectTrigger className="w-16 h-8 text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                                        <SelectItem key={p} value={String(p)}>{p}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <span>Per page:</span>
-                        <Select value={String(limit)} onValueChange={(v) => { setLimit(Number(v)); setPage(1); }}>
-                            <SelectTrigger className="w-14 h-8 text-xs">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="25">25</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                                <SelectItem value="100">100</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
+            {totalResults > 0 && (
+                <DataTablePagination
+                    page={page}
+                    totalPages={totalPages}
+                    totalItems={totalResults}
+                    pageSize={limit}
+                    currentCount={transactions.length}
+                    itemLabel="records"
+                    onPageChange={setPage}
+                    onPageSizeChange={(value) => {
+                        setLimit(value);
+                        setPage(1);
+                    }}
+                    pageSizeOptions={[10, 25, 50, 100]}
+                />
+            )}
 
-            {/* Transactions Table */}
+            {totalResults === 0 ? (
+                <EmptyState
+                    icon={CreditCard}
+                    title="No transactions found"
+                    description={
+                        statusFilter && statusFilter !== "SUCCESS"
+                            ? "Try adjusting your status filter."
+                            : "Transactions will appear here once payments are made."
+                    }
+                />
+            ) : (
             <div className="rounded-md border bg-white dark:bg-gray-900">
                 <Table>
                     <TableHeader className="bg-blue-900">
@@ -174,15 +170,7 @@ export default function AdminTransactionsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {transactions.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                                    <CreditCard className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                    No transactions found.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            transactions.map((tx) => (
+                        {transactions.map((tx) => (
                                 <TableRow key={tx._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                                     <TableCell className="font-medium text-blue-600">
                                         {tx.invoiceId ? (
@@ -227,11 +215,11 @@ export default function AdminTransactionsPage() {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
+                            ))}
                     </TableBody>
                 </Table>
             </div>
+            )}
         </div>
     );
 }

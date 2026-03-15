@@ -39,6 +39,11 @@ export interface ServerConfig {
     // Access Control
     accessControl: "unrestricted" | "restricted";
 
+    /** Last synced cPanel account count from WHM (display only). */
+    accountCount?: number;
+    /** When account count was last synced (ISO string). */
+    accountCountSyncedAt?: string;
+
     // Stats (for display)
     stats?: {
         version?: string;

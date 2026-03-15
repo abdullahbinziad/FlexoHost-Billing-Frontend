@@ -6,6 +6,13 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -17,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { formatDate } from "@/utils/format";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Open",
@@ -27,14 +35,51 @@ const STATUS_LABELS: Record<string, string> = {
   closed: "Closed",
 };
 
+const STATUS_OPTIONS = [
+  { value: "all", label: "All statuses" },
+  { value: "open", label: "Open" },
+  { value: "answered", label: "Answered" },
+  { value: "customer_reply", label: "Customer replied" },
+  { value: "on_hold", label: "On hold" },
+  { value: "in_progress", label: "In progress" },
+  { value: "closed", label: "Closed" },
+  { value: "resolved", label: "Resolved" },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: "all", label: "All priorities" },
+  { value: "low", label: "Low" },
+  { value: "normal", label: "Normal" },
+  { value: "high", label: "High" },
+  { value: "urgent", label: "Urgent" },
+];
+
+const DEPARTMENT_OPTIONS = [
+  { value: "all", label: "All departments" },
+  { value: "technical", label: "Technical" },
+  { value: "billing", label: "Billing" },
+  { value: "sales", label: "Sales" },
+  { value: "support", label: "Support" },
+];
+
 export default function ClientTicketsPage() {
   const params = useParams();
   const clientId = params?.id as string;
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
 
   const { data, isLoading, error } = useGetTicketsQuery(
-    { page, limit, clientId },
+    {
+      page,
+      limit,
+      clientId,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      priority: priorityFilter !== "all" ? priorityFilter : undefined,
+      department: departmentFilter !== "all" ? departmentFilter : undefined,
+    },
     { skip: !clientId }
   );
 
@@ -59,6 +104,79 @@ export default function ClientTicketsPage() {
         </Button>
       </CardHeader>
       <CardContent className="px-0 space-y-3">
+        <div className="rounded-lg border bg-muted/20 p-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Status
+              </label>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Priority
+              </label>
+              <Select
+                value={priorityFilter}
+                onValueChange={(value) => {
+                  setPriorityFilter(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIORITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Department
+              </label>
+              <Select
+                value={departmentFilter}
+                onValueChange={(value) => {
+                  setDepartmentFilter(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DEPARTMENT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
         <div className="rounded-md border bg-white dark:bg-gray-900">
           <Table>
             <TableHeader className="bg-gray-50 dark:bg-gray-800">
@@ -94,7 +212,7 @@ export default function ClientTicketsPage() {
                   <TableRow key={t._id}>
                     <TableCell className="font-medium text-blue-600">
                       <Link
-                        href={`/admin/tickets/${t._id}`}
+                        href={`/admin/clients/${clientId}/tickets/${t._id}`}
                         className="hover:underline"
                       >
                         {t.ticketNumber}
@@ -123,32 +241,15 @@ export default function ClientTicketsPage() {
           </Table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center text-xs text-muted-foreground">
-            <span>
-              {totalResults} ticket{totalResults !== 1 ? "s" : ""} total
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="px-2 py-1 border rounded disabled:opacity-50"
-              >
-                Prev
-              </button>
-              <span>
-                Page {page} of {totalPages}
-              </span>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="px-2 py-1 border rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <DataTablePagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalResults}
+          pageSize={limit}
+          currentCount={tickets.length}
+          itemLabel="tickets"
+          onPageChange={setPage}
+        />
       </CardContent>
     </Card>
   );

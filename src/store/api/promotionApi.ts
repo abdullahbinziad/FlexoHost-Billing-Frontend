@@ -112,7 +112,7 @@ export const promotionApi = api.injectEndpoints({
         }),
 
         validateCoupon: builder.mutation<
-            { valid: boolean; promotionId?: string; code?: string; discountAmount?: number; name?: string },
+            { valid: boolean; promotionId?: string; code?: string; discountAmount?: number; name?: string; source?: "promotion" | "affiliate" },
             { code: string; subtotal: number; currency?: string; clientId?: string; productIds?: string[]; productTypes?: string[]; productBillingCycle?: string; domainTlds?: string[]; domainBillingCycle?: string; isFirstOrder?: boolean }
         >({
             query: (body) => ({
