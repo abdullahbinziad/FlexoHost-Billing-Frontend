@@ -10,7 +10,11 @@ import { OrderSummaryCard } from "./OrderSummaryCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight, Globe } from "lucide-react";
 
-export function DomainCheckoutPage() {
+interface DomainCheckoutPageProps {
+  referral?: string;
+}
+
+export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
   const { user, isAuthenticated } = useAuth();
   const [validateCoupon] = useValidateCouponMutation();
   const {
@@ -23,6 +27,7 @@ export function DomainCheckoutPage() {
     setAgreeToTerms,
     setPromoCode,
     setPromoApplied,
+    setReferral,
     setNewAccountInfo,
     handleCheckout,
   } = useCheckoutRedux([], {
@@ -30,10 +35,61 @@ export function DomainCheckoutPage() {
     checkoutMode: "domain",
   });
 
+  const normalizedReferral = referral?.trim().toUpperCase();
+  const isReferralDiscountApplied =
+    Boolean(normalizedReferral) &&
+    formData.promoCode === normalizedReferral &&
+    (orderSummary?.discount ?? 0) > 0;
+
   useEffect(() => {
     setCheckoutMode("domain");
     setProductId(null);
-  }, [setCheckoutMode, setProductId]);
+    if (referral) setReferral(referral);
+  }, [setCheckoutMode, setProductId, setReferral, referral]);
+
+  useEffect(() => {
+    if (!normalizedReferral || !orderSummary || (orderSummary?.subtotal ?? 0) <= 0) return;
+    if (formData.promoCode && formData.promoCode !== normalizedReferral) return;
+    if (formData.promoCode === normalizedReferral && (formData.promoDiscount ?? 0) > 0) return;
+
+    let isCancelled = false;
+    const applyReferralDiscount = async () => {
+      try {
+        const result = await validateCoupon({
+          code: normalizedReferral,
+          subtotal: orderSummary.subtotal,
+          currency: orderSummary.currency,
+          clientId: formData.billingContact?.id,
+          domainTlds: [formData.selectedDomain?.tld || ""],
+          domainBillingCycle:
+            formData.domainAction === "transfer"
+              ? "annually"
+              : formData.selectedDomain?.period === 2
+                ? "biennially"
+                : formData.selectedDomain?.period === 3
+                  ? "triennially"
+                  : "annually",
+        }).unwrap();
+        if (!isCancelled && result.valid && result.discountAmount != null) {
+          setPromoApplied(normalizedReferral, result.discountAmount);
+        }
+      } catch {
+        // Ignore invalid referral
+      }
+    };
+    void applyReferralDiscount();
+    return () => { isCancelled = true; };
+  }, [
+    normalizedReferral,
+    orderSummary?.subtotal,
+    formData.promoCode,
+    formData.promoDiscount,
+    formData.billingContact?.id,
+    formData.selectedDomain,
+    formData.domainAction,
+    setPromoApplied,
+    validateCoupon,
+  ]);
 
   const billingContacts =
     isAuthenticated && user
@@ -98,6 +154,14 @@ export function DomainCheckoutPage() {
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Review your selected domain, confirm billing details, and generate the invoice.
           </p>
+          {isReferralDiscountApplied && normalizedReferral ? (
+            <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10">
+              <p className="text-sm text-gray-800 dark:text-gray-200">
+                Discount for the referral applied from link code{" "}
+                <span className="font-semibold text-primary">{normalizedReferral}</span>.
+              </p>
+            </div>
+          ) : null}
           {error && (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/30">
               <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
@@ -189,6 +253,8 @@ export function DomainCheckoutPage() {
                 setPromoCode(undefined);
               }}
               appliedPromoCode={formData.promoCode}
+              appliedDiscountLabel={isReferralDiscountApplied ? "Discount for the referral" : "Promo Code Applied"}
+              discountLineLabel={isReferralDiscountApplied ? "Discount for the referral" : "Discount"}
             />
           </div>
         </div>

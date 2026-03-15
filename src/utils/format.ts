@@ -83,6 +83,26 @@ export const formatDate = (
   }).format(dateObj);
 };
 
+/** Relative time e.g. "2 min ago", "1 hour ago", "Yesterday" */
+export const formatRelativeTime = (date: string | Date): string => {
+  if (!date) return "";
+  const dateObj = new Date(date);
+  if (isNaN(dateObj.getTime())) return "";
+  const now = new Date();
+  const diffMs = now.getTime() - dateObj.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) return "Just now";
+  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? "s" : ""} ago`;
+  if (diffDay === 1) return "Yesterday";
+  if (diffDay < 7) return `${diffDay} days ago`;
+  return formatDate(date, "short");
+};
+
 export const formatDateTime = (date: string | Date): string => {
   if (!date) return "N/A";
   const dateObj = new Date(date);

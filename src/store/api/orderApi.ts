@@ -78,8 +78,52 @@ export const orderApi = api.injectEndpoints({
             }),
             invalidatesTags: (result, error, { orderId }) => [{ type: "Order", id: orderId }],
         }),
+        bulkAcceptOrders: builder.mutation<{ updated: number; total: number }, { orderIds: string[] }>({
+            query: (body) => ({
+                url: "/orders/bulk/accept",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Order"],
+        }),
+        bulkCancelOrders: builder.mutation<{ updated: number; total: number }, { orderIds: string[] }>({
+            query: (body) => ({
+                url: "/orders/bulk/cancel",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Order"],
+        }),
+        bulkDeleteOrders: builder.mutation<{ deleted: number; total: number }, { orderIds: string[] }>({
+            query: (body) => ({
+                url: "/orders/bulk/delete",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Order"],
+        }),
+        bulkSendMessage: builder.mutation<
+            { sent: number; failed: number; total: number },
+            { orderIds: string[]; subject: string; message: string }
+        >({
+            query: (body) => ({
+                url: "/orders/bulk/send-message",
+                method: "POST",
+                body,
+            }),
+        }),
     }),
     overrideExisting: false,
 });
 
-export const { useGetOrdersQuery, useGetOrderByIdQuery, useGetOrderConfigQuery, useUpdateOrderStatusMutation, useRunModuleCreateMutation } = orderApi;
+export const {
+    useGetOrdersQuery,
+    useGetOrderByIdQuery,
+    useGetOrderConfigQuery,
+    useUpdateOrderStatusMutation,
+    useRunModuleCreateMutation,
+    useBulkAcceptOrdersMutation,
+    useBulkCancelOrdersMutation,
+    useBulkDeleteOrdersMutation,
+    useBulkSendMessageMutation,
+} = orderApi;

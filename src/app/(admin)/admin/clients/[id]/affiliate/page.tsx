@@ -16,6 +16,8 @@ import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import {
   useEnrollClientAffiliateAdminMutation,
   useGetAdminClientAffiliateQuery,
+  useRegenerateAffiliateClientReferralCodeMutation,
+  useUpdateAffiliateClientReferralCodeMutation,
   useUpdateAffiliateClientSettingsMutation,
   useUpdateAffiliateClientStatusMutation,
 } from "@/store/api/affiliateApi";
@@ -32,7 +34,12 @@ export default function ClientAffiliateAdminPage() {
   const [enrollClientAffiliate, { isLoading: isEnrolling }] = useEnrollClientAffiliateAdminMutation();
   const [updateClientAffiliateSettings, { isLoading: isSaving }] = useUpdateAffiliateClientSettingsMutation();
   const [updateAffiliateClientStatus, { isLoading: isUpdatingStatus }] = useUpdateAffiliateClientStatusMutation();
+  const [updateAffiliateClientReferralCode, { isLoading: isSavingReferralCode }] =
+    useUpdateAffiliateClientReferralCodeMutation();
+  const [regenerateAffiliateClientReferralCode, { isLoading: isRegeneratingReferralCode }] =
+    useRegenerateAffiliateClientReferralCodeMutation();
   const [commissionRate, setCommissionRate] = useState("");
+  const [referralCodeInput, setReferralCodeInput] = useState("");
   const [referralDiscountRate, setReferralDiscountRate] = useState("");
   const [payoutThreshold, setPayoutThreshold] = useState("");
   const [referralsPage, setReferralsPage] = useState(1);
@@ -47,6 +54,7 @@ export default function ClientAffiliateAdminPage() {
     setCommissionRate(String(data.profile.commissionRate ?? ""));
     setReferralDiscountRate(String(data.profile.referralDiscountRate ?? ""));
     setPayoutThreshold(String(data.profile.payoutThreshold ?? ""));
+    setReferralCodeInput(data.profile.referralCode ?? "");
   }, [data?.profile]);
 
   const summaryCurrency = useMemo(() => {
@@ -113,6 +121,29 @@ export default function ClientAffiliateAdminPage() {
       toast.success("Referral link copied.");
     } catch {
       toast.error("Failed to copy referral link.");
+    }
+  };
+
+  const handleSaveReferralCode = async () => {
+    if (!clientId || !referralCodeInput.trim()) return;
+    try {
+      await updateAffiliateClientReferralCode({
+        clientId,
+        referralCode: referralCodeInput.trim().toUpperCase(),
+      }).unwrap();
+      toast.success("Referral code updated.");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to update referral code.");
+    }
+  };
+
+  const handleRegenerateReferralCode = async () => {
+    if (!clientId) return;
+    try {
+      await regenerateAffiliateClientReferralCode(clientId).unwrap();
+      toast.success("Referral code regenerated.");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to regenerate referral code.");
     }
   };
 
@@ -195,7 +226,32 @@ export default function ClientAffiliateAdminPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-lg border p-4">
                 <p className="text-sm text-muted-foreground">Referral code</p>
-                <p className="mt-1 font-mono text-base font-semibold">{data.profile?.referralCode}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    value={referralCodeInput}
+                    onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Referral code"
+                    maxLength={20}
+                    className="font-mono"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveReferralCode}
+                    disabled={isSavingReferralCode || !referralCodeInput.trim() || referralCodeInput === data.profile?.referralCode}
+                  >
+                    {isSavingReferralCode ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRegenerateReferralCode}
+                    disabled={isRegeneratingReferralCode}
+                  >
+                    {isRegeneratingReferralCode ? <Loader2 className="h-4 w-4 animate-spin" /> : "Regenerate"}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">4–20 letters or numbers. Admin can edit or regenerate.</p>
               </div>
               <div className="rounded-lg border p-4">
                 <p className="text-sm text-muted-foreground">Referral link</p>

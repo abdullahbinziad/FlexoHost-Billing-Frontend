@@ -260,6 +260,35 @@ export const affiliateApi = api.injectEndpoints({
       transformResponse: (response: ApiResponse<AffiliatePayoutRequestItem>) => response.data,
       invalidatesTags: [{ type: "Affiliate", id: "ADMIN" }, { type: "Affiliate", id: "ME" }],
     }),
+    updateAffiliateClientReferralCode: builder.mutation<
+      { profile: AffiliateProfile; referralLink: string },
+      { clientId: string; referralCode: string }
+    >({
+      query: ({ clientId, referralCode }) => ({
+        url: `/affiliate/admin/clients/${clientId}/referral-code`,
+        method: "PATCH",
+        body: { referralCode },
+      }),
+      transformResponse: (response: ApiResponse<{ profile: AffiliateProfile; referralLink: string }>) => response.data,
+      invalidatesTags: (result, error, { clientId }) => [
+        { type: "Affiliate", id: "ADMIN" },
+        { type: "Affiliate", id: `ADMIN-CLIENT-${clientId}` },
+      ],
+    }),
+    regenerateAffiliateClientReferralCode: builder.mutation<
+      { profile: AffiliateProfile; referralLink: string },
+      string
+    >({
+      query: (clientId) => ({
+        url: `/affiliate/admin/clients/${clientId}/referral-code/regenerate`,
+        method: "POST",
+      }),
+      transformResponse: (response: ApiResponse<{ profile: AffiliateProfile; referralLink: string }>) => response.data,
+      invalidatesTags: (result, error, clientId) => [
+        { type: "Affiliate", id: "ADMIN" },
+        { type: "Affiliate", id: `ADMIN-CLIENT-${clientId}` },
+      ],
+    }),
   }),
 });
 
@@ -277,4 +306,6 @@ export const {
   useUpdateMyAffiliateReferralCodeMutation,
   useRegenerateMyAffiliateReferralCodeMutation,
   useReviewAffiliatePayoutMutation,
+  useUpdateAffiliateClientReferralCodeMutation,
+  useRegenerateAffiliateClientReferralCodeMutation,
 } = affiliateApi;

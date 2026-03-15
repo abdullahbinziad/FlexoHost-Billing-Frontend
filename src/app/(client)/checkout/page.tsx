@@ -85,7 +85,7 @@ export default function Checkout() {
   }, [mode, productId, error, router]);
 
   if (mode === "domain") {
-    return <DomainCheckoutPage />;
+    return <DomainCheckoutPage referral={referral || undefined} />;
   }
 
   if (isLoading) {

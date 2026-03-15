@@ -1,6 +1,7 @@
-import { User, MapPin, Mail, RefreshCw, Shield } from "lucide-react";
+import { User, MapPin, Mail, RefreshCw, Shield, Send } from "lucide-react";
 import { devLog } from "@/lib/devLog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useRegenerateSupportPinForClientMutation } from "@/store/api/clientApi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -18,7 +19,12 @@ interface Client {
     supportPin?: string;
 }
 
-export function ClientDetailsHeader({ client }: { client: Client }) {
+interface ClientDetailsHeaderProps {
+    client: Client;
+    onSendEmail?: () => void;
+}
+
+export function ClientDetailsHeader({ client, onSendEmail }: ClientDetailsHeaderProps) {
     const clientId = client._id ?? String(client.id);
     const [regenerateSupportPin, { isLoading: isRegenerating }] = useRegenerateSupportPinForClientMutation();
 
@@ -63,7 +69,13 @@ export function ClientDetailsHeader({ client }: { client: Client }) {
                     </div>
                 </div>
 
-                <div className="flex w-full lg:w-auto justify-end">
+                <div className="flex w-full lg:w-auto justify-end items-center gap-2">
+                    {onSendEmail && (
+                        <Button variant="outline" size="sm" onClick={onSendEmail}>
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Email
+                        </Button>
+                    )}
                     <div className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs bg-muted/40 border-muted-foreground/20 text-muted-foreground">
                         <Shield className="w-3.5 h-3.5 text-primary" />
                         <span className="font-medium text-foreground">Support PIN:</span>

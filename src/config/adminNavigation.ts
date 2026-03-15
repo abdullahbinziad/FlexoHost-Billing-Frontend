@@ -36,6 +36,7 @@ export const adminNavItems: NavItem[] = [
         requiredPermissions: ["clients:list", "affiliates:dashboard"],
         submenu: [
             { label: "View / Search Client", href: "/admin/clients", requiredPermissions: ["clients:list"] },
+            { label: "Compose Email", href: "/admin/emails/compose", requiredPermissions: ["clients:send_email"] },
             { label: "Affiliates", href: "/admin/affiliates", requiredPermissions: ["affiliates:dashboard"] },
         ],
     },

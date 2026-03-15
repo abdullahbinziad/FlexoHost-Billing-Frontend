@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -16,17 +16,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { useGetClientsQuery } from "@/store/api/clientApi";
+import type { ClientListItem } from "@/store/api/clientApi";
 import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { EmailComposer } from "@/components/shared/EmailComposer";
+import type { RecipientItem } from "@/components/shared/EmailComposer";
 
 export default function ViewSearchClients() {
     const [page, setPage] = useState(1);
@@ -37,6 +33,8 @@ export default function ViewSearchClients() {
     // Applied filters (only change on Search)
     const [search, setSearch] = useState("");
     const [supportPin, setSupportPin] = useState("");
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [showEmailComposer, setShowEmailComposer] = useState(false);
 
     const { data, isLoading, error } = useGetClientsQuery({
         page,
@@ -67,6 +65,47 @@ export default function ViewSearchClients() {
     const getStatus = (client: (typeof clients)[0]) => {
         const active = (client.user as { active?: boolean })?.active;
         return active !== false ? "Active" : "Inactive";
+    };
+
+    const getClientLabel = (c: ClientListItem) => {
+        const name = [c.firstName, c.lastName].filter(Boolean).join(" ").trim();
+        const email = c.contactEmail || (c.user as { email?: string })?.email;
+        return name ? `${name}${email ? ` (${email})` : ""}` : email || c._id;
+    };
+
+    const toggleSelectAll = useCallback(() => {
+        if (selectedIds.size === clients.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(clients.map((c) => c._id)));
+        }
+    }, [selectedIds.size, clients]);
+
+    const toggleSelect = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
+    const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+    const selectedRecipients: RecipientItem[] = clients
+        .filter((c) => selectedIds.has(c._id))
+        .map((c) => ({
+            id: c._id,
+            label: getClientLabel(c),
+            email: c.contactEmail || (c.user as { email?: string })?.email,
+        }));
+
+    const handleOpenEmailComposer = () => {
+        setShowEmailComposer(true);
+    };
+
+    const handleEmailComposerSuccess = () => {
+        clearSelection();
     };
 
     if (isLoading) {
@@ -150,6 +189,21 @@ export default function ViewSearchClients() {
                 </div>
             </Card>
 
+            {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 p-3 rounded-md border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                    <span className="text-sm font-medium">
+                        {selectedIds.size} client{selectedIds.size !== 1 ? "s" : ""} selected
+                    </span>
+                    <Button size="sm" onClick={handleOpenEmailComposer}>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Send Email
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={clearSelection}>
+                        Clear selection
+                    </Button>
+                </div>
+            )}
+
             <DataTablePagination
                 page={page}
                 totalPages={pages}
@@ -170,7 +224,13 @@ export default function ViewSearchClients() {
                 <Table>
                     <TableHeader className="bg-blue-900">
                         <TableRow className="hover:bg-blue-900/90 border-none">
-                            <TableHead className="w-[40px] text-white"><Checkbox className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-blue-900" /></TableHead>
+                            <TableHead className="w-[40px] text-white">
+                                <Checkbox
+                                    className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-blue-900"
+                                    checked={clients.length > 0 && selectedIds.size === clients.length}
+                                    onCheckedChange={toggleSelectAll}
+                                />
+                            </TableHead>
                             <TableHead className="w-[80px] text-white">
                                 <div className="flex items-center gap-1 cursor-pointer">
                                     ID <ChevronDown className="h-3 w-3" />
@@ -200,7 +260,12 @@ export default function ViewSearchClients() {
                                 })
                                 .map((client) => (
                                     <TableRow key={client._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                        <TableCell><Checkbox /></TableCell>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedIds.has(client._id)}
+                                                onCheckedChange={() => toggleSelect(client._id)}
+                                            />
+                                        </TableCell>
                                         <TableCell className="font-medium text-blue-600">
                                             <Link href={`/admin/clients/${client._id}`} className="hover:underline">
                                                 {client.clientId}
@@ -245,6 +310,13 @@ export default function ViewSearchClients() {
                     </TableBody>
                 </Table>
             </div>
+
+            <EmailComposer
+                open={showEmailComposer}
+                onOpenChange={setShowEmailComposer}
+                initialRecipients={selectedRecipients}
+                onSuccess={handleEmailComposerSuccess}
+            />
         </div>
     );
 }

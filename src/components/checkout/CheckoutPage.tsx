@@ -234,7 +234,7 @@ export function CheckoutPage({
           {isReferralDiscountApplied && normalizedReferral ? (
             <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10">
               <p className="text-sm text-gray-800 dark:text-gray-200">
-                Referral discount applied from link code{" "}
+                Discount for the referral applied from link code{" "}
                 <span className="font-semibold text-primary">{normalizedReferral}</span>.
               </p>
             </div>
@@ -342,8 +342,8 @@ export function CheckoutPage({
                 setPromoCode(undefined);
               }}
               appliedPromoCode={formData.promoCode}
-              appliedDiscountLabel={isReferralDiscountApplied ? "Referral Discount Applied" : "Promo Code Applied"}
-              discountLineLabel={isReferralDiscountApplied ? "Referral Discount" : "Discount"}
+              appliedDiscountLabel={isReferralDiscountApplied ? "Discount for the referral" : "Promo Code Applied"}
+              discountLineLabel={isReferralDiscountApplied ? "Discount for the referral" : "Discount"}
             />
           </div>
         </div>

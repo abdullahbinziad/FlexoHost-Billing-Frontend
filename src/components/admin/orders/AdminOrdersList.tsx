@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MoreHorizontal, Search } from "lucide-react";
+import { MoreHorizontal, Search, CheckCircle2, XCircle, Trash2, Mail, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -17,6 +18,16 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import {
@@ -28,7 +39,13 @@ import {
 } from "@/components/ui/select";
 
 import type { Order } from "@/types/admin";
-import { useGetOrdersQuery } from "@/store/api/orderApi";
+import {
+    useGetOrdersQuery,
+    useBulkAcceptOrdersMutation,
+    useBulkCancelOrdersMutation,
+    useBulkDeleteOrdersMutation,
+    useBulkSendMessageMutation,
+} from "@/store/api/orderApi";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export function AdminOrdersList() {
@@ -40,6 +57,11 @@ export function AdminOrdersList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [showSendMessageModal, setShowSendMessageModal] = useState(false);
+    const [messageSubject, setMessageSubject] = useState("");
+    const [messageBody, setMessageBody] = useState("");
+
     const { data: response, isLoading } = useGetOrdersQuery({
         search: searchTerm || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
@@ -75,8 +97,87 @@ export function AdminOrdersList() {
     const totalPages = response?.totalPages ?? 1;
     const totalResults = response?.totalResults ?? 0;
 
-    const updateOrderStatus = (id: string, status: Order["status"]) => {
-        // Handle update
+    const [bulkAccept, { isLoading: isAccepting }] = useBulkAcceptOrdersMutation();
+    const [bulkCancel, { isLoading: isCancelling }] = useBulkCancelOrdersMutation();
+    const [bulkDelete, { isLoading: isDeleting }] = useBulkDeleteOrdersMutation();
+    const [bulkSendMessage, { isLoading: isSendingMessage }] = useBulkSendMessageMutation();
+
+    const toggleSelectAll = useCallback(() => {
+        if (selectedIds.size === filteredOrders.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(filteredOrders.map((o) => o.id)));
+        }
+    }, [selectedIds.size, filteredOrders]);
+
+    const toggleSelect = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    }, []);
+
+    const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
+    const handleBulkAccept = async () => {
+        if (selectedIds.size === 0) return;
+        try {
+            const result = await bulkAccept({ orderIds: Array.from(selectedIds) }).unwrap();
+            toast.success(`Accepted ${result.updated} of ${result.total} order(s)`);
+            clearSelection();
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to accept orders");
+        }
+    };
+
+    const handleBulkCancel = async () => {
+        if (selectedIds.size === 0) return;
+        try {
+            const result = await bulkCancel({ orderIds: Array.from(selectedIds) }).unwrap();
+            toast.success(`Cancelled ${result.updated} of ${result.total} order(s)`);
+            clearSelection();
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to cancel orders");
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`Delete ${selectedIds.size} order(s)? This will remove them from the list.`)) return;
+        try {
+            const result = await bulkDelete({ orderIds: Array.from(selectedIds) }).unwrap();
+            toast.success(`Deleted ${result.deleted} of ${result.total} order(s)`);
+            clearSelection();
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to delete orders");
+        }
+    };
+
+    const handleOpenSendMessage = () => {
+        setMessageSubject("");
+        setMessageBody("");
+        setShowSendMessageModal(true);
+    };
+
+    const handleBulkSendMessage = async () => {
+        if (selectedIds.size === 0 || !messageSubject.trim() || !messageBody.trim()) return;
+        try {
+            const result = await bulkSendMessage({
+                orderIds: Array.from(selectedIds),
+                subject: messageSubject.trim(),
+                message: messageBody.trim(),
+            }).unwrap();
+            toast.success(`Message sent to ${result.sent} of ${result.total} client(s)`);
+            if (result.failed > 0) {
+                toast.warning(`${result.failed} client(s) could not receive the email`);
+            }
+            setShowSendMessageModal(false);
+            clearSelection();
+        } catch (err: any) {
+            toast.error(err?.data?.message || "Failed to send message");
+        }
     };
 
     const getStatusColor = (status: string) => {
@@ -113,11 +214,58 @@ export function AdminOrdersList() {
             {isLoading && (
                 <div className="text-center py-4 text-gray-500">Loading orders...</div>
             )}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Orders</h1>
-                <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                    <Link href="/admin/orders/new">Add New Order</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    {selectedIds.size > 0 && (
+                        <>
+                            <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleBulkAccept}
+                                disabled={isAccepting}
+                            >
+                                {isAccepting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                <span className="ml-1.5">Accept</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleBulkCancel}
+                                disabled={isCancelling}
+                            >
+                                {isCancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                                <span className="ml-1.5">Cancel</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleBulkDelete}
+                                disabled={isDeleting}
+                                className="text-destructive hover:text-destructive"
+                            >
+                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                <span className="ml-1.5">Delete</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleOpenSendMessage}
+                                disabled={isSendingMessage}
+                            >
+                                {isSendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                                <span className="ml-1.5">Send Message</span>
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={clearSelection}>
+                                Clear
+                            </Button>
+                        </>
+                    )}
+                    <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                        <Link href="/admin/orders/new">Add New Order</Link>
+                    </Button>
+                </div>
             </div>
 
             <Card className="border-none shadow-sm bg-white dark:bg-gray-900 overflow-hidden">
@@ -229,7 +377,13 @@ export function AdminOrdersList() {
                         <Table>
                             <TableHeader className="bg-[#1e40af]">
                                 <TableRow className="border-b-0 hover:bg-[#1e40af]">
-                                    <TableHead className="w-[40px] text-white/90 py-3"><Checkbox className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-[#1e40af]" /></TableHead>
+                                    <TableHead className="w-[40px] text-white/90 py-3">
+                                        <Checkbox
+                                            checked={filteredOrders.length > 0 && selectedIds.size === filteredOrders.length}
+                                            onCheckedChange={toggleSelectAll}
+                                            className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-[#1e40af]"
+                                        />
+                                    </TableHead>
                                     <TableHead className="text-white font-semibold py-3 h-auto">ID</TableHead>
                                     <TableHead className="text-white font-semibold py-3 h-auto">Order #</TableHead>
                                     <TableHead className="text-white font-semibold py-3 h-auto">Date</TableHead>
@@ -264,7 +418,10 @@ export function AdminOrdersList() {
                                             onClick={() => router.push(`/admin/orders/${order.id}`)}
                                         >
                                             <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox />
+                                                <Checkbox
+                                                    checked={selectedIds.has(order.id)}
+                                                    onCheckedChange={() => toggleSelect(order.id)}
+                                                />
                                             </TableCell>
                                             <TableCell className="font-mono text-xs font-medium text-blue-600 group-hover:underline">
                                                 {order.customOrderId}
@@ -346,6 +503,50 @@ export function AdminOrdersList() {
                     />
                 </div>
             </div>
+
+            <Dialog open={showSendMessageModal} onOpenChange={setShowSendMessageModal}>
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Send Message to Clients</DialogTitle>
+                        <DialogDescription>
+                            Send an email to the clients of {selectedIds.size} selected order(s). Each unique client will receive one email.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="subject">Subject</Label>
+                            <Input
+                                id="subject"
+                                value={messageSubject}
+                                onChange={(e) => setMessageSubject(e.target.value)}
+                                placeholder="Email subject"
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="message">Message</Label>
+                            <Textarea
+                                id="message"
+                                value={messageBody}
+                                onChange={(e) => setMessageBody(e.target.value)}
+                                placeholder="Your message..."
+                                rows={5}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowSendMessageModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleBulkSendMessage}
+                            disabled={!messageSubject.trim() || !messageBody.trim() || isSendingMessage}
+                        >
+                            {isSendingMessage ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            Send
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

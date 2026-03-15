@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function getVisiblePages(currentPage: number, totalPages: number): Array<number | "ellipsis"> {
   if (totalPages <= 5) {
@@ -24,16 +27,16 @@ function getVisiblePages(currentPage: number, totalPages: number): Array<number 
   }
 
   const sortedPages = Array.from(pages)
-    .filter((page) => page >= 1 && page <= totalPages)
+    .filter((p) => p >= 1 && p <= totalPages)
     .sort((a, b) => a - b);
 
   const visiblePages: Array<number | "ellipsis"> = [];
 
-  sortedPages.forEach((page, index) => {
-    if (index > 0 && page - sortedPages[index - 1] > 1) {
+  sortedPages.forEach((p, index) => {
+    if (index > 0 && p - sortedPages[index - 1] > 1) {
       visiblePages.push("ellipsis");
     }
-    visiblePages.push(page);
+    visiblePages.push(p);
   });
 
   return visiblePages;
@@ -50,6 +53,10 @@ interface DataTablePaginationProps {
   onPageSizeChange?: (pageSize: number) => void;
   pageSizeOptions?: number[];
   className?: string;
+  /** Compact layout for tight spaces */
+  variant?: "default" | "compact";
+  /** Show jump-to-page input when many pages */
+  showJumpToPage?: boolean;
 }
 
 export function DataTablePagination({
@@ -61,9 +68,12 @@ export function DataTablePagination({
   itemLabel = "records",
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 20, 50],
+  pageSizeOptions = [10, 20, 50, 100],
   className,
+  variant = "default",
+  showJumpToPage = true,
 }: DataTablePaginationProps) {
+  const [jumpValue, setJumpValue] = useState("");
   const safeTotalPages = Math.max(totalPages, 1);
   const safePage = Math.min(Math.max(page, 1), safeTotalPages);
   const visiblePages = getVisiblePages(safePage, safeTotalPages);
@@ -76,91 +86,156 @@ export function DataTablePagination({
           totalItems
         );
 
+  const handleJumpToPage = () => {
+    const num = parseInt(jumpValue, 10);
+    if (!isNaN(num) && num >= 1 && num <= safeTotalPages) {
+      onPageChange(num);
+      setJumpValue("");
+    }
+  };
+
+  const isCompact = variant === "compact";
+
   return (
     <div
-      className={[
-        "flex w-full min-w-0 flex-col gap-3 rounded-lg border border-dashed bg-white p-3 text-sm text-muted-foreground dark:bg-gray-900",
-        "lg:flex-row lg:items-center lg:justify-between",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      className={cn(
+        "flex w-full min-w-0 flex-col gap-4 rounded-xl border bg-card text-sm shadow-sm",
+        "dark:border-gray-800 dark:bg-gray-900/50",
+        isCompact ? "p-3 gap-3" : "p-4 sm:gap-4 md:gap-6",
+        className
+      )}
     >
-      <span className="min-w-0 break-words font-medium">
-        {totalItems > 0
-          ? `Showing ${start} to ${end} of ${totalItems} ${itemLabel}`
-          : `0 ${itemLabel}`}
-      </span>
+      {/* Info row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-1.5">
+          <p className="font-medium text-foreground">
+            {totalItems > 0
+              ? `Showing ${start}–${end} of ${totalItems} ${itemLabel}`
+              : `No ${itemLabel}`}
+          </p>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+            {safeTotalPages > 1 && (
+              <span>Page {safePage} of {safeTotalPages}</span>
+            )}
+            {onPageSizeChange && (
+              <label className="flex items-center gap-2">
+                <span>Rows per page</span>
+                <select
+                  className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium transition-colors hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={pageSize}
+                  onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                >
+                  {pageSizeOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+        </div>
 
-      <div className="flex min-w-0 flex-col gap-3 lg:items-end">
-        {onPageSizeChange ? (
-          <label className="flex flex-wrap items-center gap-2 whitespace-nowrap">
-            <span>Per page:</span>
-            <select
-              className="h-8 rounded border border-gray-200 bg-white px-2 text-xs font-medium dark:border-gray-800 dark:bg-gray-900"
-              value={pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            >
-              {pageSizeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-
-        {safeTotalPages > 1 ? (
-          <div className="flex min-w-0 flex-col gap-2 lg:items-end">
-            <div className="flex min-w-0 items-center gap-2">
+        {/* Navigation */}
+        {safeTotalPages > 1 && (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex items-center gap-0.5 rounded-lg border border-input bg-muted/30 p-0.5 dark:border-gray-700">
               <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-md"
+                disabled={safePage <= 1}
+                onClick={() => onPageChange(1)}
+                aria-label="First page"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-md"
                 disabled={safePage <= 1}
                 onClick={() => onPageChange(Math.max(1, safePage - 1))}
+                aria-label="Previous page"
               >
-                Prev
+                <ChevronLeft className="h-4 w-4" />
               </Button>
-              <div className="min-w-0 max-w-full overflow-x-auto">
-                <div className="flex min-w-max items-center gap-1 pr-1">
-                  {visiblePages.map((entry, index) =>
-                    entry === "ellipsis" ? (
-                      <span
-                        key={`ellipsis-${index}`}
-                        className="px-1.5 text-xs text-muted-foreground"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <Button
-                        key={entry}
-                        variant={entry === safePage ? "default" : "outline"}
-                        size="sm"
-                        className="min-w-8 shrink-0 px-2"
-                        onClick={() => onPageChange(entry)}
-                      >
-                        {entry}
-                      </Button>
-                    )
-                  )}
-                </div>
+              <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto px-1">
+                {visiblePages.map((entry, idx) =>
+                  entry === "ellipsis" ? (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-1.5 py-1 text-muted-foreground"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <Button
+                      key={entry}
+                      variant={entry === safePage ? "default" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-8 min-w-8 shrink-0 px-2 font-medium",
+                        entry === safePage && "shadow-sm"
+                      )}
+                      onClick={() => onPageChange(entry)}
+                      aria-label={`Page ${entry}`}
+                      aria-current={entry === safePage ? "page" : undefined}
+                    >
+                      {entry}
+                    </Button>
+                  )
+                )}
               </div>
               <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-md"
                 disabled={safePage >= safeTotalPages}
                 onClick={() => onPageChange(Math.min(safeTotalPages, safePage + 1))}
+                aria-label="Next page"
               >
-                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-md"
+                disabled={safePage >= safeTotalPages}
+                onClick={() => onPageChange(safeTotalPages)}
+                aria-label="Last page"
+              >
+                <ChevronsRight className="h-4 w-4" />
               </Button>
             </div>
-            <span className="text-xs text-muted-foreground lg:text-right">
-              Page {safePage} of {safeTotalPages}
-            </span>
+
+            {showJumpToPage && safeTotalPages > 5 && !isCompact && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Go to</span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={safeTotalPages}
+                    value={jumpValue}
+                    onChange={(e) => setJumpValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleJumpToPage()}
+                    placeholder={String(safePage)}
+                    className="h-8 w-16 rounded-md border border-input bg-background px-2 text-center text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2"
+                    onClick={handleJumpToPage}
+                  >
+                    Go
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
