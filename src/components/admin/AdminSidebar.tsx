@@ -99,7 +99,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     </ul>
                 </nav>
 
-                <SidebarFooter onLinkClick={handleLinkClick} isCollapsed={displayCollapsed} />
+                <SidebarFooter onLinkClick={handleLinkClick} isCollapsed={displayCollapsed} hideStatusAndSettings />
             </aside>
         </>
     );

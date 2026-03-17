@@ -9,10 +9,11 @@ import {
     Tag,
     CreditCard,
     MessageSquare,
+    HandCoins,
 } from "lucide-react";
 import type { NavItem } from "@/types/navigation";
 
-// Standard order: Dashboard → Clients → Orders → Billing → Products → Support → Promotions → Domains → Server Config → Settings
+// Standard order: Dashboard → Clients → Orders → Billing → Affiliates → Products → Support → Promotions → Domains → Server Config → Settings
 // requiredPermissions: show nav if user has ANY of these (admin/superadmin bypass)
 export const adminNavItems: NavItem[] = [
     {
@@ -33,11 +34,10 @@ export const adminNavItems: NavItem[] = [
         href: "/admin/clients",
         icon: Users,
         hasSubmenu: true,
-        requiredPermissions: ["clients:list", "affiliates:dashboard"],
+        requiredPermissions: ["clients:list", "clients:send_email"],
         submenu: [
             { label: "View / Search Client", href: "/admin/clients", requiredPermissions: ["clients:list"] },
             { label: "Compose Email", href: "/admin/emails/compose", requiredPermissions: ["clients:send_email"] },
-            { label: "Affiliates", href: "/admin/affiliates", requiredPermissions: ["affiliates:dashboard"] },
         ],
     },
     {
@@ -63,6 +63,7 @@ export const adminNavItems: NavItem[] = [
             { label: "Billable Items", href: "/admin/billing/billable-items", requiredPermissions: ["invoices:list"] },
         ],
     },
+  
     {
         label: "Products",
         href: "/admin/products",
@@ -74,11 +75,18 @@ export const adminNavItems: NavItem[] = [
             { label: "Add Product", href: "/admin/products/add", requiredPermissions: ["products:create"] },
         ],
     },
+  
     {
         label: "Support",
         href: "/admin/tickets",
         icon: MessageSquare,
         requiredPermissions: ["tickets:list", "tickets:read"],
+    },
+    {
+        label: "Affiliates",
+        href: "/admin/affiliates",
+        icon: HandCoins,
+        requiredPermissions: ["affiliates:dashboard"],
     },
     {
         label: "Promotions",
