@@ -21,8 +21,6 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/next.config.js ./next.config.js
-# If your project uses next.config.mjs instead, change the above line.
 
 EXPOSE 3000
 
