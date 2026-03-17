@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { USER_ROLES } from "@/config/api";
+import { normalizeRole } from "@/types/navigation";
 
 interface AdminRouteGuardProps {
     children: React.ReactNode;
@@ -29,9 +30,10 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
             return;
         }
 
-        // Check if user has admin role
+        // Check if user has admin role (normalize in case API returns slug e.g. super_admin)
+        const role = normalizeRole(user.role);
         const allowedRoles: string[] = [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN, USER_ROLES.STAFF];
-        const hasAdminAccess = allowedRoles.includes(user.role);
+        const hasAdminAccess = allowedRoles.includes(role);
 
         if (!hasAdminAccess) {
             // Redirect unauthorized users to login with access denied message
@@ -60,8 +62,9 @@ export function AdminRouteGuard({ children }: AdminRouteGuardProps) {
         return null;
     }
 
+    const role = normalizeRole(user.role);
     const allowedRoles: string[] = [USER_ROLES.SUPERADMIN, USER_ROLES.ADMIN, USER_ROLES.STAFF];
-    const hasAdminAccess = allowedRoles.includes(user.role);
+    const hasAdminAccess = allowedRoles.includes(role);
 
     if (!hasAdminAccess) {
         return null;

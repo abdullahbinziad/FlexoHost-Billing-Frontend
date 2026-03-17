@@ -30,6 +30,8 @@ import {
 } from "@/utils/tokenManager";
 import { fetchCsrfToken, clearCsrfToken } from "@/lib/csrfToken";
 import { devLog } from "@/lib/devLog";
+import { normalizeRole } from "@/types/navigation";
+import { USER_ROLES } from "@/config/api";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -39,13 +41,20 @@ function syncUserToRedux(user: User | null, token: string | null) {
         store.dispatch(clearCredentials());
         return;
     }
+    const resolvedToken = token ?? getAccessToken();
+    if (!resolvedToken) {
+        store.dispatch(clearCredentials());
+        return;
+    }
+    const rawRole = (user as { role?: string }).role;
+    const role = normalizeRole(rawRole) || USER_ROLES.USER;
     const authUser = {
         id: user.id ?? (user as { _id?: string })._id ?? "",
         email: user.email,
-        role: user.role as "superadmin" | "admin" | "staff" | "client" | "user",
+        role: role as "superadmin" | "admin" | "staff" | "client" | "user",
         roleData: (user as { roleData?: { permissions: string[]; hasFullAccess?: boolean } }).roleData,
     };
-    store.dispatch(setCredentials({ token: token ?? getAccessToken(), user: authUser }));
+    store.dispatch(setCredentials({ token: resolvedToken, user: authUser }));
 }
 
 /**
@@ -111,13 +120,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     /**
      * Redirect to complete-profile if user (client/user role) has not completed profile.
      */
-    const getRedirectAfterLogin = (user: { role: string; profileCompleted?: boolean } | null | undefined, redirectPath: string | null): string => {
-        if (!user || typeof user.role !== "string") {
+    const getRedirectAfterLogin = (user: { role?: string; profileCompleted?: boolean } | null | undefined, redirectPath: string | null): string => {
+        if (!user) {
             return redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
         }
-        const needsProfile = ['client', 'user'].includes(user.role) && user.profileCompleted === false;
+        const role = normalizeRole(user.role);
+        if (!role) {
+            return redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
+        }
+        const needsProfile = ['client', 'user'].includes(role) && user.profileCompleted === false;
         if (needsProfile) return '/complete-profile';
-        return getSmartRedirect(redirectPath, user.role);
+        return getSmartRedirect(redirectPath, role);
     };
 
     /**
@@ -184,7 +197,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (response.success && response.data) {
                 const { user, accessToken, refreshToken } = response.data;
 
-                if (!user || typeof user.role !== "string") {
+                const role = user ? normalizeRole((user as { role?: string }).role) : "";
+                if (!user || !role) {
                     throw new Error("Invalid login response: user data missing");
                 }
 

@@ -153,7 +153,7 @@ export function RecipientPicker({
               >
                 <Checkbox
                   checked={selectedIds.has(client._id)}
-                  onCheckedChange={() => toggleSelect(client._id)}
+                  onCheckedChange={() => toggleSelect(client)}
                   disabled={
                     disabled ||
                     (!selectedIds.has(client._id) && selectedIds.size >= maxRecipients)

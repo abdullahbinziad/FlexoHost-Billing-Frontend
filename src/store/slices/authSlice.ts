@@ -7,8 +7,8 @@ export interface AuthUser {
   role: UserRole;
   name?: string;
   roleData?: {
-    _id: string;
-    name: string;
+    _id?: string;
+    name?: string;
     permissions: string[];
     hasFullAccess?: boolean;
   };
