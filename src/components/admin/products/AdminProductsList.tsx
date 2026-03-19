@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { devLog } from "@/lib/devLog";
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Filter } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Filter, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -135,6 +135,22 @@ export function AdminProductsList({
         setProductToDelete(id);
     };
 
+    /**
+     * Copy checkout link for product to clipboard.
+     * Uses pid (from data collection) - checkout page accepts pid param.
+     */
+    const handleCopyCheckoutLink = async (product: Product) => {
+        const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+        const productId = product.pid ?? product.id;
+        const checkoutUrl = `${baseUrl}/checkout?pid=${productId}`;
+        try {
+            await navigator.clipboard.writeText(checkoutUrl);
+            toast.success("Checkout link copied to clipboard");
+        } catch {
+            toast.error("Failed to copy link");
+        }
+    };
+
     // Show loading state
     if (isLoading) {
         return (
@@ -232,7 +248,7 @@ export function AdminProductsList({
                 </p>
             </div>
 
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -240,7 +256,7 @@ export function AdminProductsList({
                             <TableHead>Type</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right min-w-[320px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -276,7 +292,17 @@ export function AdminProductsList({
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
+                                        <div className="flex justify-end gap-2 flex-wrap">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleCopyCheckoutLink(product)}
+                                                title="Copy checkout link"
+                                                className="gap-1.5 shrink-0"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                                Copy link
+                                            </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleToggleVisibility(product.id, product.isHidden)}>
                                                 {product.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </Button>

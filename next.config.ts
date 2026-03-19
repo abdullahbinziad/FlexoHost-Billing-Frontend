@@ -1,13 +1,7 @@
 import type { NextConfig } from "next";
+import { API_CONFIG } from "./src/config/api";
 
-// Actual backend URL for rewrites (must be different from frontend)
-const BACKEND_ORIGIN = (() => {
-  try {
-    return new URL(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001").origin;
-  } catch {
-    return "http://localhost:5001";
-  }
-})();
+const BACKEND_ORIGIN = API_CONFIG.BACKEND_ORIGIN;
 
 const isDev = process.env.NODE_ENV === "development";
 const CSP = [

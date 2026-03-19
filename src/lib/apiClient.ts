@@ -40,7 +40,7 @@ class ApiClient {
         if (typeof window !== 'undefined') {
             return `${window.location.origin}${path.startsWith('/') ? path : `/${path}`}`;
         }
-        const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const origin = API_CONFIG.APP_ORIGIN;
         return `${origin.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
     }
 
@@ -122,6 +122,12 @@ class ApiClient {
                     }
                 } else if (response.status === 404) {
                     errorMessage = 'API endpoint not found. Please check the backend is running.';
+                } else if (response.status === 502) {
+                    const backendUrl = API_CONFIG.BACKEND_API_BASE || 'backend';
+                    const healthUrl = API_CONFIG.BACKEND_ORIGIN ? `${API_CONFIG.BACKEND_ORIGIN}/health` : '';
+                    errorMessage = API_CONFIG.BACKEND_ORIGIN
+                        ? `Cannot connect to backend at ${backendUrl}. Check: 1) Backend running (e.g. \`npm run dev\` in backend). 2) \`NEXT_PUBLIC_BACKEND_URL\` in .env matches backend port. 3) Restart Next.js after changing .env. ${healthUrl ? `Test: ${healthUrl}` : ''}`
+                        : 'Cannot connect to backend. Set NEXT_PUBLIC_BACKEND_URL in .env and start the backend.';
                 } else if (response.status === 500) {
                     errorMessage = 'Server error. Please check backend logs.';
                 } else if (response.status === 0 || !response.status) {
@@ -159,13 +165,16 @@ class ApiClient {
                 msg.includes('NetworkError') ||
                 msg.includes('Failed to fetch')
             ) {
-                const apiUrl = this.baseURL.startsWith('http')
+                const backendUrl = API_CONFIG.BACKEND_API_BASE || (this.baseURL.startsWith('http')
                     ? this.baseURL
                     : typeof window !== 'undefined'
                         ? `${window.location.origin}${this.baseURL}`
-                        : this.baseURL;
+                        : this.baseURL);
+                const healthUrl = API_CONFIG.BACKEND_ORIGIN ? `${API_CONFIG.BACKEND_ORIGIN}/health` : '';
                 throw {
-                    message: `Cannot connect to backend. Ensure it is running at ${apiUrl}`,
+                    message: API_CONFIG.BACKEND_ORIGIN
+                        ? `Cannot connect to backend at ${backendUrl}. Check: 1) Backend running (e.g. \`npm run dev\` in backend). 2) \`NEXT_PUBLIC_BACKEND_URL\` in .env matches backend port. 3) Restart Next.js after changing .env. ${healthUrl ? `Test: ${healthUrl}` : ''}`
+                        : 'Cannot connect to backend. Set NEXT_PUBLIC_BACKEND_URL in .env and ensure the backend is running.',
                     status: 0,
                 } as ApiError;
             }

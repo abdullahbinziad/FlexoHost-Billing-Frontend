@@ -1,23 +1,38 @@
 /**
- * API Configuration
- * Centralized API configuration - single source for all API/backend URLs.
- * Import API_CONFIG from here for reusable API calls across the application.
- * Set NEXT_PUBLIC_API_URL in .env
+ * API / App config – only this file reads process.env for URLs.
+ * Rest of the app must use API_CONFIG (never process.env for URLs).
  */
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-const BACKEND_ORIGIN = (() => {
+function getBackendOrigin(): string {
+    const url = process.env.NEXT_PUBLIC_BACKEND_URL;
+    if (!url) return '';
     try {
-        return new URL(process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001').origin;
+        return new URL(url).origin;
     } catch {
-        return 'http://localhost:5001';
+        return '';
     }
-})();
+}
+
+function getAppOrigin(): string {
+    const url = process.env.NEXT_PUBLIC_FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL;
+    if (!url) return '';
+    try {
+        return new URL(url).origin;
+    } catch {
+        return '';
+    }
+}
+
+const BACKEND_ORIGIN = getBackendOrigin();
+const APP_ORIGIN = getAppOrigin();
+
+export const BACKEND_API_BASE = BACKEND_ORIGIN ? `${BACKEND_ORIGIN}/api/v1` : '';
 
 export const API_CONFIG = {
-    BASE_URL,
+    BASE_URL: BACKEND_API_BASE || '/api/v1',
     BACKEND_ORIGIN,
-    TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000'),
+    BACKEND_API_BASE,
+    APP_ORIGIN,
+    TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000', 10),
     VERSION: 'v1',
 } as const;
 
@@ -36,7 +51,7 @@ export const API_ENDPOINTS = {
         FORGOT_PASSWORD: '/auth/forgot-password',
         RESET_PASSWORD: '/auth/reset-password',
         /** Full URL to start Google OAuth (redirects to backend). */
-        GOOGLE: `${(BASE_URL as string | undefined)?.replace(/\/$/, '')}/auth/google`,
+        GOOGLE: '/api/v1/auth/google',
     },
 
     // Client Management

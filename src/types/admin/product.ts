@@ -22,6 +22,8 @@ export interface CurrencyPricing {
 
 export interface Product {
     id: string;
+    /** 6-digit product ID from database (used in checkout URLs as pid param) */
+    pid?: number;
     name: string;
     type: ProductType;
     group: string;

@@ -42,19 +42,23 @@ function syncUserToRedux(user: User | null, token: string | null) {
         return;
     }
     const resolvedToken = token ?? getAccessToken();
-    if (!resolvedToken) {
-        store.dispatch(clearCredentials());
-        return;
-    }
+    // When we have a user from a successful API response, always sync to Redux.
+    // Token can be null in cookie-only mode (auth via HttpOnly cookie) - session is still valid.
     const rawRole = (user as { role?: string }).role;
     const role = normalizeRole(rawRole) || USER_ROLES.USER;
+    const rawRoleData = (user as { roleData?: { permissions?: string[]; hasFullAccess?: boolean; _id?: string; name?: string } }).roleData;
     const authUser = {
         id: user.id ?? (user as { _id?: string })._id ?? "",
         email: user.email,
         role: role as "superadmin" | "admin" | "staff" | "client" | "user",
-        roleData: (user as { roleData?: { permissions: string[]; hasFullAccess?: boolean } }).roleData,
+        roleData: rawRoleData
+            ? {
+                  ...rawRoleData,
+                  permissions: Array.isArray(rawRoleData.permissions) ? rawRoleData.permissions : [],
+              }
+            : undefined,
     };
-    store.dispatch(setCredentials({ token: resolvedToken, user: authUser }));
+    store.dispatch(setCredentials({ token: resolvedToken || 'cookie-auth', user: authUser }));
 }
 
 /**

@@ -51,7 +51,7 @@ export default function Checkout() {
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useAuth();
 
-  const productId = searchParams.get("product_id") || searchParams.get("product");
+  const productId = searchParams.get("pid") || searchParams.get("product_id") || searchParams.get("product");
   const mode = searchParams.get("mode");
   const billingCurrency = searchParams.get("billing_currency") || searchParams.get("currency");
   const billingCycle = searchParams.get("billing_cycle") || searchParams.get("period");
