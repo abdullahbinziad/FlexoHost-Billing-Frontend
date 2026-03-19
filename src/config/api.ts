@@ -51,7 +51,7 @@ export const API_ENDPOINTS = {
         FORGOT_PASSWORD: '/auth/forgot-password',
         RESET_PASSWORD: '/auth/reset-password',
         /** Full URL to start Google OAuth (redirects to backend). */
-        GOOGLE: '/api/v1/auth/google',
+        GOOGLE: `${BACKEND_API_BASE || '/api/v1'}/auth/google`,
     },
 
     // Client Management
