@@ -6,44 +6,23 @@ import { useDispatch } from "react-redux";
 import { CheckoutPage } from "@/components/checkout/CheckoutPage";
 import { DomainCheckoutPage } from "@/components/checkout/DomainCheckoutPage";
 import { useGetStoreProductQuery } from "@/store/api/storeApi";
+import { useGetCheckoutDataQuery } from "@/store/api/checkoutApi";
 import { setCurrency } from "@/store/slices/currencySlice";
 import { useAuth } from "@/hooks/useAuth";
 import type { ServerLocation, BillingContact, PaymentMethod, Addon } from "@/types/checkout";
 import { devLog } from "@/lib/devLog";
 
-// Mock server locations data (as requested)
-const mockServerLocations: ServerLocation[] = [
-  { id: "usa", country: "USA", countryCode: "US", flag: "🇺🇸" },
-  { id: "malaysia", country: "Malaysia", countryCode: "MY", flag: "🇲🇾" },
-  { id: "singapore", country: "Singapore", countryCode: "SG", flag: "🇸🇬" },
-  { id: "bangladesh", country: "Bangladesh", countryCode: "BD", flag: "🇧🇩" },
-  { id: "germany", country: "Germany", countryCode: "DE", flag: "🇩🇪" },
-  { id: "finland", country: "Finland", countryCode: "FI", flag: "🇫🇮" },
-  { id: "usa-east", country: "USA East", countryCode: "US", flag: "🇺🇸" },
-];
-
-
-const mockPaymentMethods: PaymentMethod[] = [
-  { id: "stripe", name: "Credit Card (Stripe)", logo: "💳" },
-  { id: "paypal", name: "PayPal", logo: "🅿️" },
-  { id: "bkash", name: "bKash", logo: "🇧🇩" },
-  { id: "nagad", name: "Nagad", logo: "🇧🇩" },
-];
-
-const mockAddons: Addon[] = [
-  {
-    id: "backup",
-    name: "Daily Backups",
-    description: "Keep your data safe with daily automated backups.",
-    price: 5.0,
-  },
-  {
-    id: "security",
-    name: "Advanced Security",
-    description: "Malware scanning and real-time protection.",
-    price: 10.0,
-  },
-];
+function normalizeServerLocations(locations: ServerLocation[] | undefined): ServerLocation[] {
+  return (locations ?? []).map((location) => {
+    const countryCode = String(location.countryCode || "").toUpperCase().slice(0, 2);
+    return {
+      id: String(location.id),
+      country: location.country || location.id,
+      countryCode: countryCode || "US",
+      flag: location.flag || "",
+    };
+  });
+}
 
 export default function Checkout() {
   const searchParams = useSearchParams();
@@ -69,6 +48,7 @@ export default function Checkout() {
     productId as string,
     { skip: !productId || mode === "domain" }
   );
+  const { data: checkoutData } = useGetCheckoutDataQuery(undefined, { skip: mode === "domain" });
 
   // Redirect if no product ID or error
   useEffect(() => {
@@ -101,13 +81,17 @@ export default function Checkout() {
     return null;
   }
 
+  const serverLocations = normalizeServerLocations(checkoutData?.serverLocations);
+  const availableAddons: Addon[] = checkoutData?.availableAddons ?? [];
+  const paymentMethods: PaymentMethod[] = checkoutData?.paymentMethods ?? [];
+
   return (
     <CheckoutPage
       productName={product.name}
       basePrice={0} // Calculated from billing cycle options
       billingCycleOptions={[]} // Dynamically generated in CheckoutPage from product data
-      serverLocations={mockServerLocations}
-      availableAddons={mockAddons}
+      serverLocations={serverLocations}
+      availableAddons={availableAddons}
       billingContacts={
         isAuthenticated && user
           ? [
@@ -127,7 +111,7 @@ export default function Checkout() {
           ]
           : []
       }
-      paymentMethods={mockPaymentMethods}
+      paymentMethods={paymentMethods}
       product={product}
       initialBillingCycle={billingCycle || undefined}
       referral={referral || undefined}

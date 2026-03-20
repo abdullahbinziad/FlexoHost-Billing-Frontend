@@ -37,7 +37,7 @@ export function ServerLocationSelector({
   return (
     <div className="space-y-4">
       <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">Server Location</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 min-w-0">
         {locations.map((location) => {
           const isSelected = selected.id === location.id;
 
@@ -45,7 +45,7 @@ export function ServerLocationSelector({
             <label
               key={location.id}
               className={cn(
-                "relative flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                "relative flex min-w-0 items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all overflow-hidden",
                 "hover:bg-gray-50 dark:hover:bg-gray-800/50",
                 isSelected
                   ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-md shadow-primary/20"
@@ -84,7 +84,7 @@ export function ServerLocationSelector({
               {/* Country Name */}
               <span
                 className={cn(
-                  "flex-1 text-sm font-medium transition-colors",
+                  "flex-1 min-w-0 truncate text-sm font-medium transition-colors",
                   isSelected
                     ? "text-primary font-semibold"
                     : "text-gray-900 dark:text-gray-100"

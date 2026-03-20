@@ -116,6 +116,7 @@ export function CheckoutPage({
   } = useCheckoutRedux(billingCycleOptions, productName);
 
   const [validateCoupon] = useValidateCouponMutation();
+  const selectedServerLocation = formData.serverLocation || serverLocations[0];
   const normalizedReferral = referral?.trim().toUpperCase();
   const isReferralDiscountApplied =
     Boolean(normalizedReferral) &&
@@ -269,13 +270,19 @@ export function CheckoutPage({
             </div>
 
             {/* Server Location */}
-            <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-              <ServerLocationSelector
-                locations={serverLocations}
-                selected={formData.serverLocation || serverLocations[0]}
-                onSelect={setServerLocation}
-              />
-            </div>
+            {selectedServerLocation ? (
+              <div className="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+                <ServerLocationSelector
+                  locations={serverLocations}
+                  selected={selectedServerLocation}
+                  onSelect={setServerLocation}
+                />
+              </div>
+            ) : (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 p-4 sm:p-6 rounded-lg">
+                Server locations are not available right now. Please try again shortly.
+              </div>
+            )}
 
 
             {/* Billing Details */}
@@ -303,7 +310,7 @@ export function CheckoutPage({
             <OrderSummaryCard
               summary={orderSummary}
               billingCycle={(formData.billingCycle || initialBillingCycle || "monthly") as any}
-              serverLocation={formData.serverLocation || serverLocations[0]}
+              serverLocation={selectedServerLocation}
               agreeToTerms={formData.agreeToTerms || false}
               onAgreeToTermsChange={setAgreeToTerms}
               onCheckout={handleCheckout}

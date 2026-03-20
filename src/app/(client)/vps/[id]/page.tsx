@@ -1,15 +1,29 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useActiveClient } from "@/hooks/useActiveClient";
+import { useGetClientServiceByIdQuery } from "@/store/api/servicesApi";
 import { VPSManagePage } from "@/components/vps-manage/VPSManagePage";
-import { mockVPSServiceDetails } from "@/data/mockVPSServiceDetails";
 
 export default function VPSManage() {
     const params = useParams();
     const id = params?.id as string;
-    const service = id ? mockVPSServiceDetails[id] : null;
+    const { activeClientId } = useActiveClient();
+    const { data: service, isLoading, isError } = useGetClientServiceByIdQuery(
+      { clientId: activeClientId || "", serviceId: id },
+      { skip: !activeClientId || !id }
+    );
 
-    if (!service) {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
+
+    if (!service || isError) {
         return (
             <div className="flex items-center justify-center min-h-[400px]">
                 <div className="text-center">
@@ -24,5 +38,5 @@ export default function VPSManage() {
         );
     }
 
-    return <VPSManagePage service={service} />;
+    return <VPSManagePage service={service as any} />;
 }

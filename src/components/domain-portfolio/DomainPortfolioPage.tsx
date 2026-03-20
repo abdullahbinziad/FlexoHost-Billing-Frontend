@@ -6,11 +6,9 @@ import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetDomainsQuery, useUpdateDomainMutation } from "@/store/api/domainApi";
 import { DomainPortfolioHeader } from "./DomainPortfolioHeader";
 import { PromotionalBanner } from "@/components/shared/PromotionalBanner";
-import { DomainProtectionCard } from "./DomainProtectionCard";
 import { DomainSearchAndFilter } from "./DomainSearchAndFilter";
 import { DomainTable } from "./DomainTable";
 import type { Domain, DomainTableFilters } from "@/types/domain";
-import { mockProtectionOffer } from "@/data/mockDomains";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export function DomainPortfolioPage() {
@@ -121,11 +119,6 @@ export function DomainPortfolioPage() {
     window.location.href = "/domains/register";
   };
 
-  const handleGetProtection = () => {
-    // TODO: Open protection purchase modal
-    alert(`Get protection for: ${mockProtectionOffer.domain}`);
-  };
-
   if (isProfileLoading || (activeClientId && isLoading)) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -156,10 +149,6 @@ export function DomainPortfolioPage() {
       <PromotionalBanner
         title="New Year's sale is on – make your next move!"
         description="Grab these great deals that we've handpicked just for you."
-      />
-      <DomainProtectionCard
-        offer={mockProtectionOffer}
-        onGetNow={handleGetProtection}
       />
       <DomainSearchAndFilter
         filters={filters}
