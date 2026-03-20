@@ -49,9 +49,9 @@ export async function proxy(request: NextRequest) {
 
   // Validate JWT token (Production mode only)
   try {
-    const secret = new TextEncoder().encode(
-      API_CONFIG.JWT_SECRET
-    );
+    // MUST inline process.env here! Next.js Edge breaks if imported via API_CONFIG!
+    const secretKey = process.env.JWT_SECRET || 'dev-secret-key-change-in-production';
+    const secret = new TextEncoder().encode(secretKey);
 
     // Verify the JWT token
     const { payload } = await jwtVerify(token, secret);
