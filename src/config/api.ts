@@ -34,6 +34,7 @@ export const API_CONFIG = {
     APP_ORIGIN,
     TIMEOUT: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '30000', 10),
     VERSION: 'v1',
+    JWT_SECRET: process.env.JWT_SECRET,
 } as const;
 
 /**

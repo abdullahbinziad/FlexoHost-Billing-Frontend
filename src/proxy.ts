@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { devLog } from "@/lib/devLog";
+import { API_CONFIG } from "./config/api";
 
 /**
  * Proxy for route protection
@@ -49,7 +50,7 @@ export async function proxy(request: NextRequest) {
   // Validate JWT token (Production mode only)
   try {
     const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET || 'dev-secret-key-change-in-production'
+      API_CONFIG.JWT_SECRET
     );
 
     // Verify the JWT token
