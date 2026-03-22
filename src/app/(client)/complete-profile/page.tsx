@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompleteProfileMutation } from "@/store/api/clientApi";
@@ -10,11 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, UserPlus } from "lucide-react";
+import type { Client } from "@/types/auth";
 
 export default function CompleteProfilePage() {
   const router = useRouter();
   const { user, checkAuth } = useAuth();
   const [completeProfile, { isLoading }] = useCompleteProfileMutation();
+  const prefilled = useRef(false);
 
   const [companyName, setCompanyName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -24,27 +26,53 @@ export default function CompleteProfilePage() {
   const [postCode, setPostCode] = useState("");
   const [country, setCountry] = useState("");
 
+  useEffect(() => {
+    const c = (user as { client?: Client })?.client;
+    if (!c || prefilled.current) return;
+    prefilled.current = true;
+    setCompanyName(c.companyName ?? "");
+    setPhoneNumber(c.phoneNumber ?? "");
+    setStreet(c.address?.street ?? "");
+    setCity(c.address?.city ?? "");
+    setState(c.address?.state ?? "");
+    setPostCode(c.address?.postCode ?? "");
+    setCountry(c.address?.country ?? "");
+  }, [user]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!companyName.trim()) {
+      toast.error("Company name is required.");
+      return;
+    }
+    if (!phoneNumber.trim()) {
+      toast.error("Phone number is required.");
+      return;
+    }
+    if (!street.trim() || !city.trim() || !country.trim()) {
+      toast.error("Street, city, and country are required.");
+      return;
+    }
     try {
       await completeProfile({
-        companyName: companyName.trim() || undefined,
-        phoneNumber: phoneNumber.trim() || undefined,
+        companyName: companyName.trim(),
+        phoneNumber: phoneNumber.trim(),
         address: {
-          street: street.trim() || undefined,
-          city: city.trim() || undefined,
+          street: street.trim(),
+          city: city.trim(),
           state: state.trim() || undefined,
           postCode: postCode.trim() || undefined,
-          country: country.trim() || undefined,
+          country: country.trim(),
         },
       }).unwrap();
-      toast.success("Profile completed. Welcome!");
+      toast.success("Profile completed. Check your inbox for a welcome email.");
       await checkAuth();
       router.push("/");
     } catch (err: unknown) {
-      const message = err && typeof err === "object" && "data" in err
-        ? (err as { data?: { message?: string } }).data?.message
-        : "Failed to save profile.";
+      const message =
+        err && typeof err === "object" && "data" in err
+          ? (err as { data?: { message?: string } }).data?.message
+          : "Failed to save profile.";
       toast.error(message);
     }
   };
@@ -63,23 +91,29 @@ export default function CompleteProfilePage() {
             <CardTitle className="text-xl">Complete your profile</CardTitle>
           </div>
           <CardDescription>
-            Hi {displayName}, add your business details so we can serve you better. All fields are optional.
+            Hi {displayName}, please confirm your business and contact details. After you save, we&apos;ll send a welcome
+            email to your address on file.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company name</Label>
+              <Label htmlFor="companyName">
+                Company name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="companyName"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Your company (optional)"
+                placeholder="Your company or organization"
                 className="bg-white dark:bg-gray-900"
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone number</Label>
+              <Label htmlFor="phoneNumber">
+                Phone number <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -87,16 +121,20 @@ export default function CompleteProfilePage() {
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="+1 234 567 8900"
                 className="bg-white dark:bg-gray-900"
+                required
               />
             </div>
             <div className="space-y-2">
-              <Label>Address (optional)</Label>
+              <Label>
+                Address <span className="text-destructive">*</span>
+              </Label>
               <div className="grid gap-2">
                 <Input
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
                   placeholder="Street"
                   className="bg-white dark:bg-gray-900"
+                  required
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <Input
@@ -104,11 +142,12 @@ export default function CompleteProfilePage() {
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="City"
                     className="bg-white dark:bg-gray-900"
+                    required
                   />
                   <Input
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    placeholder="State / Region"
+                    placeholder="State / Region (optional)"
                     className="bg-white dark:bg-gray-900"
                   />
                 </div>
@@ -116,7 +155,7 @@ export default function CompleteProfilePage() {
                   <Input
                     value={postCode}
                     onChange={(e) => setPostCode(e.target.value)}
-                    placeholder="Post code"
+                    placeholder="Post code (optional)"
                     className="bg-white dark:bg-gray-900"
                   />
                   <Input
@@ -124,6 +163,7 @@ export default function CompleteProfilePage() {
                     onChange={(e) => setCountry(e.target.value)}
                     placeholder="Country"
                     className="bg-white dark:bg-gray-900"
+                    required
                   />
                 </div>
               </div>

@@ -299,7 +299,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     /**
      * Register new client (with complete profile)
      */
-    const registerClient = async (data: ClientRegistrationData): Promise<void> => {
+    const registerClient = async (data: ClientRegistrationData, redirectUrl?: string | null): Promise<void> => {
         try {
             setIsLoading(true);
 
@@ -317,8 +317,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(user);
                 syncUserToRedux(user, accessToken ?? null);
 
-                // Redirect to dashboard
-                router.push("/");
+                const finalRedirect = getRedirectAfterLogin(user, redirectUrl ?? null);
+                router.push(finalRedirect);
             } else {
                 throw new Error(response.message || "Registration failed");
             }

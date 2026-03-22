@@ -176,7 +176,7 @@ export interface AuthActions {
     /** Complete login after OAuth redirect; stores token, fetches user, redirects. */
     completeSocialLogin: (accessToken: string, redirectPath?: string, refreshToken?: string) => Promise<void>;
     register: (data: RegisterUserData) => Promise<void>;
-    registerClient: (data: ClientRegistrationData) => Promise<void>;
+    registerClient: (data: ClientRegistrationData, redirectUrl?: string | null) => Promise<void>;
     logout: () => Promise<void>;
     changePassword: (data: ChangePasswordData) => Promise<void>;
     forgotPassword: (email: string) => Promise<void>;

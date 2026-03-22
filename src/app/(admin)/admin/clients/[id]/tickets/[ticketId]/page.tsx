@@ -4,7 +4,7 @@ import { use, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { ArrowLeft, User, MessageCircle, MoreHorizontal, Paperclip, Send } from "lucide-react";
+import { ArrowLeft, User, MessageCircle, MoreHorizontal, Paperclip, Send, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +24,8 @@ import { formatDateTime } from "@/utils/format";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
   { value: "open", label: "Open" },
@@ -51,14 +53,15 @@ export default function TicketDetailsPage({
   const [messagesPage, setMessagesPage] = useState(1);
   const [messagesPageSize, setMessagesPageSize] = useState(10);
 
-  const { data, isLoading, error } = useGetTicketByIdQuery(ticketId, { skip: !ticketId });
+  const { data, isLoading, error, refetch, isFetching } = useGetTicketByIdQuery(ticketId, { skip: !ticketId });
   const [updateStatus] = useUpdateTicketStatusMutation();
   const [addReply, { isLoading: isSending }] = useAddTicketReplyMutation();
 
   const ticket = data?.ticket;
   const messages = data?.messages ?? [];
   const client = data?.client;
-  const orderedMessages = useMemo(() => [...messages].reverse(), [messages]);
+  /** API returns newest-first (createdAt desc). */
+  const orderedMessages = useMemo(() => messages, [messages]);
   const paginatedMessages = orderedMessages.slice(
     (messagesPage - 1) * messagesPageSize,
     messagesPage * messagesPageSize
@@ -71,8 +74,20 @@ export default function TicketDetailsPage({
   const handleSendReply = () => {
     if (!replyText.trim()) return;
     addReply({ id: ticketId, message: replyText.trim() })
-      .then(() => setReplyText(""))
+      .then(() => {
+        setReplyText("");
+        void refetch();
+      })
       .catch(() => {});
+  };
+
+  const handleReloadMessages = async () => {
+    const result = await refetch();
+    if (result.error) {
+      toast.error("Could not refresh replies.");
+      return;
+    }
+    toast.success("Replies updated.");
   };
 
   if (isLoading) {
@@ -125,7 +140,18 @@ export default function TicketDetailsPage({
             <span>Priority: {ticket.priority}</span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleReloadMessages}
+            disabled={isFetching}
+            aria-label="Reload replies"
+          >
+            <RefreshCw className={cn("w-4 h-4 mr-2", isFetching && "animate-spin")} />
+            Reload
+          </Button>
           <Select value={ticket.status} onValueChange={(v) => handleStatusChange(v as TicketStatus)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Status" />
@@ -155,31 +181,6 @@ export default function TicketDetailsPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader className="py-3 bg-gray-50 dark:bg-gray-800/50 border-b">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <MessageCircle className="w-4 h-4" /> Reply to Ticket
-              </h3>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
-              <Textarea
-                placeholder="Type your reply here..."
-                className="min-h-[150px]"
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-              />
-              <div className="flex justify-between items-center">
-                <Button variant="outline" size="sm">
-                  <Paperclip className="w-4 h-4 mr-2" /> Attach Files
-                </Button>
-                <Button onClick={handleSendReply} disabled={isSending || !replyText.trim()}>
-                  {isSending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  <Send className="w-4 h-4 mr-2" /> Send Reply
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           <div className="space-y-4">
             {messages.length === 0 ? (
               <Card>
@@ -229,7 +230,10 @@ export default function TicketDetailsPage({
                     </div>
                     <CardContent className="p-4 text-sm leading-relaxed">
                       {msg.messageHtml ? (
-                        <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.messageHtml) }} />
+                        <div
+                          className="prose prose-sm dark:prose-invert max-w-none [&_img]:max-w-full [&_img]:rounded-lg [&_img]:border"
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.messageHtml) }}
+                        />
                       ) : (
                         <p className="whitespace-pre-wrap">{msg.message}</p>
                       )}
@@ -254,6 +258,31 @@ export default function TicketDetailsPage({
               }}
             />
           ) : null}
+
+          <Card>
+            <CardHeader className="py-3 bg-gray-50 dark:bg-gray-800/50 border-b">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <MessageCircle className="w-4 h-4" /> Reply to Ticket
+              </h3>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              <Textarea
+                placeholder="Type your reply here..."
+                className="min-h-[150px]"
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              />
+              <div className="flex justify-between items-center">
+                <Button variant="outline" size="sm">
+                  <Paperclip className="w-4 h-4 mr-2" /> Attach Files
+                </Button>
+                <Button onClick={handleSendReply} disabled={isSending || !replyText.trim()}>
+                  {isSending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  <Send className="w-4 h-4 mr-2" /> Send Reply
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-6">

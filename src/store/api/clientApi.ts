@@ -41,9 +41,9 @@ export interface SupportPinVerifyResponse {
 }
 
 export interface CompleteProfileRequest {
-  companyName?: string;
-  phoneNumber?: string;
-  address?: { street?: string; city?: string; state?: string; postCode?: string; country?: string };
+  companyName: string;
+  phoneNumber: string;
+  address: { street: string; city: string; state?: string; postCode?: string; country: string };
 }
 
 export interface UpdateClientRequest {
@@ -143,7 +143,7 @@ export const clientApi = api.injectEndpoints({
         body,
       }),
       transformResponse: (response: ApiResponse<{ client: ClientListItem }>) => response.data,
-      invalidatesTags: [{ type: "Client", id: "LIST" }],
+      invalidatesTags: [{ type: "Client", id: "LIST" }, { type: "Client", id: "ME" }],
     }),
     updateClient: builder.mutation<{ client: ClientListItem }, { id: string; data: UpdateClientRequest }>({
       query: ({ id, data }) => ({

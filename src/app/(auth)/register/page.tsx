@@ -97,8 +97,7 @@ function RegisterPageContent() {
                 },
             };
 
-            // Use the new registerClient method
-            await registerClient(registrationData);
+            await registerClient(registrationData, redirectAfterSignup ?? null);
         } catch (err: any) {
             // Extract detailed error message from the error object
             let errorMessage = "Registration failed. Please try again.";

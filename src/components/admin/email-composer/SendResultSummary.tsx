@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 import type { BulkEmailResultItem } from "@/store/api/emailApi";
 
@@ -10,7 +11,17 @@ interface SendResultSummaryProps {
   results: BulkEmailResultItem[];
 }
 
+function looksLikeSmtpAuthFailure(results: BulkEmailResultItem[]): boolean {
+  return results.some(
+    (r) =>
+      !r.success &&
+      /535|invalid login|authentication|credentials|5\.7\./i.test(r.error || "")
+  );
+}
+
 export function SendResultSummary({ sent, failed, total, results }: SendResultSummaryProps) {
+  const showSmtpHint = failed > 0 && looksLikeSmtpAuthFailure(results);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-4 text-sm">
@@ -26,6 +37,16 @@ export function SendResultSummary({ sent, failed, total, results }: SendResultSu
         )}
         <span className="text-muted-foreground">Total: {total}</span>
       </div>
+      {showSmtpHint && (
+        <p className="text-xs text-muted-foreground rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <span className="font-medium text-destructive">SMTP authentication failed.</span> The mail server
+          rejected the configured username or password (not the recipient addresses). Update{" "}
+          <Link href="/admin/settings/smtp" className="underline font-medium text-foreground">
+            Admin → Settings → SMTP
+          </Link>
+          , then use &quot;Test email&quot; there. For Gmail with 2FA, use an App Password.
+        </p>
+      )}
       {results.length > 0 && (
         <div className="max-h-32 overflow-y-auto border rounded-md divide-y">
           {results.map((r) => (

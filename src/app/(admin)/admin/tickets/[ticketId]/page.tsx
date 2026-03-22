@@ -15,7 +15,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { ArrowLeft, User, Headphones, MessageCircle } from "lucide-react";
+import { ArrowLeft, User, Headphones, MessageCircle, RefreshCw } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,7 +47,7 @@ export default function AdminTicketDetailPage() {
   const router = useRouter();
   const params = useParams<{ ticketId: string }>();
   const ticketId = params.ticketId;
-  const { data, isLoading, error, refetch } = useGetTicketByIdQuery(ticketId);
+  const { data, isLoading, error, refetch, isFetching } = useGetTicketByIdQuery(ticketId);
   const [addReply, { isLoading: isReplying }] = useAddTicketReplyMutation();
   const [updateStatus] = useUpdateTicketStatusMutation();
 
@@ -75,6 +75,15 @@ export default function AdminTicketDetailPage() {
       devLog(e);
       toast.error("Failed to update status.");
     }
+  };
+
+  const handleReloadMessages = async () => {
+    const result = await refetch();
+    if (result.error) {
+      toast.error("Could not refresh replies.");
+      return;
+    }
+    toast.success("Replies updated.");
   };
 
   if (isLoading) {
@@ -136,6 +145,18 @@ export default function AdminTicketDetailPage() {
             <span>Opened {formatDate(ticket.createdAt)}</span>
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleReloadMessages}
+            disabled={isFetching}
+            aria-label="Reload replies"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
+            Reload
+          </Button>
         <Select
           value={ticket.status}
           onValueChange={handleStatusChange}
@@ -153,36 +174,14 @@ export default function AdminTicketDetailPage() {
               <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
         </Select>
+        </div>
       </div>
 
       {/* Main content grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left: Reply + Messages */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Reply box (only if not closed) */}
-          {ticket.status !== "closed" && ticket.status !== "resolved" && (
-            <Card className="border-primary/20">
-              <CardHeader className="border-b bg-muted/30 py-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold">
-                  <MessageCircle className="h-4 w-4 text-primary" />
-                  Reply to Ticket
-                </h3>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                <TicketReplyForm
-                  ticketId={ticketId}
-                  onSubmit={handleReply}
-                  isSubmitting={isReplying}
-                  onSuccess={refetch}
-                  variant="card"
-                  label=""
-                  placeholder="Type your reply here..."
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Messages */}
+          {/* Messages: newest first (API order), then reply below */}
           <div className="space-y-4">
             {messages.map((m) => {
               const isClient = m.authorType === "client";
@@ -277,6 +276,28 @@ export default function AdminTicketDetailPage() {
               </Card>
             )}
           </div>
+
+          {ticket.status !== "closed" && ticket.status !== "resolved" && (
+            <Card className="border-primary/20">
+              <CardHeader className="border-b bg-muted/30 py-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  <MessageCircle className="h-4 w-4 text-primary" />
+                  Reply to Ticket
+                </h3>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <TicketReplyForm
+                  ticketId={ticketId}
+                  onSubmit={handleReply}
+                  isSubmitting={isReplying}
+                  onSuccess={refetch}
+                  variant="card"
+                  label=""
+                  placeholder="Type your reply here..."
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right: Sidebar */}

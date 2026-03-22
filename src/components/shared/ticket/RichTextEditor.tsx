@@ -46,15 +46,21 @@ export function RichTextEditor({
 
   const handlePaste = useCallback(
     async (editor: any, files: File[]) => {
-      for (const file of files) {
-        if (!file.type.startsWith("image/")) continue;
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+      if (imageFiles.length === 0) return;
+      const pos = editor.state.selection.from;
+      const fragments: { type: string; attrs: { src: string; alt: string } }[] = [];
+      for (const file of imageFiles) {
         try {
           const url = await uploadImage(file);
-          editor.commands.setImage({ src: url, alt: file.name });
+          fragments.push({ type: "image", attrs: { src: url, alt: file.name } });
         } catch (e) {
           devLog(e);
           toast.error("Failed to upload image");
         }
+      }
+      if (fragments.length > 0) {
+        editor.chain().focus().insertContentAt(pos, fragments).run();
       }
     },
     [uploadImage]
@@ -62,15 +68,21 @@ export function RichTextEditor({
 
   const handleDrop = useCallback(
     async (editor: any, files: File[], pos: number) => {
-      for (const file of files) {
-        if (!file.type.startsWith("image/")) continue;
+      const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+      if (imageFiles.length === 0) return;
+      const insertAt = pos ?? editor.state.selection.from;
+      const fragments: { type: string; attrs: { src: string; alt: string } }[] = [];
+      for (const file of imageFiles) {
         try {
           const url = await uploadImage(file);
-          editor.commands.setImage({ src: url, alt: file.name });
+          fragments.push({ type: "image", attrs: { src: url, alt: file.name } });
         } catch (e) {
           devLog(e);
           toast.error("Failed to upload image");
         }
+      }
+      if (fragments.length > 0) {
+        editor.chain().focus().insertContentAt(insertAt, fragments).run();
       }
     },
     [uploadImage]
@@ -111,7 +123,7 @@ export function RichTextEditor({
     if (!file || !editor) return;
     try {
       const url = await uploadImage(file);
-      editor.commands.setImage({ src: url, alt: file.name });
+      editor.chain().focus().setImage({ src: url, alt: file.name }).run();
     } catch (err) {
       devLog(err);
       toast.error("Failed to upload image");

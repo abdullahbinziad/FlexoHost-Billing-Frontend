@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, User, Menu } from "lucide-react";
+import { User, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { DarkModeToggle } from "@/components/shared/DarkModeToggle";
@@ -40,32 +40,13 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
                 </Button>
 
                 {/* Dashboard Title - Desktop */}
-                <div className="hidden lg:block">
+                <div className="hidden lg:block flex-1 min-w-0">
                     <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                         Dashboard
                     </h1>
                 </div>
 
-                {/* Search Bar */}
-                <div className="flex-1 max-w-md hidden sm:block lg:mx-auto">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                        <input
-                            type="text"
-                            placeholder="Search admin..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                        />
-                    </div>
-                </div>
-
-                {/* Mobile Search Button */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="sm:hidden"
-                >
-                    <Search className="w-5 h-5" />
-                </Button>
+                <div className="flex-1 lg:hidden" aria-hidden="true" />
 
                 {/* Right Side Actions */}
                 <div className="flex items-center gap-2 lg:gap-4">

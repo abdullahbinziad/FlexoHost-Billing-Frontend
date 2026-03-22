@@ -101,8 +101,14 @@ export function EmailComposer({
       }).unwrap();
 
       setResult(res);
-      toast.success(`Sent to ${res.sent} of ${res.total} recipient(s)`);
-      if (res.failed > 0) {
+      if (res.sent > 0) {
+        toast.success(`Sent to ${res.sent} of ${res.total} recipient(s)`);
+      } else if (res.failed > 0) {
+        toast.error(
+          "No emails were sent. If you see SMTP or authentication errors below, fix Admin → Settings → SMTP (or server env SMTP_*)."
+        );
+      }
+      if (res.failed > 0 && res.sent > 0) {
         toast.warning(`${res.failed} recipient(s) could not receive the email`);
       }
       onSuccess?.(res);
@@ -111,8 +117,16 @@ export function EmailComposer({
         onOpenChange(false);
       }
     } catch (err: unknown) {
-      const msg = (err as { data?: { message?: string } })?.data?.message || "Failed to send email";
-      toast.error(msg);
+      const e = err as {
+        data?: { message?: string; error?: { hint?: string } };
+      };
+      const msg = e?.data?.message || "Failed to send email";
+      const hint = e?.data?.error?.hint;
+      if (hint) {
+        toast.error(msg, { description: hint });
+      } else {
+        toast.error(msg);
+      }
     }
   };
 

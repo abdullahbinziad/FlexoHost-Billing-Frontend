@@ -9,7 +9,7 @@ import {
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, User, Headphones, CheckCircle } from "lucide-react";
+import { ArrowLeft, User, Headphones, CheckCircle, RefreshCw } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { buildAttachmentUrl } from "@/lib/safeAttachmentUrl";
@@ -31,7 +31,7 @@ export default function ClientTicketDetailPage() {
   const router = useRouter();
   const params = useParams<{ ticketId: string }>();
   const ticketId = params.ticketId;
-  const { data, isLoading, error, refetch } = useGetTicketByIdQuery(ticketId);
+  const { data, isLoading, error, refetch, isFetching } = useGetTicketByIdQuery(ticketId);
   const [addReply, { isLoading: isReplying }] = useAddTicketReplyMutation();
   const [markResolved, { isLoading: isResolving }] = useMarkTicketResolvedMutation();
 
@@ -61,6 +61,15 @@ export default function ClientTicketDetailPage() {
 
   const isClosedOrResolved =
     ticket?.status === "closed" || ticket?.status === "resolved";
+
+  const handleReloadMessages = async () => {
+    const result = await refetch();
+    if (result.error) {
+      toast.error("Could not refresh replies.");
+      return;
+    }
+    toast.success("Replies updated.");
+  };
 
   if (isLoading) {
     return (
@@ -133,6 +142,18 @@ export default function ClientTicketDetailPage() {
               <span>Created {formatDate(ticket.createdAt)}</span>
             </div>
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleReloadMessages}
+            disabled={isFetching}
+            className="shrink-0"
+            aria-label="Reload replies"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", isFetching && "animate-spin")} />
+            Reload
+          </Button>
         </div>
       </div>
 

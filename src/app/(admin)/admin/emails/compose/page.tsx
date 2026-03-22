@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { EmailComposer } from "@/components/admin/email-composer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -11,7 +12,11 @@ export default function ComposeEmailPage() {
           Compose Email
         </h1>
         <p className="text-muted-foreground mt-1">
-          Send an email to one or more clients. Search and select recipients below.
+          Send an email to one or more clients. Search and select recipients below. Outbound mail uses the{" "}
+          <Link href="/admin/settings/smtp" className="underline font-medium text-foreground">
+            SMTP settings
+          </Link>{" "}
+          configured for this installation—confirm them with &quot;Test email&quot; if sends fail.
         </p>
       </div>
 
