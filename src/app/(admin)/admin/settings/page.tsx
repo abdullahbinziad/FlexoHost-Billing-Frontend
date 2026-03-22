@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useGetSettingsQuery, useUpdateBillingSettingsMutation, type BillingSettings } from "@/store/api/settingsApi";
+import {
+    useGetSettingsQuery,
+    useUpdateBillingSettingsMutation,
+    type BillingSettings,
+    type BillingSettingsPatch,
+    DEFAULT_BILLING_SETTINGS,
+    billingFormWithoutSmtpFields,
+} from "@/store/api/settingsApi";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -14,34 +21,14 @@ import {
     LateFeeCard,
 } from "@/components/admin/settings";
 
-const DEFAULT_BILLING: BillingSettings = {
-    renewalLeadDays: 7,
-    daysBeforeSuspend: 5,
-    daysBeforeTermination: 30,
-    invoiceDueDays: 7,
-    overdueExtraChargeDays: 0,
-    overdueExtraChargeAmount: 0,
-    overdueExtraChargeType: "fixed",
-    reminderPreDays: 7,
-    reminderOverdue1Days: 3,
-    reminderOverdue2Days: 7,
-    reminderOverdue3Days: 14,
-    preReminderDays: [30, 14, 7, 3, 1],
-    overdueReminderDays: [1, 3, 7, 14, 30],
-    suspendWarningDays: [3, 1],
-    terminationWarningDays: [7, 3, 1],
-    domainExpiryReminderDays: [90, 60, 30, 14, 7],
-    reminderDueTodayEnabled: true,
-};
-
 export default function AdminSettingsPage() {
     const { data, isLoading, error } = useGetSettingsQuery();
     const [updateBilling, { isLoading: isSaving }] = useUpdateBillingSettingsMutation();
-    const [form, setForm] = useState<BillingSettings>(DEFAULT_BILLING);
+    const [form, setForm] = useState<BillingSettings>(DEFAULT_BILLING_SETTINGS);
 
     useEffect(() => {
         if (data?.billing) {
-            setForm({ ...DEFAULT_BILLING, ...data.billing });
+            setForm({ ...DEFAULT_BILLING_SETTINGS, ...data.billing });
         }
     }, [data]);
 
@@ -51,7 +38,8 @@ export default function AdminSettingsPage() {
 
     const handleSave = async () => {
         try {
-            await updateBilling(form).unwrap();
+            const patch: BillingSettingsPatch = billingFormWithoutSmtpFields(form);
+            await updateBilling(patch).unwrap();
             toast.success("Billing settings saved successfully");
         } catch (err: unknown) {
             const msg = err && typeof err === "object" && "data" in err

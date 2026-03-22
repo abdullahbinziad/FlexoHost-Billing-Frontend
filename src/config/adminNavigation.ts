@@ -117,9 +117,17 @@ export const adminNavItems: NavItem[] = [
         href: "/admin/settings",
         icon: Settings,
         hasSubmenu: true,
-        requiredPermissions: ["settings:read", "roles:list", "users:list", "migration:run"],
+        requiredPermissions: [
+            "settings:read",
+            "settings:update_billing",
+            "settings:smtp",
+            "roles:list",
+            "users:list",
+            "migration:run",
+        ],
         submenu: [
             { label: "Billing & Reminders", href: "/admin/settings", requiredPermissions: ["settings:read"] },
+            { label: "SMTP configuration", href: "/admin/settings/smtp", requiredPermissions: ["settings:smtp"] },
             { label: "Roles", href: "/admin/roles", requiredPermissions: ["roles:list"] },
             { label: "Manage User", href: "/admin/users", requiredPermissions: ["users:list"] },
             { label: "WHMCS Migration", href: "/admin/migration", requiredPermissions: ["migration:run"] },

@@ -11,7 +11,12 @@ export function useMenuNavigation(navItems: NavItem[]) {
 
   const matchesHref = (href: string): boolean => {
     const [path, query] = href.split("?");
-    if (pathname !== path && !pathname.startsWith(path + "/")) return false;
+    // Avoid /admin/settings matching /admin/settings/smtp (sibling submenu items share a prefix).
+    if (path === "/admin/settings") {
+      if (pathname !== "/admin/settings") return false;
+    } else if (pathname !== path && !pathname.startsWith(path + "/")) {
+      return false;
+    }
     if (query && search !== query) return false;
     return true;
   };

@@ -22,18 +22,34 @@ export interface SendBulkEmailResponse {
   results: BulkEmailResultItem[];
 }
 
+export interface TestSmtpResponse {
+    to: string;
+    messageId?: string;
+    smtpHost: string;
+    smtpPort: number;
+    smtpSource: "env" | "dashboard";
+}
+
 export const emailApi = api.injectEndpoints({
-  overrideExisting: true,
-  endpoints: (builder) => ({
-    sendBulkEmail: builder.mutation<SendBulkEmailResponse, SendBulkEmailRequest>({
-      query: (body) => ({
-        url: "/email/send-bulk",
-        method: "POST",
-        body,
-      }),
-      transformResponse: (response: ApiResponse<SendBulkEmailResponse>) => response.data,
+    overrideExisting: true,
+    endpoints: (builder) => ({
+        sendBulkEmail: builder.mutation<SendBulkEmailResponse, SendBulkEmailRequest>({
+            query: (body) => ({
+                url: "/email/send-bulk",
+                method: "POST",
+                body,
+            }),
+            transformResponse: (response: ApiResponse<SendBulkEmailResponse>) => response.data,
+        }),
+        testSmtp: builder.mutation<TestSmtpResponse, { to: string }>({
+            query: (body) => ({
+                url: "/email/test",
+                method: "POST",
+                body,
+            }),
+            transformResponse: (response: ApiResponse<TestSmtpResponse>) => response.data as TestSmtpResponse,
+        }),
     }),
-  }),
 });
 
-export const { useSendBulkEmailMutation } = emailApi;
+export const { useSendBulkEmailMutation, useTestSmtpMutation } = emailApi;

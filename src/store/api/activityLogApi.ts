@@ -1,4 +1,5 @@
 import { api } from "./baseApi";
+import type { ApiResponse } from "@/types/api";
 
 export interface ActivityLogEntry {
   _id: string;
@@ -57,8 +58,15 @@ export const activityLogApi = api.injectEndpoints({
         url: "/activity-log",
         params: params || {},
       }),
-      transformResponse: (res: { data?: GetActivityLogResponse }) =>
-        res?.data ?? (res as unknown as GetActivityLogResponse),
+      transformResponse: (response: ApiResponse<GetActivityLogResponse>) =>
+        response.data ??
+        ({
+          results: [],
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+          totalResults: 0,
+        } satisfies GetActivityLogResponse),
       providesTags: ["ActivityLog"],
     }),
   }),

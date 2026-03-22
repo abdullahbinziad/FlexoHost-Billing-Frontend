@@ -40,13 +40,36 @@ function clientDisplay(entry: ActivityLogEntry): string {
 }
 
 function userDisplay(entry: ActivityLogEntry): string {
-  const u = entry.userId;
-  if (!u) return entry.actorType === "system" ? "System/Automated" : "—";
+  if (entry.actorType === "system") {
+    return "System/Automated";
+  }
+  const u = entry.userId ?? entry.actorId;
+  if (!u) return "—";
   if (typeof u === "object" && u !== null) {
-    return (u as any).email ?? (u as any)._id ?? "—";
+    return (u as { email?: string }).email ?? (u as { _id?: string })._id ?? "—";
   }
   return String(u);
 }
+
+/** Must match backend `ActivityCategory` values in activity-log.interface.ts */
+const CATEGORY_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: "affiliate", label: "Affiliate" },
+  { value: "auth", label: "Login / auth" },
+  { value: "automation", label: "Automation" },
+  { value: "backup", label: "Backup" },
+  { value: "cron", label: "Cron" },
+  { value: "domain", label: "Domain" },
+  { value: "email", label: "Email" },
+  { value: "invoice", label: "Invoice" },
+  { value: "order", label: "Order" },
+  { value: "other", label: "Other" },
+  { value: "payment", label: "Payment" },
+  { value: "service", label: "Service" },
+  { value: "settings", label: "Settings" },
+  { value: "suspension", label: "Suspension" },
+  { value: "ticket", label: "Ticket" },
+  { value: "usage", label: "Usage" },
+];
 
 export default function ActivityLogPage() {
   const [page, setPage] = useState(1);
@@ -59,7 +82,7 @@ export default function ActivityLogPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const { data, isLoading } = useGetActivityLogQuery({
+  const { data, isLoading, isError, error } = useGetActivityLogQuery({
     page,
     limit: pageSize,
     search: searchSubmitted || undefined,
@@ -147,13 +170,11 @@ export default function ActivityLogPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={ALL_VALUE}>All</SelectItem>
-                  <SelectItem value="cron">Cron</SelectItem>
-                  <SelectItem value="login">Login</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="suspension">Suspension</SelectItem>
-                  <SelectItem value="invoice">Invoice</SelectItem>
-                  <SelectItem value="usage">Usage</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {CATEGORY_FILTER_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -189,7 +210,13 @@ export default function ActivityLogPage() {
 
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
+          {isError ? (
+            <div className="p-8 text-center text-destructive text-sm">
+              {error && typeof error === "object" && "data" in error
+                ? String((error as { data?: { message?: string } }).data?.message ?? "Failed to load activity log.")
+                : 'Failed to load activity log. Check that your role includes "View activity log" (dashboard:activity_log).'}
+            </div>
+          ) : isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
