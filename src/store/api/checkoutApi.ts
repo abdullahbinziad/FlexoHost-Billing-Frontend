@@ -56,13 +56,6 @@ export interface DomainSearchApiResponse {
     currency?: string;
     premium?: boolean;
   };
-  dynadotResult?: {
-    domain?: string;
-    available?: boolean | "Yes" | "No" | string;
-    price?: number;
-    currency?: string;
-    premium?: boolean;
-  };
   tldData?: any;
 }
 

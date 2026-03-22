@@ -104,7 +104,7 @@ export function DomainPricingRow({
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="Dynadot">Dynadot</SelectItem>
-                        <SelectItem value="Namely Partner">Namely Partner</SelectItem>
+                        <SelectItem value="namely">Namely</SelectItem>
                         <SelectItem value="None">None</SelectItem>
                     </SelectContent>
                 </Select>

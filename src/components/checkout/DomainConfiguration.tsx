@@ -29,7 +29,6 @@ type DomainSearchApiInner = {
   currency?: string;
   premium?: boolean;
   registrarResult?: { domain_name?: string; available?: boolean | "Yes" | "No" | string };
-  dynadotResult?: { domain_name?: string; available?: boolean | "Yes" | "No" | string };
   tldData?: TLD;
 };
 
@@ -219,7 +218,7 @@ export function DomainConfiguration({
       }
 
       const apiAvailable = normalizeAvailability(
-        payload?.available ?? payload?.registrarResult?.available ?? payload?.dynadotResult?.available
+        payload?.available ?? payload?.registrarResult?.available
       );
 
       // For transfer: available = false means domain IS registered (can transfer)
@@ -316,7 +315,15 @@ export function DomainConfiguration({
     onDomainSelect(domainWithPeriod);
   };
 
-  const periodOptions = [1, 2, 3];
+  const periodOptions = [1, 2, 3] as const;
+
+  useEffect(() => {
+    if (!searchResult?.available || selectedAction !== "register") return;
+    if (!isPeriodEnabled(selectedPeriod)) {
+      const next = periodOptions.find((y) => isPeriodEnabled(y));
+      if (next !== undefined) setSelectedPeriod(next);
+    }
+  }, [searchResult, selectedAction, selectedPeriod, searchedTldData, tlds, selectedCurrency.code]);
 
   return (
     <div className="space-y-5 min-w-0 overflow-visible">
@@ -326,26 +333,27 @@ export function DomainConfiguration({
 
       {/* Selected Domain Summary */}
       {selectedDomain ? (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-5 rounded-xl bg-gray-50 dark:bg-gray-800/50 min-w-0">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
+        <div className="flex flex-col gap-3 rounded-xl border border-gray-200/90 bg-gray-50/90 p-4 dark:border-gray-700/60 dark:bg-gray-800/50 min-w-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <Check className="h-4 w-4 text-primary" strokeWidth={2.5} />
             </div>
             <div className="min-w-0">
-              <p className="text-xl font-semibold text-gray-900 dark:text-gray-100 truncate">
-                {selectedDomain.domain}<span className="text-primary">{selectedDomain.tld}</span>
+              <p className="truncate text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                {selectedDomain.domain}
+                <span className="text-primary">{selectedDomain.tld}</span>
               </p>
-              {selectedDomain.period && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {selectedDomain.period} {selectedDomain.period === 1 ? "year" : "years"}
+              {selectedDomain.period ? (
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {selectedDomain.period} {selectedDomain.period === 1 ? "year" : "years"} registration
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
           <button
             type="button"
             onClick={() => onDomainSelect(undefined)}
-            className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 shrink-0"
+            className="shrink-0 self-start text-sm font-medium text-primary hover:underline sm:self-center"
           >
             Change
           </button>
@@ -481,62 +489,71 @@ export function DomainConfiguration({
 
               {/* Domain Availability Result */}
               {searchResult && (
-                <div className="mt-3 p-4 sm:p-5 rounded-xl bg-gray-50 dark:bg-gray-800/50 overflow-hidden min-w-0 w-full max-w-full">
+                <div className="mt-3 min-w-0 w-full max-w-full overflow-hidden rounded-xl border border-gray-200/90 bg-gray-50/90 p-3.5 dark:border-gray-700/60 dark:bg-gray-800/40 sm:p-4">
                   {searchResult.available ? (
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 w-full min-w-0">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
+                    <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                          <Check className="h-4 w-4 text-primary" strokeWidth={2.5} />
                         </div>
-                        <div className="min-w-0 overflow-hidden">
-                          <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100 break-all">
-                            {searchResult.domain}<span className="text-primary">{searchResult.tld}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base font-semibold leading-snug tracking-tight text-gray-900 [overflow-wrap:anywhere] break-words sm:text-lg dark:text-gray-100">
+                            {searchResult.domain}
+                            <span className="text-primary">{searchResult.tld}</span>
                           </p>
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">Available</p>
+                          <span className="mt-1.5 inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                            Available
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto min-w-0 flex-shrink-0">
-                        <div className="flex gap-1 flex-wrap">
-                          {periodOptions.map((years) => {
-                            const enabled = isPeriodEnabled(years);
-                            const isSelected = selectedPeriod === years;
-                            return (
-                              <button
-                                key={years}
-                                type="button"
-                                disabled={!enabled}
-                                onClick={() => enabled && setSelectedPeriod(years)}
-                                className={cn(
-                                  "flex-1 min-w-[74px] sm:flex-initial sm:min-w-0 px-3 sm:px-4 py-2.5 rounded text-sm font-medium transition-colors",
-                                  !enabled && "opacity-40 cursor-not-allowed",
-                                  isSelected
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-300"
-                                )}
-                              >
-                                {years} {years === 1 ? "Year" : "Years"}
-                              </button>
-                            );
-                          })}
+                      <div className="flex w-full min-w-0 flex-col gap-3 border-t border-gray-200/90 pt-3 dark:border-gray-700/60 sm:flex-row sm:items-center sm:justify-end sm:border-0 sm:pt-0 lg:w-auto lg:max-w-[min(100%,22rem)] lg:shrink-0">
+                        <div className="flex w-full items-center gap-2 sm:w-auto">
+                          <label className="sr-only" htmlFor="checkout-reg-period">
+                            Registration period
+                          </label>
+                          <select
+                            id="checkout-reg-period"
+                            value={selectedPeriod}
+                            onChange={(e) => setSelectedPeriod(Number(e.target.value))}
+                            className={cn(
+                              "h-9 min-w-[7.25rem] flex-1 cursor-pointer rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-gray-900 shadow-sm",
+                              "focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:flex-initial"
+                            )}
+                          >
+                            {periodOptions.map((years) => (
+                              <option key={years} value={years} disabled={!isPeriodEnabled(years)}>
+                                {years} {years === 1 ? "year" : "years"}
+                              </option>
+                            ))}
+                          </select>
                         </div>
 
-                        <div className="flex items-center justify-between sm:justify-start gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-gray-700">
-                          <div>
-                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
+                        <div className="flex items-center justify-between gap-3 sm:justify-end sm:gap-4">
+                          <div className="min-w-0 text-right sm:text-left">
+                            <p
+                              className="text-base font-semibold tabular-nums text-gray-900 dark:text-gray-100 sm:text-lg"
+                              title={
+                                getSavings(selectedPeriod)
+                                  ? `Save ${formatCurrency(getSavings(selectedPeriod)!)} vs paying yearly`
+                                  : undefined
+                              }
+                            >
                               {formatCurrency(getPeriodPrice(selectedPeriod))}
                             </p>
-                            {getSavings(selectedPeriod) && (
-                              <p className="text-xs text-primary">Save {formatCurrency(getSavings(selectedPeriod)!)}</p>
-                            )}
+                            {getSavings(selectedPeriod) ? (
+                              <p className="text-xs font-medium text-primary">
+                                Save {formatCurrency(getSavings(selectedPeriod)!)}
+                              </p>
+                            ) : null}
                           </div>
                           <Button
                             onClick={handleAddToCart}
-                            size="lg"
-                            className="shrink-0"
+                            size="sm"
+                            className="h-9 shrink-0 px-4 text-sm"
                             disabled={!isPeriodEnabled(selectedPeriod)}
                           >
-                            <ShoppingCart className="w-4 h-4 mr-1.5" />
+                            <ShoppingCart className="mr-1.5 h-4 w-4" />
                             Add
                           </Button>
                         </div>
@@ -544,50 +561,55 @@ export function DomainConfiguration({
                     </div>
                   ) : selectedAction === "transfer" ? (
                     rawApiAvailable ? (
-                      <div className="flex items-center gap-3 min-w-0">
-                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
-                        <div className="min-w-0 overflow-hidden">
-                          <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100 break-all">
-                            {searchResult.domain}<span className="text-gray-500">{searchResult.tld}</span>
+                      <div className="flex min-w-0 items-start gap-3">
+                        <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-base font-semibold leading-snug tracking-tight text-gray-900 [overflow-wrap:anywhere] break-words sm:text-lg dark:text-gray-100">
+                            {searchResult.domain}
+                            <span className="text-gray-500 dark:text-gray-400">{searchResult.tld}</span>
                           </p>
-                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                          <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                             Not registered yet. You can register it instead.
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4 w-full min-w-0">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <ArrowRightLeft className="w-4 h-4 text-primary" strokeWidth={2} />
+                      <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                            <ArrowRightLeft className="h-4 w-4 text-primary" strokeWidth={2} />
                           </div>
-                          <div className="min-w-0 overflow-hidden">
-                            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100 break-all">
-                              {searchResult.domain}<span className="text-primary">{searchResult.tld}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base font-semibold leading-snug tracking-tight text-gray-900 [overflow-wrap:anywhere] break-words sm:text-lg dark:text-gray-100">
+                              {searchResult.domain}
+                              <span className="text-primary">{searchResult.tld}</span>
                             </p>
-                            <p className="text-xs text-gray-500 mt-0.5">+ 1 year extension</p>
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                              Includes 1 year renewal after transfer
+                            </p>
                           </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto min-w-0 flex-shrink-0">
+                        <div className="flex w-full min-w-0 flex-col gap-3 border-t border-gray-200/90 pt-3 dark:border-gray-700/60 sm:flex-row sm:items-center sm:justify-end sm:border-0 sm:pt-0 lg:w-auto lg:max-w-xl lg:shrink-0">
                           <input
                             type="text"
                             value={eppCode}
                             onChange={(e) => setEppCode(e.target.value)}
                             placeholder="EPP / Auth code"
-                            className="w-full sm:min-w-[220px] px-4 py-3 text-base border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-primary"
+                            autoComplete="off"
+                            className="h-9 w-full min-w-0 rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 sm:min-w-[200px] sm:max-w-xs"
                           />
-                          <div className="flex items-center justify-between sm:justify-start gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-200 dark:border-gray-700">
-                            <p className="font-semibold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
+                          <div className="flex items-center justify-between gap-3 sm:justify-end">
+                            <p className="text-base font-semibold tabular-nums text-gray-900 dark:text-gray-100 sm:text-lg">
                               {formatCurrency(getPeriodPrice(1))}
                             </p>
                             <Button
                               onClick={handleAddToCart}
-                              size="lg"
-                              className="shrink-0"
+                              size="sm"
+                              className="h-9 shrink-0 px-4 text-sm"
                               disabled={!isPeriodEnabled(1) || !eppCode.trim()}
                             >
-                              <ArrowRightLeft className="w-4 h-4 mr-1.5" />
+                              <ArrowRightLeft className="mr-1.5 h-4 w-4" />
                               Transfer
                             </Button>
                           </div>
@@ -595,14 +617,15 @@ export function DomainConfiguration({
                       </div>
                     )
                   ) : (
-                    <div className="flex items-center gap-3 min-w-0">
-                      <X className="w-5 h-5 text-red-500 shrink-0" />
-                      <div className="min-w-0 overflow-hidden">
-                        <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 dark:text-gray-100 break-all">
-                          {searchResult.domain}<span className="text-gray-500">{searchResult.tld}</span>
+                    <div className="flex min-w-0 items-start gap-3">
+                      <X className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-base font-semibold leading-snug tracking-tight text-gray-900 [overflow-wrap:anywhere] break-words sm:text-lg dark:text-gray-100">
+                          {searchResult.domain}
+                          <span className="text-gray-500 dark:text-gray-400">{searchResult.tld}</span>
                         </p>
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                          Already registered. Try another name or extension.
+                        <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                          Not Available
                         </p>
                       </div>
                     </div>

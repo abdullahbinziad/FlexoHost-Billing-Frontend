@@ -3,6 +3,7 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { api } from "./api/baseApi";
 import "./api/productApi"; // Inject product endpoints
 import "./api/promotionApi"; // Inject promotion endpoints
+import "./api/domainApi"; // Inject domain / registrar config endpoints
 import "./api/roleApi"; // Inject role endpoints
 import "./api/userApi"; // Inject user endpoints
 import authReducer from "./slices/authSlice";

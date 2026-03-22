@@ -250,7 +250,18 @@ export const domainApi = api.injectEndpoints({
       query: () => ({
         url: "/domains/admin/registrars",
       }),
-      transformResponse: (response: ApiResponse<RegistrarConfig[]>) => response.data ?? [],
+      transformResponse: (response: unknown): RegistrarConfig[] => {
+        if (Array.isArray(response)) {
+          return response as RegistrarConfig[];
+        }
+        if (response && typeof response === "object" && "data" in response) {
+          const inner = (response as { data?: unknown }).data;
+          if (Array.isArray(inner)) {
+            return inner as RegistrarConfig[];
+          }
+        }
+        return [];
+      },
       providesTags: [{ type: "Domain", id: "REGISTRARS" }],
     }),
     getAdminDomains: builder.query<AdminDomainsResponse, GetAdminDomainsParams | void>({
