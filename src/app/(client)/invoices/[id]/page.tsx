@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { InvoiceDetail } from "@/components/invoice";
+import { InvoiceDetail } from "@/components/client/invoice";
 import { useGetInvoiceByIdQuery } from "@/store/api/invoiceApi";
 import { mapInvoiceApiToFrontend } from "@/lib/mappers";
 

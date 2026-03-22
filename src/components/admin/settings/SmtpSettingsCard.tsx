@@ -57,10 +57,17 @@ export function SmtpSettingsCard({
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <CardTitle className="text-base">SMTP and test email</CardTitle>
                 </div>
-                <CardDescription className="text-xs">
-                    When custom SMTP is off, the API server uses <code className="text-[11px]">SMTP_*</code> and{" "}
-                    <code className="text-[11px]">EMAIL_FROM</code> from environment. Turn on to store credentials in the
-                    database instead.
+                <CardDescription className="text-xs space-y-1.5">
+                    <span className="block">
+                        When custom SMTP is off, the API uses <code className="text-[11px]">SMTP_*</code> and{" "}
+                        <code className="text-[11px]">EMAIL_FROM</code> from the server environment.
+                    </span>
+                    <span className="block">
+                        When custom SMTP is on, host and username are stored in the database; the password is encrypted at
+                        rest if <code className="text-[11px]">SETTINGS_ENCRYPTION_KEY</code> is set on the API. If you
+                        leave the password field blank but <code className="text-[11px]">SMTP_PASSWORD</code> is set in
+                        environment, that env password is used for sending.
+                    </span>
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-2 space-y-4">

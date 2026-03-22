@@ -1,6 +1,6 @@
 "use client";
 
-import { EmailComposer } from "@/components/shared/EmailComposer";
+import { EmailComposer } from "@/components/admin/email-composer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ComposeEmailPage() {

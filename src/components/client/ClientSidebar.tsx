@@ -7,10 +7,12 @@ import { useMenuNavigation } from "@/hooks/useMenuNavigation";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetClientProfileActingAsQuery } from "@/store/api/clientApi";
-import { SidebarHeader } from "./sidebar/SidebarHeader";
-import { SidebarNavItem } from "./sidebar/SidebarNavItem";
-import { SidebarSubmenu } from "./sidebar/SidebarSubmenu";
-import { SidebarFooter } from "./sidebar/SidebarFooter";
+import {
+    SidebarHeader,
+    SidebarNavItem,
+    SidebarSubmenu,
+    SidebarFooter,
+} from "@/components/shared/sidebar";
 
 interface ClientSidebarProps {
   isOpen: boolean;

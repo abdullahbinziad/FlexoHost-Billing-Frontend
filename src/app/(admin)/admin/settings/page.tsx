@@ -19,6 +19,7 @@ import {
     ReminderEmailCard,
     DomainReminderCard,
     LateFeeCard,
+    SettingsPageFrame,
 } from "@/components/admin/settings";
 
 export default function AdminSettingsPage() {
@@ -66,14 +67,10 @@ export default function AdminSettingsPage() {
     }
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-bold tracking-tight">Settings</h1>
-                    <p className="text-muted-foreground text-sm mt-0.5">
-                        Billing automation, suspension, termination, and reminders.
-                    </p>
-                </div>
+        <SettingsPageFrame
+            title="Billing & Reminders"
+            description="Automation rules for invoices, renewals, suspension, termination, and reminder emails."
+            actions={
                 <Button onClick={handleSave} disabled={isSaving} size="sm">
                     {isSaving ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -82,8 +79,8 @@ export default function AdminSettingsPage() {
                     )}
                     Save all
                 </Button>
-            </div>
-
+            }
+        >
             <div className="grid gap-4 sm:grid-cols-2">
                 <DefaultStaffRoleCard form={form} onChange={handleChange} />
                 <InvoiceSettingsCard form={form} onChange={handleChange} />
@@ -92,6 +89,6 @@ export default function AdminSettingsPage() {
                 <DomainReminderCard form={form} onChange={handleChange} />
                 <LateFeeCard form={form} onChange={handleChange} />
             </div>
-        </div>
+        </SettingsPageFrame>
     );
 }

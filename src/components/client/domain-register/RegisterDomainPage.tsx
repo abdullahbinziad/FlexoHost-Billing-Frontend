@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PromotionalBanner } from "@/components/shared/PromotionalBanner";
 import { useCheckoutRedux } from "@/hooks/useCheckoutRedux";
-import { DomainConfiguration } from "@/components/checkout/DomainConfiguration";
+import { DomainConfiguration } from "@/components/client/checkout/DomainConfiguration";
 import { TldPricingGrid } from "./TldPricingGrid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

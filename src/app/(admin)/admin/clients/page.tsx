@@ -21,8 +21,8 @@ import type { ClientListItem } from "@/store/api/clientApi";
 import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
-import { EmailComposer } from "@/components/shared/EmailComposer";
-import type { RecipientItem } from "@/components/shared/EmailComposer";
+import { EmailComposer } from "@/components/admin/email-composer";
+import type { RecipientItem } from "@/components/admin/email-composer";
 
 export default function ViewSearchClients() {
     const [page, setPage] = useState(1);

@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetClientServiceByIdQuery } from "@/store/api/servicesApi";
-import { VPSManagePage } from "@/components/vps-manage/VPSManagePage";
+import { VPSManagePage } from "@/components/client/vps-manage/VPSManagePage";
 
 export default function VPSManage() {
     const params = useParams();

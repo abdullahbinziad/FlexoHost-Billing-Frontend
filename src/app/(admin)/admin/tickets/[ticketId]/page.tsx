@@ -29,12 +29,12 @@ import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { buildAttachmentUrl } from "@/lib/safeAttachmentUrl";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { TicketReplyForm } from "@/components/ticket/TicketReplyForm";
+import { TicketReplyForm } from "@/components/shared/ticket/TicketReplyForm";
 import {
   TicketStatusBadge,
   TICKET_STATUS_LABELS,
-} from "@/components/ticket/TicketStatusBadge";
-import { TicketPriorityBadge } from "@/components/ticket/TicketPriorityBadge";
+} from "@/components/shared/ticket/TicketStatusBadge";
+import { TicketPriorityBadge } from "@/components/shared/ticket/TicketPriorityBadge";
 import { devLog } from "@/lib/devLog";
 
 const ADMIN_STATUS_LABELS: Record<string, string> = {

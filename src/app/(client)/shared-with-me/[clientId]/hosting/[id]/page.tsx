@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { HostingManagePage } from "@/components/hosting-manage/HostingManagePage";
+import { HostingManagePage } from "@/components/client/hosting-manage/HostingManagePage";
 import { useGetClientServiceByIdQuery } from "@/store/api/servicesApi";
 import { useGetGrantsSharedWithMeQuery } from "@/store/api/accessGrantsApi";
 import { getGrantClientId, getClientDisplayName } from "@/types/grant-access";

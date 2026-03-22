@@ -8,13 +8,14 @@ Industry-standard structure for scalable feature modules.
 src/
 ├── app/                    # Next.js App Router (pages, layouts)
 ├── components/             # React components
-│   ├── ui/                 # Shared primitives (Button, Input, etc.)
-│   ├── shared/             # Cross-feature (CurrencySwitcher, DarkModeToggle)
-│   ├── client/             # Client layout (Header, Sidebar, RouteGuard)
-│   ├── public/             # Public/unauthenticated layout
-│   ├── invoice/            # Invoice feature (refactored)
-│   ├── checkout/           # Checkout feature
-│   └── admin/              # Admin feature modules
+│   ├── ui/                 # Design-system primitives (Button, Input, etc.)
+│   ├── shared/             # Used by BOTH client + admin (or app-wide)
+│   │   ├── sidebar/        # SidebarHeader, NavItem, Submenu, Footer (both dashboards)
+│   │   ├── ticket/         # Ticket reply + badges (client + admin tickets)
+│   │   ├── providers.tsx   # Root Redux / theme / auth providers
+│   │   └── …               # DarkModeToggle, NotificationsDropdown, Modal, etc.
+│   ├── client/             # Client portal only (hosting, domains, checkout, invoice view, …)
+│   └── admin/              # Staff admin only (includes email-composer for bulk/staff email UI)
 ├── config/                 # Navigation, API config
 ├── contexts/               # React contexts (Auth, Theme, Sidebar)
 ├── hooks/                  # Custom hooks
@@ -84,9 +85,9 @@ Prefer barrel imports for feature modules:
 
 ```ts
 // Good
-import { InvoiceDetail } from "@/components/invoice";
-import { CheckoutPage } from "@/components/checkout";
+import { InvoiceDetail } from "@/components/client/invoice";
+import { CheckoutPage } from "@/components/client/checkout";
 
 // Also valid (direct)
-import { InvoiceDetail } from "@/components/invoice/InvoiceDetail";
+import { InvoiceDetail } from "@/components/client/invoice/InvoiceDetail";
 ```

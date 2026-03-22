@@ -1,4 +1,4 @@
-import { ReferralsHubPage } from "@/components/referrals/ReferralsHubPage";
+import { ReferralsHubPage } from "@/components/client/referrals/ReferralsHubPage";
 
 export default async function ReferralsPage({
   searchParams,

@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useGetGrantsSharedWithMeQuery } from "@/store/api/accessGrantsApi";
 import { getGrantClientId, getClientDisplayName } from "@/types/grant-access";
-import { SharedAccessBanner } from "@/features/shared-with-me";
+import { SharedAccessBanner } from "@/components/client/shared-with-me";
 
 export default function SharedClientLayout({
   children,

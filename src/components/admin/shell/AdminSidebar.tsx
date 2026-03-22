@@ -7,10 +7,12 @@ import { adminNavItems } from "@/config/adminNavigation";
 import { filterAdminNavByRole } from "@/types/navigation";
 import { useMenuNavigation } from "@/hooks/useMenuNavigation";
 import { useSidebar } from "@/hooks/useSidebar";
-import { SidebarHeader } from "@/components/client/sidebar/SidebarHeader";
-import { SidebarNavItem } from "@/components/client/sidebar/SidebarNavItem";
-import { SidebarSubmenu } from "@/components/client/sidebar/SidebarSubmenu";
-import { SidebarFooter } from "@/components/client/sidebar/SidebarFooter";
+import {
+    SidebarHeader,
+    SidebarNavItem,
+    SidebarSubmenu,
+    SidebarFooter,
+} from "@/components/shared/sidebar";
 import type { RootState } from "@/store";
 
 interface AdminSidebarProps {

@@ -13,7 +13,7 @@ import {
 import { useGetClientServicesQuery } from "@/store/api/servicesApi";
 import type { CreateGrantRequest, UpdateGrantRequest } from "@/types/grant-access";
 import type { AccessGrant } from "@/types/grant-access";
-import { GrantAccessForm, GrantList, GrantEditDialog } from "@/features/grant-access";
+import { GrantAccessForm, GrantList, GrantEditDialog } from "@/components/client/grant-access";
 
 export default function GrantAccessPage() {
   const { data: client, isLoading: clientLoading } = useGetMyClientProfileQuery();

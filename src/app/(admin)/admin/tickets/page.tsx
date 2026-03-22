@@ -16,8 +16,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { formatDate } from "@/utils/format";
-import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/ticket/TicketStatusBadge";
-import { TicketPriorityBadge } from "@/components/ticket/TicketPriorityBadge";
+import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/shared/ticket/TicketStatusBadge";
+import { TicketPriorityBadge } from "@/components/shared/ticket/TicketPriorityBadge";
 import { cn } from "@/lib/utils";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 

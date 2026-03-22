@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { DomainManagePage } from "@/components/domain-manage/DomainManagePage";
+import { DomainManagePage } from "@/components/client/domain-manage/DomainManagePage";
 import { useGetDomainDetailsQuery } from "@/store/api/domainApi";
 
 export default function DomainManage() {

@@ -5,8 +5,8 @@ import { useParams } from "next/navigation";
 import { useGetClientByIdQuery } from "@/store/api/clientApi";
 import { ClientDetailsHeader } from "./ClientDetailsHeader";
 import { ClientTabs } from "./ClientTabs";
-import { EmailComposer } from "@/components/shared/EmailComposer";
-import type { RecipientItem } from "@/components/shared/EmailComposer";
+import { EmailComposer } from "@/components/admin/email-composer";
+import type { RecipientItem } from "@/components/admin/email-composer";
 import { Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 

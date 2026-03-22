@@ -14,10 +14,10 @@ import { formatDate } from "@/utils/format";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { buildAttachmentUrl } from "@/lib/safeAttachmentUrl";
 import { cn } from "@/lib/utils";
-import { TicketReplyForm } from "@/components/ticket/TicketReplyForm";
+import { TicketReplyForm } from "@/components/shared/ticket/TicketReplyForm";
 import { toast } from "sonner";
-import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/ticket/TicketStatusBadge";
-import { TicketPriorityBadge } from "@/components/ticket/TicketPriorityBadge";
+import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/shared/ticket/TicketStatusBadge";
+import { TicketPriorityBadge } from "@/components/shared/ticket/TicketPriorityBadge";
 import { devLog } from "@/lib/devLog";
 
 const CLIENT_STATUS_LABELS: Record<string, string> = {

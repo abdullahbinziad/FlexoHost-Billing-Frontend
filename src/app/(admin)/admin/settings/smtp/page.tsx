@@ -11,7 +11,7 @@ import {
 } from "@/store/api/settingsApi";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
-import { SmtpSettingsCard } from "@/components/admin/settings";
+import { SmtpSettingsCard, SettingsPageFrame } from "@/components/admin/settings";
 
 export default function AdminSmtpSettingsPage() {
     const { data, isLoading, error } = useGetSettingsQuery();
@@ -75,14 +75,10 @@ export default function AdminSmtpSettingsPage() {
     }
 
     return (
-        <div className="space-y-4 max-w-3xl">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-bold tracking-tight">SMTP configuration</h1>
-                    <p className="text-muted-foreground text-sm mt-0.5">
-                        Outbound mail server credentials and a one-off test message.
-                    </p>
-                </div>
+        <SettingsPageFrame
+            title="SMTP configuration"
+            description="Configure outbound mail for transactional email. Use Send test to verify after saving."
+            actions={
                 <Button onClick={handleSave} disabled={isSaving} size="sm">
                     {isSaving ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -91,16 +87,18 @@ export default function AdminSmtpSettingsPage() {
                     )}
                     Save
                 </Button>
+            }
+        >
+            <div className="max-w-3xl">
+                <SmtpSettingsCard
+                    form={form}
+                    onChange={handleChange}
+                    smtpPasswordDraft={smtpPasswordDraft}
+                    onSmtpPasswordDraft={setSmtpPasswordDraft}
+                    smtpPasswordClearPending={smtpPasswordClearPending}
+                    onSmtpPasswordClearPending={setSmtpPasswordClearPending}
+                />
             </div>
-
-            <SmtpSettingsCard
-                form={form}
-                onChange={handleChange}
-                smtpPasswordDraft={smtpPasswordDraft}
-                onSmtpPasswordDraft={setSmtpPasswordDraft}
-                smtpPasswordClearPending={smtpPasswordClearPending}
-                onSmtpPasswordClearPending={setSmtpPasswordClearPending}
-            />
-        </div>
+        </SettingsPageFrame>
     );
 }

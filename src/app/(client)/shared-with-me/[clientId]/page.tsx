@@ -6,8 +6,8 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetClientServicesQuery } from "@/store/api/servicesApi";
-import { getSharedServiceManagePath } from "@/features/shared-with-me";
-import { ActiveServicesList } from "@/components/hosting/ActiveServicesList";
+import { getSharedServiceManagePath } from "@/components/client/shared-with-me";
+import { ActiveServicesList } from "@/components/client/hosting/ActiveServicesList";
 import { Grid3x3, Server, Globe, Mail, Key, Layers } from "lucide-react";
 
 const SERVICE_TABS: { value: string; label: string; type?: string; icon: React.ComponentType<{ className?: string }> }[] = [

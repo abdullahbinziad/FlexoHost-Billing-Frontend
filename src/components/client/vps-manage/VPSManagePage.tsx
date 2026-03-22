@@ -1,12 +1,12 @@
 "use client";
 
-import { Breadcrumbs } from "@/components/hosting-manage/Breadcrumbs";
+import { Breadcrumbs } from "@/components/client/hosting-manage/Breadcrumbs";
 import { VPSHeader } from "./VPSHeader";
 import { VPSPowerControls } from "./VPSPowerControls";
 import { VPSStatsCard } from "./VPSStatsCard";
 import { VPSInfoCard } from "./VPSInfoCard";
 import { VPSConsolePreview } from "./VPSConsolePreview";
-import { BillingOverviewCard } from "@/components/hosting-manage/BillingOverviewCard";
+import { BillingOverviewCard } from "@/components/client/hosting-manage/BillingOverviewCard";
 import type { VPSServiceDetails } from "@/types/vps-manage";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Activity, Settings, HardDrive, Shield } from "lucide-react";

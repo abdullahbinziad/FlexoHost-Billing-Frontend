@@ -12,6 +12,7 @@ import {
     HandCoins,
 } from "lucide-react";
 import type { NavItem } from "@/types/navigation";
+import { ADMIN_SETTINGS_CORE_SUBMENU } from "@/components/admin/settings";
 
 // Standard order: Dashboard → Clients → Orders → Billing → Affiliates → Products → Support → Promotions → Domains → Server Config → Settings
 // requiredPermissions: show nav if user has ANY of these (admin/superadmin bypass)
@@ -126,8 +127,7 @@ export const adminNavItems: NavItem[] = [
             "migration:run",
         ],
         submenu: [
-            { label: "Billing & Reminders", href: "/admin/settings", requiredPermissions: ["settings:read"] },
-            { label: "SMTP configuration", href: "/admin/settings/smtp", requiredPermissions: ["settings:smtp"] },
+            ...ADMIN_SETTINGS_CORE_SUBMENU,
             { label: "Roles", href: "/admin/roles", requiredPermissions: ["roles:list"] },
             { label: "Manage User", href: "/admin/users", requiredPermissions: ["users:list"] },
             { label: "WHMCS Migration", href: "/admin/migration", requiredPermissions: ["migration:run"] },

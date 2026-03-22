@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { HostingManagePage } from "@/components/hosting-manage/HostingManagePage";
+import { HostingManagePage } from "@/components/client/hosting-manage/HostingManagePage";
 import { useActiveClient } from "@/hooks/useActiveClient";
 import { useGetClientServiceByIdQuery } from "@/store/api/servicesApi";
 

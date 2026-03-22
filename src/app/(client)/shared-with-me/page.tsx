@@ -3,7 +3,7 @@
 import { useGetGrantsSharedWithMeQuery } from "@/store/api/accessGrantsApi";
 import { Loader2, Share2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { SharedClientCard } from "@/features/shared-with-me";
+import { SharedClientCard } from "@/components/client/shared-with-me";
 
 export default function SharedWithMePage() {
   const { data: grants = [], isLoading } = useGetGrantsSharedWithMeQuery();

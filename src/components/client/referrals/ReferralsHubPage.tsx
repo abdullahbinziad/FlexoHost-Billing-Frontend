@@ -1,8 +1,8 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ReferHostingPage } from "@/components/referrals/ReferHostingPage";
-import { AffiliateEarningsPage } from "@/components/referrals/AffiliateEarningsPage";
+import { ReferHostingPage } from "@/components/client/referrals/ReferHostingPage";
+import { AffiliateEarningsPage } from "@/components/client/referrals/AffiliateEarningsPage";
 
 interface ReferralsHubPageProps {
   initialTab?: "refer" | "earnings";

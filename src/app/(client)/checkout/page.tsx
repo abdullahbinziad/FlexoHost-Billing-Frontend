@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { CheckoutPage } from "@/components/checkout/CheckoutPage";
-import { DomainCheckoutPage } from "@/components/checkout/DomainCheckoutPage";
+import { CheckoutPage } from "@/components/client/checkout/CheckoutPage";
+import { DomainCheckoutPage } from "@/components/client/checkout/DomainCheckoutPage";
 import { useGetStoreProductQuery } from "@/store/api/storeApi";
 import { useGetCheckoutDataQuery } from "@/store/api/checkoutApi";
 import { setCurrency } from "@/store/slices/currencySlice";
