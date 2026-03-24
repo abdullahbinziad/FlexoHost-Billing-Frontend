@@ -121,7 +121,6 @@ export const adminNavItems: NavItem[] = [
         requiredPermissions: [
             "settings:read",
             "settings:update_billing",
-            "settings:smtp",
             "roles:list",
             "users:list",
             "migration:run",

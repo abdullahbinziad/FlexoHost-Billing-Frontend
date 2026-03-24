@@ -105,7 +105,7 @@ export function EmailComposer({
         toast.success(`Sent to ${res.sent} of ${res.total} recipient(s)`);
       } else if (res.failed > 0) {
         toast.error(
-          "No emails were sent. If you see SMTP or authentication errors below, fix Admin → Settings → SMTP (or server env SMTP_*)."
+          "No emails were sent. If you see SMTP or authentication errors below, fix SMTP_* on the API server."
         );
       }
       if (res.failed > 0 && res.sent > 0) {
@@ -118,12 +118,26 @@ export function EmailComposer({
       }
     } catch (err: unknown) {
       const e = err as {
-        data?: { message?: string; error?: { hint?: string } };
+        data?: {
+          message?: string;
+          error?: { hint?: string; detail?: string; code?: string; smtpHost?: string; smtpPort?: number; smtpSource?: string };
+        };
       };
       const msg = e?.data?.message || "Failed to send email";
       const hint = e?.data?.error?.hint;
-      if (hint) {
-        toast.error(msg, { description: hint });
+      const detail = e?.data?.error?.detail;
+      const code = e?.data?.error?.code;
+      const meta = e?.data?.error;
+      const parts: string[] = [];
+      if (detail) parts.push(detail.length > 400 ? `${detail.slice(0, 400)}…` : detail);
+      if (code) parts.push(`Code: ${code}`);
+      if (meta?.smtpHost != null && meta?.smtpPort != null) {
+        parts.push(`SMTP: ${meta.smtpHost}:${meta.smtpPort} (${meta.smtpSource ?? "?"})`);
+      }
+      if (hint) parts.push(hint);
+      const description = parts.length ? parts.join("\n\n") : undefined;
+      if (description) {
+        toast.error(msg, { description });
       } else {
         toast.error(msg);
       }

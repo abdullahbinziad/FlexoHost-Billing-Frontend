@@ -20,47 +20,9 @@ export interface BillingSettings {
     terminationWarningDays: number[];
     domainExpiryReminderDays: number[];
     reminderDueTodayEnabled: boolean;
-    smtpUseCustom: boolean;
-    smtpHost: string;
-    smtpPort: number;
-    smtpUser: string;
-    smtpPasswordIsSet: boolean;
-    smtpSecure: boolean;
-    smtpRequireTls: boolean;
-    smtpTlsRejectUnauthorized: boolean;
-    emailFrom: string;
 }
 
-export type BillingSettingsPatch = Partial<Omit<BillingSettings, "smtpPasswordIsSet">> & {
-    smtpPassword?: string | null;
-};
-
-/** Default form state before API load; used by billing settings and SMTP pages. */
-/** Strip SMTP fields so the billing-only page does not overwrite SMTP when saving. */
-export function billingFormWithoutSmtpFields(form: BillingSettings): BillingSettingsPatch {
-    const {
-        smtpPasswordIsSet: _a,
-        smtpUseCustom: _b,
-        smtpHost: _c,
-        smtpPort: _d,
-        smtpUser: _e,
-        smtpSecure: _f,
-        smtpRequireTls: _g,
-        smtpTlsRejectUnauthorized: _h,
-        emailFrom: _i,
-        ...billingOnly
-    } = form;
-    void _a;
-    void _b;
-    void _c;
-    void _d;
-    void _e;
-    void _f;
-    void _g;
-    void _h;
-    void _i;
-    return billingOnly;
-}
+export type BillingSettingsPatch = Partial<BillingSettings>;
 
 export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
     renewalLeadDays: 7,
@@ -80,15 +42,6 @@ export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
     terminationWarningDays: [7, 3, 1],
     domainExpiryReminderDays: [90, 60, 30, 14, 7],
     reminderDueTodayEnabled: true,
-    smtpUseCustom: false,
-    smtpHost: "",
-    smtpPort: 587,
-    smtpUser: "",
-    smtpPasswordIsSet: false,
-    smtpSecure: false,
-    smtpRequireTls: true,
-    smtpTlsRejectUnauthorized: true,
-    emailFrom: "",
 };
 
 export interface SettingsResponse {

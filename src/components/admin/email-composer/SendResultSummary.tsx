@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
 import type { BulkEmailResultItem } from "@/store/api/emailApi";
 
@@ -40,11 +39,9 @@ export function SendResultSummary({ sent, failed, total, results }: SendResultSu
       {showSmtpHint && (
         <p className="text-xs text-muted-foreground rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
           <span className="font-medium text-destructive">SMTP authentication failed.</span> The mail server
-          rejected the configured username or password (not the recipient addresses). Update{" "}
-          <Link href="/admin/settings/smtp" className="underline font-medium text-foreground">
-            Admin → Settings → SMTP
-          </Link>
-          , then use &quot;Test email&quot; there. For Gmail with 2FA, use an App Password.
+          rejected the configured username or password (not the recipient addresses). Set{" "}
+          <code className="text-[11px]">SMTP_USER</code> and <code className="text-[11px]">SMTP_PASSWORD</code>{" "}
+          on the API server and restart. For Gmail with 2FA, use an App Password.
         </p>
       )}
       {results.length > 0 && (

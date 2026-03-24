@@ -11,7 +11,7 @@ export function useMenuNavigation(navItems: NavItem[]) {
 
   const matchesHref = (href: string): boolean => {
     const [path, query] = href.split("?");
-    // Avoid /admin/settings matching /admin/settings/smtp (sibling submenu items share a prefix).
+    // Exact match for /admin/settings so /admin/settings/foo does not activate the parent alone.
     if (path === "/admin/settings") {
       if (pathname !== "/admin/settings") return false;
     } else if (pathname !== path && !pathname.startsWith(path + "/")) {

@@ -8,7 +8,6 @@ import {
     type BillingSettings,
     type BillingSettingsPatch,
     DEFAULT_BILLING_SETTINGS,
-    billingFormWithoutSmtpFields,
 } from "@/store/api/settingsApi";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +38,7 @@ export default function AdminSettingsPage() {
 
     const handleSave = async () => {
         try {
-            const patch: BillingSettingsPatch = billingFormWithoutSmtpFields(form);
+            const patch: BillingSettingsPatch = { ...form };
             await updateBilling(patch).unwrap();
             toast.success("Billing settings saved successfully");
         } catch (err: unknown) {
