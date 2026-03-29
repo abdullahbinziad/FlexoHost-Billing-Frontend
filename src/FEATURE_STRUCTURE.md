@@ -15,7 +15,7 @@ src/
 │   │   ├── providers.tsx   # Root Redux / theme / auth providers
 │   │   └── …               # DarkModeToggle, NotificationsDropdown, Modal, etc.
 │   ├── client/             # Client portal only (hosting, domains, checkout, invoice view, …)
-│   └── admin/              # Staff admin only (includes email-composer for bulk/staff email UI)
+│   └── admin/              # Staff admin only (email-composer, `tickets/` AdminTicketDetailView, …)
 ├── config/                 # Navigation, API config
 ├── contexts/               # React contexts (Auth, Theme, Sidebar)
 ├── hooks/                  # Custom hooks

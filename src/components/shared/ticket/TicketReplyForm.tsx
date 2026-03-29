@@ -42,9 +42,24 @@ export function TicketReplyForm({
     setMessage(text);
   };
 
+  const hasEditorContent = () => {
+    const plain = message.trim();
+    if (plain.length > 0) return true;
+    const html = (messageHtml || "").trim();
+    if (!html) return false;
+    // Allow image-only replies (or any non-empty rich content).
+    const hasImage = /<img[\s\S]*?>/i.test(html);
+    if (hasImage) return true;
+    const htmlText = html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .trim();
+    return htmlText.length > 0;
+  };
+
   const handleReply = async () => {
-    if (!message.trim()) {
-      toast.error("Reply message cannot be empty.");
+    if (!hasEditorContent()) {
+      toast.error("Reply cannot be empty.");
       return;
     }
     try {

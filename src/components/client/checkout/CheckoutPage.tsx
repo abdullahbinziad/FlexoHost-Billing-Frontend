@@ -314,6 +314,7 @@ export function CheckoutPage({
               agreeToTerms={formData.agreeToTerms || false}
               onAgreeToTermsChange={setAgreeToTerms}
               onCheckout={handleCheckout}
+              checkoutLoading={isLoading}
               hasDomain={!!formData.selectedDomain}
               onPromoCodeApply={async (code: string) => {
                 const subtotal = orderSummary?.subtotal ?? 0;

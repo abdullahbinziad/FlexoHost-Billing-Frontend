@@ -10,7 +10,6 @@ import { ClientRouteGuard } from "./ClientRouteGuard";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveClient } from "@/hooks/useActiveClient";
-import { SharedAccessBanner } from "@/components/client/shared-with-me";
 import { PublicLayout } from "@/components/client/PublicLayout";
 import { setActingAs, clearActingAs as clearActingAsAction } from "@/store/slices/activeClientSlice";
 import { loadActingAs, clearActingAsStorage } from "@/store/slices/activeClientPersistence";
@@ -109,16 +108,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       {/* If authenticated, show full dashboard layout */}
       {isAuthenticated && user ? (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          {/* Acting-as banner: full width at the very top, above header */}
-          {isActingAs && ownerLabel && (
-            <div className="fixed top-0 left-0 right-0 z-40 h-14 flex items-center print:hidden">
-              <SharedAccessBanner
-                accountLabel={ownerLabel}
-                onSwitchBack={handleSwitchBack}
-                placement="top"
-              />
-            </div>
-          )}
           <ClientSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
           <div
             className={cn(
@@ -127,11 +116,19 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               contentMargin
             )}
           >
-            <ClientHeader onMenuClick={toggleSidebar} hasBanner={isActingAs && !!ownerLabel} />
+            <ClientHeader
+              onMenuClick={toggleSidebar}
+              managingAccountLabel={isActingAs && ownerLabel ? ownerLabel : undefined}
+              onExitManagingAccount={
+                isActingAs && ownerLabel ? handleSwitchBack : undefined
+              }
+            />
             <main
               className={cn(
-                "min-h-[calc(100vh-4rem)] print:pt-0",
-                isActingAs && ownerLabel ? "pt-[7.5rem]" : "pt-16"
+                "print:pt-0",
+                isActingAs && ownerLabel
+                  ? "min-h-[calc(100vh-10.25rem)] pt-[10.25rem] sm:min-h-[calc(100vh-7.5rem)] sm:pt-[7.5rem]"
+                  : "min-h-[calc(100vh-4rem)] pt-16"
               )}
             >
               <div className="p-4 sm:p-6 print:p-0">{children}</div>

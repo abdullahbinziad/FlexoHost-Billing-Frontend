@@ -1,18 +1,16 @@
 /**
- * Services Index
- * Central export point for all services
+ * Services barrel — use concrete modules from here when convenient.
+ * Auth flows use `authentication.service` and `client.service` directly.
  */
 
-export { authenticationService } from './authentication.service';
-export { clientService } from './client.service';
-export { authService } from './authService';
+export { authenticationService } from "./authentication.service";
+export { clientService } from "./client.service";
 
-// Re-export types for convenience
 export type {
-    LoginCredentials,
-    RegisterUserData,
-    ClientRegistrationData,
-    User,
-    Client,
-    AuthTokens,
-} from '@/types/auth';
+  LoginCredentials,
+  RegisterUserData,
+  ClientRegistrationData,
+  User,
+  Client,
+  AuthTokens,
+} from "@/types/auth";

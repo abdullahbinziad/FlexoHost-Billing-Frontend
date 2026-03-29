@@ -12,12 +12,23 @@ import { useAuth } from "@/hooks/useAuth";
 import type { ServerLocation, BillingContact, PaymentMethod, Addon } from "@/types/checkout";
 import { devLog } from "@/lib/devLog";
 
+const LOCATION_TO_COUNTRY_CODE: Record<string, string> = {
+  usa: "US",
+  malaysia: "MY",
+  singapore: "SG",
+  bangladesh: "BD",
+  germany: "DE",
+  finland: "FI",
+};
+
 function normalizeServerLocations(locations: ServerLocation[] | undefined): ServerLocation[] {
   return (locations ?? []).map((location) => {
-    const countryCode = String(location.countryCode || "").toUpperCase().slice(0, 2);
+    const normalizedCountry = String(location.country || location.id || "").trim();
+    const derivedCode = LOCATION_TO_COUNTRY_CODE[normalizedCountry.toLowerCase()] || "";
+    const countryCode = String(location.countryCode || derivedCode).toUpperCase().slice(0, 2);
     return {
       id: String(location.id),
-      country: location.country || location.id,
+      country: normalizedCountry,
       countryCode: countryCode || "US",
       flag: location.flag || "",
     };
@@ -48,7 +59,12 @@ export default function Checkout() {
     productId as string,
     { skip: !productId || mode === "domain" }
   );
-  const { data: checkoutData } = useGetCheckoutDataQuery(undefined, { skip: mode === "domain" });
+  const {
+    data: checkoutData,
+  } = useGetCheckoutDataQuery(productId as string, {
+    skip: mode === "domain" || !productId,
+  });
+  const serverLocations = normalizeServerLocations(checkoutData?.serverLocations);
 
   // Redirect if no product ID or error
   useEffect(() => {
@@ -81,7 +97,6 @@ export default function Checkout() {
     return null;
   }
 
-  const serverLocations = normalizeServerLocations(checkoutData?.serverLocations);
   const availableAddons: Addon[] = checkoutData?.availableAddons ?? [];
   const paymentMethods: PaymentMethod[] = checkoutData?.paymentMethods ?? [];
 

@@ -3,6 +3,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useMemo, useEffect } from "react";
 import type { RootState } from "@/store";
+import { useLoader } from "@/contexts/LoaderContext";
 import {
   setCheckoutMode,
   setBillingCycle,
@@ -91,6 +92,7 @@ export function useCheckoutRedux(
   const dispatch = useDispatch();
   const checkout = useSelector((state: RootState) => state.checkout);
   const selectedCurrency = useSelector((state: RootState) => state.currency.selectedCurrency);
+  const { startLoading, stopLoading } = useLoader();
   const { data: tldsData } = useGetTldsQuery();
   const [createOrder, { isLoading: isCreatingOrder }] =
     useCreateOrderMutation();
@@ -326,6 +328,8 @@ export function useCheckoutRedux(
 
     dispatch(setLoading(true));
     dispatch(setError(null));
+    const loaderId = startLoading("Processing your checkout...");
+    let didRedirect = false;
 
     try {
       const result = await createOrder(payload).unwrap();
@@ -335,17 +339,24 @@ export function useCheckoutRedux(
 
       // Redirect to the newly generated invoice page
       if (result.invoiceId) {
-        window.location.href = `/invoices/${result.invoiceId}`;
+        didRedirect = true;
+        window.location.assign(`/invoices/${result.invoiceId}`);
+        return;
       } else {
         // Fallback to order page if no invoice was generated
-        window.location.href = `/orders/${result.order?.orderId}`;
+        didRedirect = true;
+        window.location.assign(`/orders/${result.order?.orderId}`);
+        return;
       }
     } catch (error: any) {
       dispatch(
         setError(error?.data?.message || "Failed to create order. Please try again.")
       );
     } finally {
-      dispatch(setLoading(false));
+      if (!didRedirect) {
+        dispatch(setLoading(false));
+      }
+      stopLoading(loaderId);
     }
   };
 

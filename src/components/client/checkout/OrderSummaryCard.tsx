@@ -14,6 +14,7 @@ interface OrderSummaryCardProps {
   agreeToTerms: boolean;
   onAgreeToTermsChange: (agree: boolean) => void;
   onCheckout: () => void;
+  checkoutLoading?: boolean;
   onPromoCodeApply?: (code: string) => Promise<boolean>;
   onPromoCodeRemove?: () => void;
   appliedPromoCode?: string;
@@ -29,6 +30,7 @@ export function OrderSummaryCard({
   agreeToTerms,
   onAgreeToTermsChange,
   onCheckout,
+  checkoutLoading = false,
   onPromoCodeApply,
   onPromoCodeRemove,
   appliedPromoCode,
@@ -259,12 +261,21 @@ export function OrderSummaryCard({
           )}
           <Button
             onClick={onCheckout}
-            disabled={!agreeToTerms || !hasDomain}
+            disabled={!agreeToTerms || !hasDomain || checkoutLoading}
             className="w-full py-4 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             size="lg"
           >
-            Checkout
-            <ArrowRight className="w-5 h-5" />
+            {checkoutLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Processing checkout...
+              </>
+            ) : (
+              <>
+                Checkout
+                <ArrowRight className="w-5 h-5" />
+              </>
+            )}
           </Button>
         </div>
       </div>

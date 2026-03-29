@@ -34,11 +34,11 @@ export interface ValidatePromoCodeResponse {
 }
 
 export interface GetCheckoutDataResponse {
-  billingCycleOptions: BillingCycleOption[];
-  serverLocations: ServerLocation[];
-  availableAddons: Addon[];
-  billingContacts: BillingContact[];
-  paymentMethods: PaymentMethod[];
+  billingCycleOptions?: BillingCycleOption[];
+  serverLocations?: ServerLocation[];
+  availableAddons?: Addon[];
+  billingContacts?: BillingContact[];
+  paymentMethods?: PaymentMethod[];
 }
 
 export interface DomainSearchApiResponse {
@@ -62,8 +62,9 @@ export interface DomainSearchApiResponse {
 export const checkoutApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get checkout configuration data
-    getCheckoutData: builder.query<GetCheckoutDataResponse, void>({
-      query: () => "/checkout/data",
+    getCheckoutData: builder.query<GetCheckoutDataResponse, string>({
+      query: (productId) => `/store/products/${productId}/checkout-config`,
+      transformResponse: (response: ApiResponse<GetCheckoutDataResponse>) => response.data,
       providesTags: ["Product", "Order"],
     }),
 

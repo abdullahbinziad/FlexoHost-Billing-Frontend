@@ -157,6 +157,23 @@ export default function ClientTicketDetailPage() {
         </div>
       </div>
 
+      {/* Reply box */}
+      {!isClosedOrResolved && (
+        <Card className="border-primary/20">
+          <CardContent className="p-4 sm:p-6">
+            <TicketReplyForm
+              ticketId={ticketId}
+              onSubmit={handleReply}
+              isSubmitting={isReplying}
+              onSuccess={refetch}
+              variant="plain"
+              label="Your Reply"
+              placeholder="Type your reply here..."
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* Messages */}
       <div className="space-y-4">
         {messages.map((m) => {
@@ -242,23 +259,6 @@ export default function ClientTicketDetailPage() {
           </Card>
         )}
       </div>
-
-      {/* Reply box */}
-      {!isClosedOrResolved && (
-        <Card className="border-primary/20">
-          <CardContent className="p-4 sm:p-6">
-            <TicketReplyForm
-              ticketId={ticketId}
-              onSubmit={handleReply}
-              isSubmitting={isReplying}
-              onSuccess={refetch}
-              variant="plain"
-              label="Your Reply"
-              placeholder="Type your reply here..."
-            />
-          </CardContent>
-        </Card>
-      )}
 
       {isClosedOrResolved && (
         <Card className="border-muted bg-muted/30">
