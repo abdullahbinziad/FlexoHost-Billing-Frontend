@@ -15,9 +15,7 @@ export function DomainSearchAndFilter({
   filters,
   onFiltersChange,
 }: DomainSearchAndFilterProps) {
-  // Local state for search input (UI-only)
   const [searchValue, setSearchValue] = useState(filters.search || "");
-  // Local state for filter dropdown (UI-only)
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const handleSearchChange = (value: string) => {
@@ -38,70 +36,86 @@ export function DomainSearchAndFilter({
   };
 
   return (
-    <div className="mb-6 flex items-center gap-4">
-      {/* Search Bar */}
-      <div className="flex-1 relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+    <div className="mb-4 flex min-w-0 items-center gap-2 sm:mb-6 sm:gap-3">
+      <div className="relative min-w-0 flex-1">
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-gray-500"
+          aria-hidden
+        />
         <input
           type="text"
           value={searchValue}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search..."
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          className="h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white py-0 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
         />
       </div>
 
-      {/* Filter Button */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
+          type="button"
+          aria-expanded={isFilterOpen}
+          aria-haspopup="true"
+          aria-label="Sort and filter options"
           onClick={() => setIsFilterOpen(!isFilterOpen)}
           className={cn(
-            "p-3 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors bg-white dark:bg-gray-900",
-            isFilterOpen && "bg-gray-50 dark:bg-gray-800 border-gray-400 dark:border-gray-600"
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800",
+            isFilterOpen &&
+              "border-gray-400 bg-gray-50 dark:border-gray-600 dark:bg-gray-800"
           )}
         >
-          <Filter className="w-5 h-5 text-primary" />
+          <Filter
+            className="h-5 w-5 text-gray-900 dark:text-gray-100"
+            strokeWidth={2}
+            aria-hidden
+          />
         </button>
 
-        {/* Filter Dropdown */}
         {isFilterOpen && (
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-            <div className="p-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  handleSortChange("name");
-                  setIsFilterOpen(false);
-                }}
-                className="w-full justify-start"
-              >
-                Sort by Name
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  handleSortChange("status");
-                  setIsFilterOpen(false);
-                }}
-                className="w-full justify-start"
-              >
-                Sort by Status
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  handleSortChange("expirationDate");
-                  setIsFilterOpen(false);
-                }}
-                className="w-full justify-start"
-              >
-                Sort by Expiration
-              </Button>
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              aria-hidden
+              onClick={() => setIsFilterOpen(false)}
+            />
+            <div className="absolute right-0 top-full z-20 mt-2 w-[min(100vw-2rem,12rem)] max-w-[calc(100vw-2rem)] rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900 sm:w-48">
+              <div className="p-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    handleSortChange("name");
+                    setIsFilterOpen(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  Sort by Name
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    handleSortChange("status");
+                    setIsFilterOpen(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  Sort by Status
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    handleSortChange("expirationDate");
+                    setIsFilterOpen(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  Sort by Expiration
+                </Button>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

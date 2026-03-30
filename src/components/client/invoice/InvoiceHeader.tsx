@@ -17,20 +17,20 @@ export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
   return (
     <div
       data-invoice-header
-      className="border-b border-gray-200 dark:border-gray-700 px-8 pt-10 pb-8 print:pt-6 print:pb-5 print:px-6"
+      className="border-b border-gray-200 px-4 pb-6 pt-6 dark:border-gray-700 sm:px-6 sm:pb-8 sm:pt-8 md:px-8 md:pt-10 print:px-6 print:pb-5 print:pt-6"
     >
-      <div className="flex items-start justify-between gap-8 mb-8">
-        <div className="flex-1">
+      <div className="mb-6 flex flex-col gap-6 md:mb-8 md:flex-row md:items-start md:justify-between md:gap-8">
+        <div className="min-w-0 flex-1">
           <div className="space-y-4">
             <div>
-              <h2 className="text-5xl font-extrabold text-gray-900 dark:text-gray-100 mb-3 tracking-tight">
+              <h2 className="mb-2 text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl md:mb-3 md:text-5xl">
                 INVOICE
               </h2>
               <div className="space-y-2">
                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium">
                   Invoice Number
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">
                   {invoice.invoiceNumber}
                 </p>
               </div>
@@ -52,8 +52,8 @@ export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
             </div>
           </div>
         </div>
-        <div className="flex-shrink-0">
-          <div className="flex flex-col items-end space-y-6">
+        <div className="shrink-0 md:max-w-[45%]">
+          <div className="flex flex-col items-start space-y-4 md:items-end md:space-y-6">
             <img
               src={logoSrc}
               alt="Company Logo"
@@ -62,9 +62,9 @@ export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
               loading="eager"
               decoding="sync"
               data-invoice-logo
-              className="object-contain max-w-[200px] h-auto"
+              className="h-auto max-w-[160px] object-contain sm:max-w-[200px]"
             />
-            <div className="text-right space-y-3 w-full">
+            <div className="w-full space-y-3 text-left md:text-right">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-medium mb-1">
                   Invoice Date

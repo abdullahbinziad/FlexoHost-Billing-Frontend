@@ -5,103 +5,106 @@ import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
 import { getBillingCycleName } from "@/utils/checkout";
 import { Button } from "@/components/ui/button";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 import type { HostingService } from "@/types/hosting";
 
-interface ServiceCardProps {
+interface ServiceTableRowProps {
   service: HostingService;
   onManage: (serviceId: string) => void;
 }
 
-export function ServiceCard({ service, onManage }: ServiceCardProps) {
+const cellBorder =
+  "border-r border-gray-100 py-3 align-middle dark:border-gray-800/80";
+
+/** One data row for the hosting services table (used inside TableBody). */
+export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
   const formatCurrency = useFormatCurrency();
   const isExpired = service.status === "expired";
   const isActive = service.status === "active";
 
   return (
-    <div className="p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-      <div className="grid grid-cols-12 gap-4 items-center">
-        {/* Icon Column */}
-        <div className="col-span-1 flex items-center justify-center">
-          <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded flex items-center justify-center">
-            <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
+    <TableRow className="border-b border-gray-100 hover:bg-gray-50/70 dark:border-gray-800/80 dark:hover:bg-gray-800/40">
+      <TableCell className={cn(cellBorder, "w-12 px-2 text-center")}>
+        <div className="flex justify-center">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-red-100 dark:bg-red-900/30">
+            <Lock className="h-5 w-5 text-red-600 dark:text-red-400" />
           </div>
         </div>
-
-        {/* Product/Service Column */}
-        <div className="col-span-3">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
+      </TableCell>
+      <TableCell className={cn(cellBorder, "max-w-[14rem] px-4 sm:max-w-[18rem]")}>
+        <div className="flex flex-col justify-center gap-0.5">
+          <span className="font-medium leading-snug text-gray-900 dark:text-gray-100">
             {service.name}
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{service.identifier}</p>
+          </span>
+          <span className="break-all text-xs text-gray-600 dark:text-gray-400">{service.identifier}</span>
           {(service.serverLocation || service.productType) && (
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <span className="text-xs text-muted-foreground">
               {service.productType === "vps" ? "VPS" : "Hosting"}
               {service.serverLocation ? ` · ${service.serverLocation}` : ""}
-            </p>
+            </span>
           )}
         </div>
-
-        {/* Pricing Column */}
-        <div className="col-span-3">
-          <p className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
+      </TableCell>
+      <TableCell className={cn(cellBorder, "whitespace-nowrap px-4")}>
+        <div className="flex flex-col justify-center gap-0.5">
+          <span className="font-semibold text-gray-900 dark:text-gray-100">
             {formatCurrency(service.pricing.amount, service.pricing.currency)}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          </span>
+          <span className="text-xs text-gray-600 dark:text-gray-400">
             {getBillingCycleName(service.pricing.billingCycle)}
-          </p>
+          </span>
         </div>
-
-        {/* Next Due Date Column */}
-        <div className="col-span-3">
-          {service.nextDueDate ? (
-            <p className="text-base font-medium text-gray-900 dark:text-gray-100">
-              {formatDate(service.nextDueDate, "full")}
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-500">N/A</p>
+      </TableCell>
+      <TableCell className={cn(cellBorder, "px-4")}>
+        {service.nextDueDate ? (
+          <span className="text-sm text-gray-900 dark:text-gray-100">
+            {formatDate(service.nextDueDate, "full")}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-500 dark:text-gray-500">—</span>
+        )}
+      </TableCell>
+      <TableCell className={cn(cellBorder, "px-4 text-right")}>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {isExpired && service.expiredDaysAgo !== undefined && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Expired {service.expiredDaysAgo}d ago</span>
+            </span>
+          )}
+          {isActive && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-400"
+              )}
+            >
+              <Check className="h-3 w-3 shrink-0" />
+              Active
+            </span>
+          )}
+          {service.status === "suspended" && (
+            <span className="inline-flex items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-400">
+              Suspended
+            </span>
+          )}
+          {service.status === "pending" && (
+            <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-400">
+              Pending
+            </span>
           )}
         </div>
-
-        {/* Status Column */}
-        <div className="col-span-1 flex items-center justify-end">
-          <div className="flex items-center gap-2">
-            {isExpired && service.expiredDaysAgo !== undefined && (
-              <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-                <AlertCircle className="w-4 h-4" />
-                <span>Expired {service.expiredDaysAgo} days ago</span>
-              </div>
-            )}
-            {isActive && (
-              <span className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium rounded">
-                <Check className="w-3 h-3" />
-                Active
-              </span>
-            )}
-            {service.status === "suspended" && (
-              <span className="inline-flex items-center px-3 py-1 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-sm font-medium rounded">
-                Suspended
-              </span>
-            )}
-            {service.status === "pending" && (
-              <span className="inline-flex items-center px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-sm font-medium rounded">
-                Pending
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Actions Column */}
-        <div className="col-span-1 flex items-center justify-end">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => onManage(service.id)}
-            className="h-8 whitespace-nowrap"
-          >
-            Manage
-          </Button>
-        </div>
-      </div>
-    </div>
+      </TableCell>
+      <TableCell className="py-3 pl-3 pr-4 text-right align-middle">
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => onManage(service.id)}
+          className="h-8 whitespace-nowrap"
+        >
+          Manage
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 }

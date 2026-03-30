@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { FileText, Eye, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { FileText, Eye, Loader2 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
@@ -29,11 +30,12 @@ export default function ClientInvoices() {
   const formatCurrency = useFormatCurrency();
   const { activeClientId } = useActiveClient();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState<string>("");
 
   const { data, isLoading, error } = useGetAllInvoicesQuery({
     page,
-    limit: 10,
+    limit: pageSize,
     ...(activeClientId ? { clientId: activeClientId } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
   });
@@ -161,34 +163,21 @@ export default function ClientInvoices() {
             </div>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Page {page} of {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <DataTablePagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalResults}
+            pageSize={pageSize}
+            currentCount={invoices.length}
+            itemLabel="invoices"
+            onPageChange={setPage}
+            onPageSizeChange={(value) => {
+              setPageSize(value);
+              setPage(1);
+            }}
+            variant="compact"
+            showJumpToPage={false}
+          />
         </>
       )}
     </div>

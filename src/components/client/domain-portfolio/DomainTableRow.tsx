@@ -6,13 +6,27 @@ import { Button } from "@/components/ui/button";
 import type { Domain } from "@/types/domain";
 import { formatDate } from "@/utils/format";
 
-interface DomainTableRowProps {
+export interface DomainTableRowProps {
   domain: Domain;
   isSelected: boolean;
   onSelect: (domainId: string, selected: boolean) => void;
   onToggleAutoRenewal: (domainId: string, enabled: boolean) => void;
   onRenew: (domainId: string) => void;
   onManage: (domainId: string) => void;
+}
+
+const DOMAIN_STATUS_COLORS: Record<Domain["status"], string> = {
+  active: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30",
+  expired: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30",
+  pending: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30",
+  suspended: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50",
+};
+
+export function domainStatusBadgeClassName(status: Domain["status"]) {
+  return cn(
+    "inline-flex items-center gap-2 px-2 py-1 rounded text-sm font-medium",
+    DOMAIN_STATUS_COLORS[status]
+  );
 }
 
 export function DomainTableRow({
@@ -23,13 +37,6 @@ export function DomainTableRow({
   onRenew,
   onManage,
 }: DomainTableRowProps) {
-  const statusColors = {
-    active: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30",
-    expired: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30",
-    pending: "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30",
-    suspended: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50",
-  };
-
   return (
     <tr className="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
       {/* Checkbox */}
@@ -46,18 +53,13 @@ export function DomainTableRow({
 
       {/* Domain Name */}
       <td className="px-4 py-4 align-middle">
-        <span className="font-medium text-gray-900 dark:text-gray-100">{domain.name}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100 break-all">{domain.name}</span>
       </td>
 
       {/* Status */}
       <td className="px-4 py-4 align-middle">
-        <span
-          className={cn(
-            "inline-flex items-center gap-2 px-2 py-1 rounded text-sm font-medium",
-            statusColors[domain.status]
-          )}
-        >
-          {domain.status === "active" && <Check className="w-4 h-4" />}
+        <span className={domainStatusBadgeClassName(domain.status)}>
+          {domain.status === "active" && <Check className="w-4 h-4 shrink-0" />}
           <span className="capitalize">{domain.status}</span>
         </span>
       </td>

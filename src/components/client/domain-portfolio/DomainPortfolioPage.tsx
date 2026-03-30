@@ -121,35 +121,37 @@ export function DomainPortfolioPage() {
 
   if (isProfileLoading || (activeClientId && isLoading)) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-500 dark:text-gray-400">Loading domains...</p>
+      <div className="flex items-center justify-center min-h-[240px] sm:min-h-[400px] px-4">
+        <p className="text-center text-gray-500 dark:text-gray-400">Loading domains...</p>
       </div>
     );
   }
 
   if (!activeClientId) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-500 dark:text-gray-400">Client profile not found. Please complete your profile.</p>
+      <div className="flex items-center justify-center min-h-[240px] sm:min-h-[400px] px-4">
+        <p className="text-center text-gray-500 dark:text-gray-400 max-w-md">
+          Client profile not found. Please complete your profile.
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-        <p className="text-red-800 dark:text-red-200">Error loading domains. Please try again.</p>
+      <div className="p-4 sm:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mx-0 w-full min-w-0 max-w-full">
+        <p className="text-red-800 dark:text-red-200 text-sm sm:text-base">Error loading domains. Please try again.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 max-w-full space-y-4 sm:space-y-6">
       <DomainPortfolioHeader onAddDomain={handleAddDomain} />
-      <PromotionalBanner
+      {/* <PromotionalBanner
         title="New Year's sale is on – make your next move!"
         description="Grab these great deals that we've handpicked just for you."
-      />
+      /> */}
       <DomainSearchAndFilter
         filters={filters}
         onFiltersChange={(nextFilters) => {

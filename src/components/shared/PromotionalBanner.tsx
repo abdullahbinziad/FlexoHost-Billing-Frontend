@@ -27,8 +27,8 @@ export function PromotionalBanner({
   return (
     <div
       className={cn(
-        "relative bg-gradient-to-r from-brand-primary-50 dark:from-brand-primary-900/20 to-brand-primary-100 dark:to-brand-primary-900/30 border border-brand-primary-200 dark:border-brand-primary-800 rounded-lg",
-        isCompact ? "p-4" : "p-6",
+        "relative w-full min-w-0 max-w-full bg-gradient-to-r from-brand-primary-50 dark:from-brand-primary-900/20 to-brand-primary-100 dark:to-brand-primary-900/30 border border-brand-primary-200 dark:border-brand-primary-800 rounded-lg",
+        isCompact ? "p-4 pr-12" : "p-4 pr-12 sm:p-6 sm:pr-14",
         className
       )}
     >
@@ -36,47 +36,52 @@ export function PromotionalBanner({
         variant="ghost"
         size="icon"
         onClick={() => setIsVisible(false)}
-        className="absolute top-4 right-4 h-8 w-8"
+        className="absolute top-2 right-2 h-8 w-8 sm:top-4 sm:right-4"
         aria-label="Dismiss banner"
       >
         <X className="w-5 h-5" />
       </Button>
       <div
         className={cn(
-          "flex items-center justify-between gap-6",
-          isCompact && "pr-8"
+          "flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6",
+          isCompact && "sm:pr-0"
         )}
       >
-        <div className={cn("flex items-center gap-4", isCompact && "flex-1")}>
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 items-start gap-3 sm:items-center sm:gap-4",
+            isCompact && "sm:gap-4"
+          )}
+        >
           <div
             className={cn(
               "bg-brand-primary-200 dark:bg-brand-primary-800/50 rounded-lg flex items-center justify-center relative overflow-hidden flex-shrink-0",
-              isCompact ? "w-16 h-16" : "w-24 h-24"
+              isCompact ? "w-14 h-14 sm:w-16 sm:h-16" : "w-16 h-16 sm:w-24 sm:h-24"
             )}
           >
             <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]"></div>
             <span
               className={cn(
                 "font-bold text-brand-primary-700 dark:text-brand-primary-300 relative z-10",
-                isCompact ? "text-3xl" : "text-4xl"
+                isCompact ? "text-2xl sm:text-3xl" : "text-3xl sm:text-4xl"
               )}
             >
               %
             </span>
           </div>
-          <div className={isCompact ? "flex-1" : "flex-1"}>
+          <div className="min-w-0 flex-1">
             <h2
               className={cn(
-                "font-bold text-gray-900 dark:text-gray-100",
-                isCompact ? "text-lg mb-1" : "text-xl mb-2"
+                "font-bold text-gray-900 dark:text-gray-100 break-words",
+                isCompact ? "text-base mb-1 sm:text-lg" : "text-lg mb-1 sm:text-xl sm:mb-2"
               )}
             >
               {title}
             </h2>
             <p
               className={cn(
-                "text-gray-700 dark:text-gray-300",
-                isCompact ? "text-sm" : ""
+                "text-gray-700 dark:text-gray-300 text-sm sm:text-base",
+                isCompact && "text-sm"
               )}
             >
               {description}
@@ -84,14 +89,14 @@ export function PromotionalBanner({
           </div>
         </div>
         {!isCompact && (
-          <div className="relative flex-shrink-0 flex items-center gap-2">
-            <div className="w-24 h-24 bg-brand-primary-200 dark:bg-brand-primary-800/50 rounded-lg flex items-center justify-center relative overflow-hidden">
+          <div className="hidden shrink-0 items-center gap-2 sm:flex">
+            <div className="w-20 h-20 bg-brand-primary-200 dark:bg-brand-primary-800/50 rounded-lg flex items-center justify-center relative overflow-hidden sm:w-24 sm:h-24">
               <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,.2)_50%,transparent_75%,transparent_100%)] bg-[length:20px_20px]"></div>
-              <span className="text-4xl font-bold text-brand-primary-700 dark:text-brand-primary-300 relative z-10">
+              <span className="text-3xl sm:text-4xl font-bold text-brand-primary-700 dark:text-brand-primary-300 relative z-10">
                 %
               </span>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" aria-hidden tabIndex={-1}>
               <svg
                 className="w-5 h-5"
                 fill="none"
