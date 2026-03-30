@@ -14,9 +14,9 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
   const { invoicedTo } = invoice;
 
   return (
-    <div className="invoice-body flex-1 px-8 py-6 space-y-6 print:py-4 print:space-y-4 print:px-6">
+    <div className="invoice-body flex-1 space-y-5 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-6 md:px-8 print:space-y-4 print:px-6 print:py-4">
       {/* Pay To / Bill To */}
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8">
         <div>
           <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-2">
             Pay To:
@@ -58,14 +58,14 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
         <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-3">
           Invoice Items
         </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <div className="-mx-1 overflow-x-auto sm:mx-0">
+            <table className="w-full min-w-[280px] border-collapse">
             <thead>
               <tr className="bg-gray-200 dark:bg-gray-700">
-                <th className="text-left py-3 px-4 text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
+                <th className="border border-gray-300 px-2 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-gray-900 dark:border-gray-600 dark:text-gray-100 sm:px-4 sm:py-3 sm:text-xs">
                   Description
                 </th>
-                <th className="text-right py-3 px-4 text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider border border-gray-300 dark:border-gray-600">
+                <th className="border border-gray-300 px-2 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-gray-900 dark:border-gray-600 dark:text-gray-100 sm:px-4 sm:py-3 sm:text-xs">
                   Amount
                 </th>
               </tr>
@@ -79,10 +79,10 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
                     index % 2 === 0 && "bg-gray-50 dark:bg-gray-900/50"
                   )}
                 >
-                  <td className="py-2.5 px-3 text-sm text-gray-900 dark:text-gray-100 border-r border-gray-300 dark:border-gray-700">
+                  <td className="break-words border-r border-gray-300 px-2 py-2 text-xs text-gray-900 dark:border-gray-700 dark:text-gray-100 sm:px-3 sm:py-2.5 sm:text-sm">
                     {item.description}
                   </td>
-                  <td className="py-2.5 px-3 text-right text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <td className="whitespace-nowrap px-2 py-2 text-right text-xs font-semibold text-gray-900 dark:text-gray-100 sm:px-3 sm:py-2.5 sm:text-sm">
                     {formatCurrency(item.amount, invoice.currency)}
                   </td>
                 </tr>
@@ -94,7 +94,7 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
 
       {/* Totals */}
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-        <div className="max-w-xs ml-auto space-y-2">
+        <div className="ml-0 w-full max-w-full space-y-2 sm:ml-auto sm:max-w-xs">
           <div className="flex justify-between text-sm">
             <span className="text-gray-700 dark:text-gray-300 font-medium">Sub Total</span>
             <span className="font-semibold text-gray-900 dark:text-gray-100">
@@ -122,8 +122,8 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
           Transactions
         </h3>
         {invoice.transactions.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="-mx-1 overflow-x-auto sm:mx-0">
+            <table className="w-full min-w-[480px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="text-left py-2 px-3 text-xs font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
@@ -175,7 +175,7 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
 
       {/* Balance */}
       <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-        <div className="max-w-xs ml-auto">
+        <div className="ml-0 w-full max-w-full sm:ml-auto sm:max-w-xs">
           <div className="flex justify-between items-center">
             <span className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
               Balance
