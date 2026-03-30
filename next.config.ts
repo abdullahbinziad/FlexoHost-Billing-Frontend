@@ -37,8 +37,8 @@ const nextConfig: NextConfig = {
         source: "/uploads/:path*",
         destination: `${BACKEND_ORIGIN}/uploads/:path*`,
       },
-      // API /api/v1/* is proxied via app/api/v1/[...path]/route.ts to explicitly
-      // forward cookies (Next.js rewrites may not forward Cookie header)
+      // API /api/v1/* is proxied via app/api/v1/[[...path]]/route.ts to forward
+      // cookies and bodies (Next.js rewrites may not forward Cookie reliably).
     ];
   },
   async headers() {

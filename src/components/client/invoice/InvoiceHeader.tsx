@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { formatInvoiceDate, getInvoiceStatusStyles } from "./invoice.utils";
 import type { Invoice } from "@/types/invoice";
@@ -11,6 +10,10 @@ interface InvoiceHeaderProps {
 }
 
 export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
+  const logoSrc = isDark
+    ? "/img/company/FlexoHostHorizontalforDark.webp"
+    : "/img/company/FlexoHostHorizontalforLight.webp";
+
   return (
     <div
       data-invoice-header
@@ -51,16 +54,15 @@ export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
         </div>
         <div className="flex-shrink-0">
           <div className="flex flex-col items-end space-y-6">
-            <Image
-              src={
-                isDark
-                  ? "/img/company/FlexoHostHorizontalforDark.webp"
-                  : "/img/company/FlexoHostHorizontalforLight.webp"
-              }
+            <img
+              src={logoSrc}
               alt="Company Logo"
               width={200}
               height={60}
-              className="object-contain"
+              loading="eager"
+              decoding="sync"
+              data-invoice-logo
+              className="object-contain max-w-[200px] h-auto"
             />
             <div className="text-right space-y-3 w-full">
               <div>
