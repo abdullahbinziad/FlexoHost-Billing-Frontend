@@ -125,18 +125,26 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[420px]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex min-h-[240px] items-center justify-center px-4 sm:h-[420px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error) {
-    return <div className="p-6 text-center text-destructive">Failed to load affiliate dashboard.</div>;
+    return (
+      <div className="px-4 py-8 text-center text-sm text-destructive sm:text-base">
+        Failed to load affiliate dashboard.
+      </div>
+    );
   }
 
   if (!data || !data.profile) {
-    return <div className="p-6 text-center text-muted-foreground">Preparing your referral workspace...</div>;
+    return (
+      <div className="px-4 py-8 text-center text-sm text-muted-foreground sm:text-base">
+        Preparing your referral workspace...
+      </div>
+    );
   }
 
   const referralLink = data.profile.referralLink || "";
@@ -145,26 +153,26 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
   const thresholdProgress = payoutThreshold > 0 ? Math.min(100, (availableForPayout / payoutThreshold) * 100) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-4 sm:space-y-6">
       {!embedded && (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Affiliate Program</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold sm:text-2xl">Affiliate Program</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Earn on qualified referrals, wait through the refund window, then redeem approved balance.
             </p>
           </div>
-          <div className="rounded-lg border bg-card px-4 py-3 text-sm">
+          <div className="rounded-lg border bg-card px-3 py-3 text-sm sm:px-4">
             <div className="text-muted-foreground">Current account credit</div>
-            <div className="text-lg font-semibold mt-1">
+            <div className="mt-1 text-base font-semibold sm:text-lg">
               {formatCurrency(data.clientCreditBalance || 0, data.clientCreditCurrency || preferredCurrency)}
             </div>
           </div>
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Card>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <Card className="min-w-0">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <Share2 className="w-4 h-4" />
@@ -180,9 +188,16 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-lg border p-4">
                 <div className="text-sm text-muted-foreground">Referral code</div>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <div className="text-xl font-semibold tracking-wide">{data.profile?.referralCode}</div>
-                  <Button variant="outline" size="sm" onClick={() => handleCopy(data.profile?.referralCode || "", "Referral code")}>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0 break-all text-lg font-semibold tracking-wide sm:text-xl">
+                    {data.profile?.referralCode}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full shrink-0 sm:w-auto"
+                    onClick={() => handleCopy(data.profile?.referralCode || "", "Referral code")}
+                  >
                     <Copy className="w-4 h-4 mr-2" />
                     Copy
                   </Button>
@@ -234,14 +249,17 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
             </div>
 
             <div className="rounded-lg border p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                   <div className="text-sm font-medium">Payout threshold progress</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {formatCurrency(availableForPayout, preferredCurrency)} available of {formatCurrency(payoutThreshold, preferredCurrency)} required
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {formatCurrency(availableForPayout, preferredCurrency)} available of{" "}
+                    {formatCurrency(payoutThreshold, preferredCurrency)} required
                   </div>
                 </div>
-                <Badge variant="secondary">{Math.round(thresholdProgress)}%</Badge>
+                <Badge variant="secondary" className="w-fit shrink-0">
+                  {Math.round(thresholdProgress)}%
+                </Badge>
               </div>
               <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
                 <div className="h-full bg-primary" style={{ width: `${thresholdProgress}%` }} />
@@ -250,8 +268,8 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
           </CardContent>
         </Card>
 
-        <div className="grid gap-4">
-          <Card>
+        <div className="grid min-w-0 gap-4">
+          <Card className="min-w-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Redeem to account credit</CardTitle>
             </CardHeader>
@@ -297,7 +315,7 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <DashboardStatCard
           title="Total Referrals"
           value={data.profile?.referredClientsCount || 0}
@@ -332,17 +350,24 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
         />
       </div>
 
-      <Tabs defaultValue="referrals" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="referrals">Referrals</TabsTrigger>
-          <TabsTrigger value="commissions">Commissions</TabsTrigger>
-          <TabsTrigger value="payouts">Payouts</TabsTrigger>
+      <Tabs defaultValue="referrals" className="w-full min-w-0 space-y-4">
+        <TabsList className="flex h-auto w-full min-w-0 flex-wrap justify-stretch gap-1 p-1 sm:h-10 sm:w-fit sm:flex-nowrap sm:justify-center">
+          <TabsTrigger className="flex-1 sm:flex-initial" value="referrals">
+            Referrals
+          </TabsTrigger>
+          <TabsTrigger className="flex-1 sm:flex-initial" value="commissions">
+            Commissions
+          </TabsTrigger>
+          <TabsTrigger className="flex-1 sm:flex-initial" value="payouts">
+            Payouts
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="referrals">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
+          <Card className="min-w-0">
+            <CardContent className="min-w-0 p-0">
+              <div className="min-w-0 overflow-x-auto">
+                <Table className="min-w-[640px] whitespace-normal">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Client</TableHead>
@@ -379,14 +404,16 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="commissions">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
+          <Card className="min-w-0">
+            <CardContent className="min-w-0 p-0">
+              <div className="min-w-0 overflow-x-auto">
+                <Table className="min-w-[720px] whitespace-normal">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Status</TableHead>
@@ -418,14 +445,16 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="payouts">
-          <Card>
-            <CardContent className="p-0">
-              <Table>
+          <Card className="min-w-0">
+            <CardContent className="min-w-0 p-0">
+              <div className="min-w-0 overflow-x-auto">
+                <Table className="min-w-[680px] whitespace-normal">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Requested</TableHead>
@@ -457,6 +486,7 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
                   )}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

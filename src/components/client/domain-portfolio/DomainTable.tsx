@@ -1,10 +1,90 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Domain, DomainTableFilters } from "@/types/domain";
-import { DomainTableRow } from "./DomainTableRow";
+import { formatDate } from "@/utils/format";
+import {
+  DomainTableRow,
+  domainStatusBadgeClassName,
+  type DomainTableRowProps,
+} from "./DomainTableRow";
+
+function DomainPortfolioMobileCard({
+  domain,
+  isSelected,
+  onSelect,
+  onToggleAutoRenewal,
+  onRenew,
+  onManage,
+}: DomainTableRowProps) {
+  return (
+    <div className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+      <div className="flex gap-3">
+        <div className="flex shrink-0 items-start pt-0.5">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onSelect(domain.id, e.target.checked)}
+            className="mt-0.5 h-4 w-4 cursor-pointer rounded border-gray-300 bg-white text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-offset-gray-900"
+            aria-label={`Select ${domain.name}`}
+          />
+        </div>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Domain
+            </p>
+            <p className="break-all font-medium text-gray-900 dark:text-gray-100">{domain.name}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={domainStatusBadgeClassName(domain.status)}>
+              {domain.status === "active" && <Check className="h-4 w-4 shrink-0" />}
+              <span className="capitalize">{domain.status}</span>
+            </span>
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Expires
+            </p>
+            <p className="text-gray-700 dark:text-gray-300">{formatDate(domain.expirationDate, "short")}</p>
+          </div>
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 dark:border-gray-700 dark:bg-gray-800/40">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto-renewal</span>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                checked={domain.autoRenewal}
+                onChange={(e) => onToggleAutoRenewal(domain.id, e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className="relative h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary dark:bg-gray-700 dark:after:border-gray-600" />
+            </label>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRenew(domain.id)}
+              className="h-9 w-full sm:h-8 sm:flex-1"
+            >
+              Renew
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => onManage(domain.name)}
+              className="h-9 w-full sm:h-8 sm:flex-1"
+            >
+              Manage
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface DomainTableProps {
   domains: Domain[];
@@ -62,16 +142,44 @@ export function DomainTable({
 
   if (domains.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="px-4 py-10 text-center sm:py-12">
         <p className="text-gray-500 dark:text-gray-400">No domains found</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
+    <div className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div className="lg:hidden">
+        <div className="flex items-center gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-800/50">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            ref={(input) => {
+              if (input) input.indeterminate = someSelected;
+            }}
+            onChange={(e) => onSelectAll(e.target.checked)}
+            className="h-4 w-4 cursor-pointer rounded border-gray-300 bg-white text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-offset-gray-900"
+            aria-label="Select all domains on this page"
+          />
+          <span className="text-sm text-gray-600 dark:text-gray-400">Select all on this page</span>
+        </div>
+        <div className="divide-y divide-gray-200 dark:divide-gray-800">
+          {domains.map((domain) => (
+            <DomainPortfolioMobileCard
+              key={domain.id}
+              domain={domain}
+              isSelected={selectedDomains.has(domain.id)}
+              onSelect={onSelectDomain}
+              onToggleAutoRenewal={onToggleAutoRenewal}
+              onRenew={onRenew}
+              onManage={onManage}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="hidden overflow-x-auto lg:block">
+        <table className="w-full min-w-[720px]">
           <thead className="bg-gray-50 dark:bg-gray-800/50">
             <tr>
               <th className="px-4 py-3 text-left align-middle">

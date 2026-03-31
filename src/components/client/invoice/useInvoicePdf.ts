@@ -6,6 +6,22 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { A4_DIMENSIONS } from "./invoice.constants";
 
+const waitForImages = async (container: HTMLElement) => {
+  const images = Array.from(container.querySelectorAll("img"));
+
+  await Promise.all(
+    images.map(async (img) => {
+      if (img.complete && img.naturalWidth > 0) return;
+
+      await new Promise<void>((resolve) => {
+        const done = () => resolve();
+        img.addEventListener("load", done, { once: true });
+        img.addEventListener("error", done, { once: true });
+      });
+    })
+  );
+};
+
 export function useInvoicePdf(invoiceRef: React.RefObject<HTMLDivElement | null>, invoiceNumber: string) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
@@ -30,6 +46,8 @@ export function useInvoicePdf(invoiceRef: React.RefObject<HTMLDivElement | null>
 
       const originalBg = invoiceElement.style.backgroundColor;
       invoiceElement.style.backgroundColor = "#ffffff";
+
+      await waitForImages(invoiceElement);
 
       const canvas = await html2canvas(invoiceElement, {
         scale: 2,

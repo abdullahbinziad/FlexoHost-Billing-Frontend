@@ -153,11 +153,11 @@ export function RegisterDomainPage({
         </div>
 
         {/* Promotional Banner */}
-        <PromotionalBanner
+        {/* <PromotionalBanner
           title={promoTitle}
           description={promoDescription}
           variant="default"
-        />
+        /> */}
       </div>
     </div>
   );

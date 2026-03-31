@@ -40,7 +40,7 @@ export function HostingPage() {
       noClient={noClient}
       loadingMessage="Loading hosting services..."
     >
-      <div className="space-y-6">
+      <div className="w-full min-w-0 max-w-full space-y-4 sm:space-y-6">
         <OrderNewHostingBanner onOrderClick={handleOrderNew} />
         {renewingSoon.count > 0 && (
           <ServicesRenewingSoonCard data={renewingSoon} onRenew={handleRenew} />

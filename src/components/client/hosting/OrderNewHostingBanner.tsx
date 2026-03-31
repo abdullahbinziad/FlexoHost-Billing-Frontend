@@ -23,10 +23,10 @@ export function OrderNewHostingBanner({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-6">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 sm:text-lg mb-1">
             {title}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -35,7 +35,7 @@ export function OrderNewHostingBanner({
         </div>
         <Button
           onClick={handleClick}
-          className="whitespace-nowrap"
+          className="w-full shrink-0 sm:w-auto whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           Order Now

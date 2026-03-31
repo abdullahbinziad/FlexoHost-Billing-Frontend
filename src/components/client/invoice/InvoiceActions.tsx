@@ -32,23 +32,28 @@ export function InvoiceActions({
   const handlePayNow = () => onPayNow(selectedPaymentMethod);
 
   const ActionButtons = () => (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full min-w-0 flex-row items-stretch gap-2 sm:gap-3">
       <Button
         variant="outline"
-        size="sm"
-        className="gap-2"
+        size="default"
+        className="min-h-10 min-w-0 flex-1 gap-2"
         onClick={onDownloadPDF}
         disabled={isGeneratingPDF}
       >
         {isGeneratingPDF ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
         ) : (
-          <Download className="w-4 h-4" />
+          <Download className="h-4 w-4 shrink-0" />
         )}
         {isGeneratingPDF ? "Generating..." : "Download PDF"}
       </Button>
-      <Button variant="outline" size="sm" className="gap-2" onClick={onPrint}>
-        <Printer className="w-4 h-4" />
+      <Button
+        variant="outline"
+        size="default"
+        className="min-h-10 min-w-0 flex-1 gap-2"
+        onClick={onPrint}
+      >
+        <Printer className="h-4 w-4 shrink-0" />
         Print
       </Button>
     </div>
@@ -57,17 +62,17 @@ export function InvoiceActions({
   if (invoice.status === "unpaid") {
     return (
       <div className="lg:col-span-1 print:hidden">
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm sticky top-20">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+        <div className="sticky top-16 z-10 rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:top-20">
+          <div className="border-b border-gray-200 px-4 py-4 dark:border-gray-800 sm:px-6">
+            <h1 className="mb-3 break-words text-2xl font-bold text-gray-900 dark:text-gray-100 sm:mb-4 sm:text-3xl">
               Invoice {invoice.invoiceNumber}
             </h1>
             <ActionButtons />
           </div>
-          <div className="p-6 space-y-5">
+          <div className="space-y-5 p-4 sm:p-6">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1.5">Total Due</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="mb-1.5 text-sm text-gray-600 dark:text-gray-400">Total Due</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 sm:text-3xl">
                 {formatCurrency(invoice.balance, invoice.currency)}
               </p>
             </div>
@@ -143,10 +148,10 @@ export function InvoiceActions({
   }
 
   return (
-    <div className="lg:col-span-3 print:hidden mb-6">
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm px-6 py-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+    <div className="mb-4 print:hidden sm:mb-6 lg:col-span-3">
+      <div className="rounded-lg border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="break-words text-2xl font-bold text-gray-900 dark:text-gray-100 sm:text-3xl">
             Invoice {invoice.invoiceNumber}
           </h1>
           <ActionButtons />

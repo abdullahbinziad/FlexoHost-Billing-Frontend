@@ -16,11 +16,11 @@ export async function fetchCsrfToken(): Promise<string | null> {
   try {
     const base = (API_CONFIG.BASE_URL || "").replace(/\/$/, "");
     const path = `${base}${CSRF_ENDPOINT}`.replace(/^\/+/, "/");
-    const url = path.startsWith("http")
-      ? path
-      : typeof window !== "undefined"
-        ? `${window.location.origin}${path}`
-        : path;
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : (API_CONFIG.APP_ORIGIN || "http://localhost:3000");
+    const url = path.startsWith("http") ? path : `${origin}${path.startsWith("/") ? path : `/${path}`}`;
     const res = await fetch(url, {
       method: "GET",
       credentials: "include",

@@ -27,8 +27,13 @@ const APP_ORIGIN = getAppOrigin();
 
 export const BACKEND_API_BASE = BACKEND_ORIGIN ? `${BACKEND_ORIGIN}/api/v1` : '';
 
+/**
+ * Browser and same-origin server requests use the Next.js proxy at /api/v1/*
+ * (see app/api/v1/[[...path]]/route.ts) so we avoid cross-origin issues and
+ * forward cookies reliably. OAuth and other full-URL cases still use BACKEND_API_BASE.
+ */
 export const API_CONFIG = {
-    BASE_URL: BACKEND_API_BASE || '/api/v1',
+    BASE_URL: '/api/v1',
     BACKEND_ORIGIN,
     BACKEND_API_BASE,
     APP_ORIGIN,

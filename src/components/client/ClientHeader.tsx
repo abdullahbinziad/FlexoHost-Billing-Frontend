@@ -19,6 +19,11 @@ import { toast } from "sonner";
 import { NotificationsDropdown } from "@/components/shared/NotificationsDropdown";
 import { devLog } from "@/lib/devLog";
 
+/** Unified touch targets and shell for icon-only header actions (mobile-first). */
+const CLIENT_HEADER_ICON_TRIGGER =
+  "h-10 w-10 shrink-0 rounded-full border border-muted-foreground/20 bg-muted/40 text-foreground hover:bg-muted/60";
+const CLIENT_HEADER_ICON_GLYPH = "size-4";
+
 interface ClientHeaderProps {
   onMenuClick: () => void;
   /** When set (shared access / acting-as), shows centered “You are managing … account”. */
@@ -59,6 +64,8 @@ export function ClientHeader({
   const { isCollapsed, isMounted } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const [isSupportPinOpen, setIsSupportPinOpen] = useState(false);
+  const supportPinMenuRef = useRef<HTMLDivElement>(null);
 
   // Support PIN — fetch once per mount; refetch only when user clicks Regenerate
   const {
@@ -73,11 +80,15 @@ export function ClientHeader({
   });
   const [regeneratePin, { isLoading: isRegeneratingPin }] = useRegenerateMySupportPinMutation();
 
-  // Close user menu when clicking outside
+  // Close user / Support PIN menus when clicking outside (PIN sheet lives inside ref; backdrop closes via its own handler)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+      const t = event.target as Node;
+      if (userMenuRef.current && !userMenuRef.current.contains(t)) {
         setIsUserMenuOpen(false);
+      }
+      if (supportPinMenuRef.current && !supportPinMenuRef.current.contains(t)) {
+        setIsSupportPinOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -85,6 +96,15 @@ export function ClientHeader({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSupportPinOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsSupportPinOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isSupportPinOpen]);
 
   const handleLogout = async () => {
     try {
@@ -103,46 +123,130 @@ export function ClientHeader({
 
   const isManaging = Boolean(managingAccountLabel);
 
+  const regenerateSupportPin = async () => {
+    try {
+      await regeneratePin().unwrap();
+      await refetchSupportPin();
+      toast.success("Support PIN regenerated.");
+    } catch (e) {
+      devLog(e);
+      toast.error("Failed to regenerate Support PIN.");
+    }
+  };
+
+  const supportPinValue = (
+    <span className="tabular-nums tracking-[0.15em] text-foreground">
+      {isLoadingPin ? "••••••" : supportPinData?.supportPin ?? "------"}
+    </span>
+  );
+
   const toolbarRight = (
     <>
       {user && (
-        <div className="hidden sm:flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-muted/40 border-muted-foreground/20 text-muted-foreground">
-          <Shield className="w-3.5 h-3.5 text-primary" />
-          <span className="font-medium text-foreground">Support PIN:</span>
-          <span className="tabular-nums tracking-[0.15em] text-foreground">
-            {isLoadingPin ? "••••••" : supportPinData?.supportPin ?? "------"}
-          </span>
-          <button
-            type="button"
-            className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted disabled:opacity-50"
-            onClick={async () => {
-              try {
-                await regeneratePin().unwrap();
-                await refetchSupportPin();
-                toast.success("Support PIN regenerated.");
-              } catch (e) {
-                devLog(e);
-                toast.error("Failed to regenerate Support PIN.");
-              }
-            }}
-            disabled={isRegeneratingPin}
-            title="Generate new Support PIN"
-          >
-            <RefreshCw className={cn("w-3 h-3", isRegeneratingPin && "animate-spin")} />
-          </button>
-        </div>
+        <>
+          {/* Desktop / tablet: inline pill */}
+          <div className="hidden sm:flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-muted/40 border-muted-foreground/20 text-muted-foreground">
+            <Shield className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="font-medium text-foreground">Support PIN:</span>
+            {supportPinValue}
+            <button
+              type="button"
+              className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full hover:bg-muted disabled:opacity-50"
+              onClick={regenerateSupportPin}
+              disabled={isRegeneratingPin}
+              title="Generate new Support PIN"
+            >
+              <RefreshCw className={cn("w-3 h-3", isRegeneratingPin && "animate-spin")} />
+            </button>
+          </div>
+
+          {/* Mobile: icon + flyout — keeps header single-row; PIN one tap away */}
+          <div className="relative sm:hidden" ref={supportPinMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsUserMenuOpen(false);
+                setIsSupportPinOpen((o) => !o);
+              }}
+              className={cn(
+                "inline-flex items-center justify-center text-primary",
+                CLIENT_HEADER_ICON_TRIGGER,
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              )}
+              aria-label="View Support PIN"
+              aria-expanded={isSupportPinOpen}
+            >
+              <Shield className={cn(CLIENT_HEADER_ICON_GLYPH, "text-primary")} />
+            </button>
+            {isSupportPinOpen ? (
+              <>
+                <div
+                  className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] sm:hidden"
+                  aria-hidden
+                  onClick={() => setIsSupportPinOpen(false)}
+                />
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Support PIN"
+                  className={cn(
+                    "fixed left-4 right-4 z-50 max-h-[min(24rem,85dvh)] overflow-y-auto sm:hidden",
+                    isManaging ? "top-[calc(10.25rem+0.5rem)]" : "top-[calc(4rem+0.5rem)]",
+                    "rounded-2xl border border-border bg-card px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-2xl",
+                    "animate-in slide-in-from-top duration-300"
+                  )}
+                >
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Support PIN
+                  </p>
+                  <p className="mt-3 text-center text-2xl font-medium tabular-nums tracking-[0.25em] text-foreground">
+                    {isLoadingPin ? "••••••" : supportPinData?.supportPin ?? "------"}
+                  </p>
+                  <p className="mt-2 text-center text-xs text-muted-foreground">
+                    Share this code only with support when asked.
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 py-3 text-sm font-medium text-foreground hover:bg-muted/70 disabled:opacity-50"
+                    onClick={regenerateSupportPin}
+                    disabled={isRegeneratingPin}
+                  >
+                    <RefreshCw className={cn("h-4 w-4", isRegeneratingPin && "animate-spin")} />
+                    Generate new PIN
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </>
       )}
 
       {shouldShowCurrencySwitcher(pathname) && <CurrencySwitcher />}
 
-      <DarkModeToggle />
+      <DarkModeToggle
+        className={CLIENT_HEADER_ICON_TRIGGER}
+        iconClassName={CLIENT_HEADER_ICON_GLYPH}
+      />
 
-      <NotificationsDropdown />
+      <NotificationsDropdown
+        triggerClassName={CLIENT_HEADER_ICON_TRIGGER}
+        iconClassName={CLIENT_HEADER_ICON_GLYPH}
+      />
 
       <div className="relative" ref={userMenuRef}>
         <button
-          onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-          className="flex items-center gap-2 lg:gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-1 lg:p-1.5 transition-colors focus:outline-none"
+          type="button"
+          aria-label="Open account menu"
+          onClick={() => {
+            setIsSupportPinOpen(false);
+            setIsUserMenuOpen(!isUserMenuOpen);
+          }}
+          className={cn(
+            "flex items-center gap-2 lg:gap-3 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "h-10 w-10 shrink-0 justify-center p-0 md:h-auto md:w-auto md:p-1 lg:p-1.5",
+            CLIENT_HEADER_ICON_TRIGGER,
+            "md:border-transparent md:bg-transparent md:hover:bg-gray-100 md:dark:hover:bg-gray-800"
+          )}
         >
           <div className="text-right hidden md:block">
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -152,7 +256,8 @@ export function ClientHeader({
               {user?.role}
             </p>
           </div>
-          <div className="w-8 h-8 lg:w-9 lg:h-9 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+          <User className="md:hidden shrink-0 size-4 text-primary" aria-hidden />
+          <div className="hidden md:flex w-8 h-8 lg:w-9 lg:h-9 bg-primary/10 rounded-full items-center justify-center text-primary">
             <User className="w-4 h-4 lg:w-5 lg:h-5" />
           </div>
         </button>
@@ -271,7 +376,7 @@ export function ClientHeader({
           </Button>
         </div>
 
-        <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2 lg:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 lg:gap-3">
           {toolbarRight}
         </div>
       </div>

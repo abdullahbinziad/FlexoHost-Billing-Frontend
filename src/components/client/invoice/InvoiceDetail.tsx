@@ -72,10 +72,10 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
 
   return (
     <div
-      className="max-w-7xl mx-auto print:max-w-none print:mx-0"
+      className="mx-auto w-full min-w-0 max-w-7xl print:mx-0 print:max-w-none"
       ref={invoiceRef}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:grid-cols-1">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3 print:grid-cols-1">
         <InvoiceActions
           invoice={invoice}
           onPayNow={handlePayNow}
@@ -93,13 +93,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
         >
           <div
             data-invoice-container
-            className="invoice-a4 flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden print:border-0 print:shadow-none print:rounded-none"
-            style={{
-              width: "210mm",
-              minHeight: "297mm",
-              margin: "0 auto",
-              padding: 0,
-            }}
+            className="invoice-a4 mx-auto flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:max-w-[210mm] md:min-h-[297mm] print:max-w-none print:rounded-none print:border-0 print:shadow-none"
           >
             <InvoiceHeader invoice={invoice} isDark={isDark} />
             <InvoiceBody invoice={invoice} />
