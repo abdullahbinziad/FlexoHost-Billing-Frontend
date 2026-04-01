@@ -129,8 +129,8 @@ export function CheckoutPage({
     if (product?._id || product?.id) {
       setProductId(product._id || product.id);
     }
-    if (referral) {
-      setReferral(referral);
+    if (referral?.trim()) {
+      setReferral(referral.trim().toUpperCase());
     }
   }, [product, referral, setCheckoutMode, setProductId, setReferral]);
 

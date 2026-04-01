@@ -15,11 +15,9 @@ import {
   Share2,
   Wallet,
 } from "lucide-react";
-import { useActiveClient } from "@/hooks/useActiveClient";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
-import { useGetClientProfileActingAsQuery, useGetMySupportPinQuery } from "@/store/api/clientApi";
 import { useGetStoreProductsQuery } from "@/store/api/storeApi";
 import { useGetMyAffiliateDashboardQuery } from "@/store/api/affiliateApi";
 import { Badge } from "@/components/ui/badge";
@@ -154,7 +152,6 @@ function buildAffiliateLink(params: {
 export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
   const { selectedCurrency } = useCurrency();
   const formatCurrency = useFormatCurrency();
-  const { activeClientId, isActingAs } = useActiveClient();
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory>("hosting");
   const [selectedBillingCycle, setSelectedBillingCycle] = useState<BillingCycleKey>("annually");
   const [siteOrigin, setSiteOrigin] = useState("");
@@ -165,13 +162,8 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
     limit: 200,
     sort: "name",
   });
-  const { data: supportPinData, isLoading: isSupportPinLoading } = useGetMySupportPinQuery(undefined, {
-    skip: isActingAs,
-  });
-  const { data: actingAsProfile } = useGetClientProfileActingAsQuery(activeClientId!, {
-    skip: !isActingAs || !activeClientId,
-  });
-  const { data: affiliateDashboard } = useGetMyAffiliateDashboardQuery();
+  const { data: affiliateDashboard, isLoading: isAffiliateDashboardLoading } =
+    useGetMyAffiliateDashboardQuery();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -179,11 +171,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
     }
   }, []);
 
-  const referralCode =
-    supportPinData?.supportPin ||
-    actingAsProfile?.client?.supportPin ||
-    activeClientId ||
-    "";
+  const referralCode = affiliateDashboard?.profile?.referralCode?.trim().toUpperCase() || "";
 
   const allProducts = useMemo(() => storeProductsData?.products ?? [], [storeProductsData?.products]);
 
@@ -277,7 +265,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
     }));
   };
 
-  if (isLoading || isFetching || isSupportPinLoading) {
+  if (isLoading || isFetching || isAffiliateDashboardLoading) {
     return (
       <div className="flex min-h-[240px] items-center justify-center px-4 sm:min-h-[320px]">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -394,7 +382,8 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
         >
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
           <p>
-            Your referral code is not ready yet, so links cannot be copied right now.
+            Your affiliate referral code is not available yet (complete enrollment or open My earnings if
+            setup is still in progress). Links cannot be copied until it appears there.
           </p>
         </div>
       )}
