@@ -44,7 +44,7 @@ export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
   useEffect(() => {
     setCheckoutMode("domain");
     setProductId(null);
-    if (referral) setReferral(referral);
+    if (referral?.trim()) setReferral(referral.trim().toUpperCase());
   }, [setCheckoutMode, setProductId, setReferral, referral]);
 
   useEffect(() => {
