@@ -1,9 +1,10 @@
 "use client";
 
 import { Filter, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import {
   Table,
   TableBody,
@@ -35,18 +36,41 @@ export function ActiveServicesList({
   >("all");
   // Local state for search input (UI-only)
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const filteredServices = services.filter((service) => {
-    const matchesStatus =
-      filterStatus === "all" || service.status === filterStatus;
-    const matchesSearch =
-      !searchQuery ||
-      service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.identifier.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const filteredServices = useMemo(
+    () =>
+      services.filter((service) => {
+        const matchesStatus =
+          filterStatus === "all" || service.status === filterStatus;
+        const matchesSearch =
+          !searchQuery ||
+          service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.identifier.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesStatus && matchesSearch;
+      }),
+    [services, filterStatus, searchQuery]
+  );
+
+  const totalItems = filteredServices.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize) || 1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filterStatus, searchQuery]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paginatedServices = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredServices.slice(start, start + pageSize);
+  }, [filteredServices, page, pageSize]);
 
   return (
+    <>
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden w-full min-w-0 max-w-full">
       {/* Header with Search and Filter */}
       <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-800">
@@ -193,43 +217,31 @@ export function ActiveServicesList({
               </TableRow>
             </TableHeader>
             <TableBody className="[&_tr:nth-child(even)]:bg-gray-50/60 dark:[&_tr:nth-child(even)]:bg-gray-900/35 [&_tr]:border-gray-100 dark:[&_tr]:border-gray-800/80">
-              {filteredServices.map((service) => (
+              {paginatedServices.map((service) => (
                 <ServiceTableRow key={service.id} service={service} onManage={onManage} />
               ))}
             </TableBody>
           </Table>
         )}
       </div>
-
-      {/* Pagination Footer */}
-      <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Show</span>
-          <select className="px-2 py-1 border border-gray-300 dark:border-gray-700 rounded text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary">
-            <option>10</option>
-            <option>25</option>
-            <option>50</option>
-            <option>100</option>
-          </select>
-          <span className="text-sm text-gray-600 dark:text-gray-400">entries</span>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2 min-w-0">
-          <span className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left break-words">
-            Showing 1 to {filteredServices.length} of {filteredServices.length} entries
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
-            <Button variant="ghost" size="sm" className="min-w-0">
-              Previous
-            </Button>
-            <Button variant="default" size="sm">
-              1
-            </Button>
-            <Button variant="ghost" size="sm" className="min-w-0">
-              Next
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
+    {totalItems > 0 && (
+      <DataTablePagination
+        page={page}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        pageSize={pageSize}
+        currentCount={paginatedServices.length}
+        itemLabel="services"
+        onPageChange={setPage}
+        onPageSizeChange={(value) => {
+          setPageSize(value);
+          setPage(1);
+        }}
+        variant="compact"
+        showJumpToPage={false}
+      />
+    )}
+    </>
   );
 }
