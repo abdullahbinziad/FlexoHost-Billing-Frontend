@@ -16,7 +16,7 @@ const DEFAULT_LINKS: QuickLinkItem[] = [
   { href: "/domains", label: "Domains", icon: Globe, description: "Manage domains" },
   { href: "/billing", label: "Billing", icon: CreditCard, description: "Invoices & payments" },
   { href: "/tickets", label: "Support", icon: MessageSquare, description: "Open a ticket" },
-  { href: "/account", label: "Account", icon: Users, description: "Profile & settings" },
+  { href: "/account", label: "Account", icon: Users, description: "Profile, billing & access" },
   { href: "/checkout", label: "Order", icon: ShoppingCart, description: "New service" },
 ];
 

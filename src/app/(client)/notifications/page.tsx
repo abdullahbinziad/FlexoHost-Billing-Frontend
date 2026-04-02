@@ -33,8 +33,11 @@ import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+const READ_FILTER_ALL = "all" as const;
+const CATEGORY_FILTER_ALL = "all" as const;
+
 const CATEGORIES = [
-  { value: "", label: "All categories" },
+  { value: CATEGORY_FILTER_ALL, label: "All categories" },
   { value: "billing", label: "Billing" },
   { value: "service", label: "Service" },
   { value: "support", label: "Support" },
@@ -44,14 +47,14 @@ const CATEGORIES = [
 export default function NotificationsPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [readFilter, setReadFilter] = useState<"" | "read" | "unread">("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [readFilter, setReadFilter] = useState<typeof READ_FILTER_ALL | "read" | "unread">(READ_FILTER_ALL);
+  const [categoryFilter, setCategoryFilter] = useState<string>(CATEGORY_FILTER_ALL);
 
   const { data, isLoading } = useGetNotificationsQuery({
     page,
     limit: 15,
     read: readFilter === "read" ? true : readFilter === "unread" ? false : undefined,
-    category: categoryFilter || undefined,
+    category: categoryFilter === CATEGORY_FILTER_ALL ? undefined : categoryFilter,
   });
 
   const [markRead] = useMarkNotificationReadMutation();
@@ -135,13 +138,19 @@ export default function NotificationsPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Select value={readFilter} onValueChange={(v) => { setReadFilter(v as any); setPage(1); }}>
+        <Select
+          value={readFilter}
+          onValueChange={(v) => {
+            setReadFilter(v as typeof READ_FILTER_ALL | "read" | "unread");
+            setPage(1);
+          }}
+        >
           <SelectTrigger className="w-[160px]">
             <Filter className="w-4 h-4 mr-1.5" />
             <SelectValue placeholder="All" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All</SelectItem>
+            <SelectItem value={READ_FILTER_ALL}>All</SelectItem>
             <SelectItem value="unread">Unread</SelectItem>
             <SelectItem value="read">Read</SelectItem>
           </SelectContent>
@@ -152,7 +161,7 @@ export default function NotificationsPage() {
           </SelectTrigger>
           <SelectContent>
             {CATEGORIES.map((c) => (
-              <SelectItem key={c.value || "all"} value={c.value}>
+              <SelectItem key={c.value} value={c.value}>
                 {c.label}
               </SelectItem>
             ))}
@@ -171,7 +180,7 @@ export default function NotificationsPage() {
               <Bell className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
               <p className="font-medium text-muted-foreground">No notifications</p>
               <p className="text-sm text-muted-foreground mt-1">
-                {readFilter || categoryFilter
+                {readFilter !== READ_FILTER_ALL || categoryFilter !== CATEGORY_FILTER_ALL
                   ? "Try adjusting your filters"
                   : "We'll notify you when something happens"}
               </p>
