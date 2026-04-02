@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
+import { Plus, MessageSquare, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import {
   Table,
   TableBody,
@@ -31,11 +32,11 @@ export default function ClientTickets() {
   const router = useRouter();
   const { activeClientId } = useActiveClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data, isLoading, error } = useGetTicketsQuery({
     page,
-    limit,
+    limit: pageSize,
     ...(activeClientId ? { clientId: activeClientId } : {}),
   });
 
@@ -204,36 +205,22 @@ export default function ClientTickets() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {totalResults} ticket{totalResults !== 1 ? "s" : ""} total
-          </p>
-          <div className="flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Prev
-            </Button>
-            <span className="min-w-[100px] text-center text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      {!isLoading && !error && tickets.length > 0 && (
+        <DataTablePagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalResults}
+          pageSize={pageSize}
+          currentCount={tickets.length}
+          itemLabel="tickets"
+          onPageChange={setPage}
+          onPageSizeChange={(value) => {
+            setPageSize(value);
+            setPage(1);
+          }}
+          variant="compact"
+          showJumpToPage={false}
+        />
       )}
     </div>
   );

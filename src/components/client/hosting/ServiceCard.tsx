@@ -32,8 +32,8 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
           </div>
         </div>
       </TableCell>
-      <TableCell className={cn(cellBorder, "max-w-[14rem] px-4 sm:max-w-[18rem]")}>
-        <div className="flex flex-col justify-center gap-0.5">
+      <TableCell className={cn(cellBorder, "max-w-[14rem] px-4 text-center sm:max-w-[18rem]")}>
+        <div className="flex flex-col items-center justify-center gap-0.5 text-center">
           <span className="font-medium leading-snug text-gray-900 dark:text-gray-100">
             {service.name}
           </span>
@@ -46,8 +46,8 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
           )}
         </div>
       </TableCell>
-      <TableCell className={cn(cellBorder, "whitespace-nowrap px-4")}>
-        <div className="flex flex-col justify-center gap-0.5">
+      <TableCell className={cn(cellBorder, "whitespace-nowrap px-4 text-center")}>
+        <div className="flex flex-col items-center justify-center gap-0.5">
           <span className="font-semibold text-gray-900 dark:text-gray-100">
             {formatCurrency(service.pricing.amount, service.pricing.currency)}
           </span>
@@ -56,7 +56,7 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
           </span>
         </div>
       </TableCell>
-      <TableCell className={cn(cellBorder, "px-4")}>
+      <TableCell className={cn(cellBorder, "px-4 text-center")}>
         {service.nextDueDate ? (
           <span className="text-sm text-gray-900 dark:text-gray-100">
             {formatDate(service.nextDueDate, "full")}
@@ -65,8 +65,8 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
           <span className="text-sm text-gray-500 dark:text-gray-500">—</span>
         )}
       </TableCell>
-      <TableCell className={cn(cellBorder, "px-4 text-right")}>
-        <div className="flex flex-wrap items-center justify-end gap-2">
+      <TableCell className={cn(cellBorder, "px-4 text-center")}>
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {isExpired && service.expiredDaysAgo !== undefined && (
             <span className="inline-flex items-center gap-1.5 text-sm text-red-600 dark:text-red-400">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -95,15 +95,17 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
           )}
         </div>
       </TableCell>
-      <TableCell className="py-3 pl-3 pr-4 text-right align-middle">
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => onManage(service.id)}
-          className="h-8 whitespace-nowrap"
-        >
-          Manage
-        </Button>
+      <TableCell className="border-r-0 py-3 px-4 text-center align-middle">
+        <div className="flex justify-center">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => onManage(service.id)}
+            className="h-8 whitespace-nowrap"
+          >
+            Manage
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );

@@ -114,7 +114,7 @@ export function DataTablePagination({
               : `No ${itemLabel}`}
           </p>
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-            {safeTotalPages > 1 && (
+            {totalItems > 0 && (
               <span>Page {safePage} of {safeTotalPages}</span>
             )}
             {onPageSizeChange && (
@@ -136,8 +136,8 @@ export function DataTablePagination({
           </div>
         </div>
 
-        {/* Navigation */}
-        {safeTotalPages > 1 && (
+        {/* Navigation: show whenever there are items so layout matches multi-page views (controls disabled on a single page). */}
+        {totalItems > 0 && (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex items-center gap-0.5 rounded-lg border border-input bg-muted/30 p-0.5 dark:border-gray-700">
               <Button
