@@ -1,6 +1,9 @@
 node_modules
 .next
 .git
+.cursor
+.env
+.env.*
 npm-debug.log
 tsconfig.tsbuildinfo
 Dockerfile
