@@ -94,6 +94,7 @@ export function ClientSidebar({ isOpen, onClose }: ClientSidebarProps) {
                     isExpanded={isExpanded}
                     isCollapsed={displayCollapsed}
                     onClick={() => handleMenuClick(item)}
+                    onLinkClick={handleLinkClick}
                   />
 
                   {/* Submenu Items - hide when collapsed */}

@@ -13,6 +13,8 @@ interface SidebarNavItemProps {
   isExpanded: boolean;
   isCollapsed: boolean;
   onClick: () => void;
+  /** Called when a top-level nav link is activated (e.g. close mobile drawer). */
+  onLinkClick?: () => void;
 }
 
 export function SidebarNavItem({
@@ -22,6 +24,7 @@ export function SidebarNavItem({
   isExpanded,
   isCollapsed,
   onClick,
+  onLinkClick,
 }: SidebarNavItemProps) {
   const Icon = item.icon;
 
@@ -73,6 +76,7 @@ export function SidebarNavItem({
   return (
     <Link
       href={item.href}
+      onClick={onLinkClick}
       className={cn(
         "flex items-center rounded-lg text-sm font-medium transition-colors relative group cursor-pointer w-full gap-2 px-3 py-2.5",
         isCollapsed && "justify-center px-0",
