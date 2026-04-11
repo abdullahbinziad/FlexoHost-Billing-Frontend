@@ -5,6 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, MessageSquare, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import {
   Table,
@@ -28,16 +35,29 @@ const CLIENT_STATUS_LABELS: Record<string, string> = {
   customer_reply: "Your reply sent",
 };
 
+const STATUS_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: "all", label: "All statuses" },
+  { value: "open", label: CLIENT_STATUS_LABELS.open },
+  { value: "answered", label: CLIENT_STATUS_LABELS.answered },
+  { value: "customer_reply", label: CLIENT_STATUS_LABELS.customer_reply },
+  { value: "on_hold", label: CLIENT_STATUS_LABELS.on_hold },
+  { value: "in_progress", label: CLIENT_STATUS_LABELS.in_progress },
+  { value: "closed", label: CLIENT_STATUS_LABELS.closed },
+  { value: "resolved", label: CLIENT_STATUS_LABELS.resolved },
+];
+
 export default function ClientTickets() {
   const router = useRouter();
   const { activeClientId } = useActiveClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const { data, isLoading, error } = useGetTicketsQuery({
     page,
     limit: pageSize,
     ...(activeClientId ? { clientId: activeClientId } : {}),
+    status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
   const tickets = data?.results ?? [];
@@ -62,6 +82,32 @@ export default function ClientTickets() {
             Open New Ticket
           </Button>
         </Link>
+      </div>
+
+      <div className="rounded-lg border bg-muted/20 p-4">
+        <div className="max-w-xs">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
+            Status
+          </label>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Desktop: Table */}
@@ -98,12 +144,31 @@ export default function ClientTickets() {
                 <TableCell colSpan={6} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
                     <MessageSquare className="h-12 w-12 opacity-40" />
-                    <p>You have no support tickets yet.</p>
-                    <Link href="/tickets/new">
-                      <Button variant="outline" size="sm">
-                        Open New Ticket
-                      </Button>
-                    </Link>
+                    {statusFilter !== "all" ? (
+                      <>
+                        <p>No tickets match this status.</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setStatusFilter("all");
+                            setPage(1);
+                          }}
+                        >
+                          Clear status filter
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p>You have no support tickets yet.</p>
+                        <Link href="/tickets/new">
+                          <Button variant="outline" size="sm">
+                            Open New Ticket
+                          </Button>
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -159,12 +224,31 @@ export default function ClientTickets() {
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-16 text-muted-foreground">
               <MessageSquare className="h-12 w-12 opacity-40" />
-              <p>You have no support tickets yet.</p>
-              <Link href="/tickets/new">
-                <Button variant="outline" size="sm">
-                  Open New Ticket
-                </Button>
-              </Link>
+              {statusFilter !== "all" ? (
+                <>
+                  <p>No tickets match this status.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setPage(1);
+                    }}
+                  >
+                    Clear status filter
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p>You have no support tickets yet.</p>
+                  <Link href="/tickets/new">
+                    <Button variant="outline" size="sm">
+                      Open New Ticket
+                    </Button>
+                  </Link>
+                </>
+              )}
             </CardContent>
           </Card>
         ) : (

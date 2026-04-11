@@ -83,6 +83,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                                         isExpanded={isExpanded}
                                         isCollapsed={displayCollapsed}
                                         onClick={() => handleMenuClick(item)}
+                                        onLinkClick={handleLinkClick}
                                     />
 
                                     {/* Submenu Items - hide when collapsed */}
