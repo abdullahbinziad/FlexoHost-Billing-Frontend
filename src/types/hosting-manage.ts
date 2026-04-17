@@ -7,6 +7,7 @@ import type { HostingService } from "./hosting";
 export interface HostingServiceDetails extends HostingService {
   domain: string;
   packageName: string;
+  packageProductId?: string;
   rawStatus?: string;
   usage: {
     disk: {
@@ -31,6 +32,16 @@ export interface HostingServiceDetails extends HostingService {
   };
   /** Admin-only notes (private, stored in service.meta.adminNotes). */
   adminNotes?: string;
+  moduleContext?: {
+    accountUsername?: string;
+    serverId?: string;
+    serverGroup?: string;
+    serverLocation?: string;
+    whmPackage?: string;
+    hasSavedPassword?: boolean;
+    lastPasswordUpdatedAt?: string;
+    lastUsedAt?: string;
+  };
 }
 
 export interface QuickShortcut {

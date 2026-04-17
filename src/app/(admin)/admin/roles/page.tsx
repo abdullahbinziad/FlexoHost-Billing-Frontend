@@ -7,16 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -326,42 +317,24 @@ export default function RolesPage() {
         />
       ) : null}
 
-      <AlertDialog open={!!roleToDelete} onOpenChange={(open) => !open && setRoleToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete role?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The role will be permanently removed. Users must be
-              reassigned before deleting.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmActionDialog
+        open={!!roleToDelete}
+        onOpenChange={(open) => !open && setRoleToDelete(null)}
+        title="Delete role?"
+        description="This action cannot be undone. The role will be permanently removed. Users must be reassigned before deleting."
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+      />
 
-      <AlertDialog open={!!roleToArchive} onOpenChange={(open) => !open && setRoleToArchive(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive role?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Archived roles cannot be assigned to new users. Users with this role will need to be
-              reassigned. You can restore the role later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleArchive}>Archive</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmActionDialog
+        open={!!roleToArchive}
+        onOpenChange={(open) => !open && setRoleToArchive(null)}
+        title="Archive role?"
+        description="Archived roles cannot be assigned to new users. Users with this role will need to be reassigned. You can restore the role later."
+        confirmLabel="Archive"
+        onConfirm={handleArchive}
+        destructive={false}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { HostingService } from "@/types/hosting";
+import { getPendingStatusLabel } from "@/utils/serviceStatusLabel";
 
 interface ServiceTableRowProps {
   service: HostingService;
@@ -88,9 +89,14 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
               Suspended
             </span>
           )}
-          {service.status === "pending" && (
+          {service.status === "cancelled" && (
+            <span className="inline-flex items-center rounded-md border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300">
+              Cancelled
+            </span>
+          )}
+          {(service.status === "pending" || service.status === "provisioning") && (
             <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-400">
-              Pending
+              {getPendingStatusLabel(service.status, service.pendingReason)}
             </span>
           )}
         </div>

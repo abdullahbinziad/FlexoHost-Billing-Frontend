@@ -10,7 +10,10 @@ export function devLog(...args: unknown[]): void {
         if (a instanceof Error) return { name: a.name, message: a.message, stack: a.stack };
         return a;
       });
-      console.error(...safe);
+      // Use console.log instead of console.error to avoid noisy red error output in dev tools.
+      // This is strictly a development helper and is fully suppressed in production.
+      // eslint-disable-next-line no-console
+      console.log(...safe);
     } catch {
       // Never let devLog break the app
     }

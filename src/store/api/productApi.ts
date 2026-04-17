@@ -142,6 +142,18 @@ export const productApi = api.injectEndpoints({
         }),
 
         /**
+         * Duplicate a product
+         */
+        duplicateProduct: builder.mutation<Product, string>({
+            query: (id) => ({
+                url: `/admin/products/${id}/duplicate`,
+                method: "POST",
+            }),
+            transformResponse: (response: ApiResponse<Product>) => response.data,
+            invalidatesTags: [{ type: "Product", id: "LIST" }],
+        }),
+
+        /**
          * Toggle product visibility
          */
         toggleProductVisibility: builder.mutation<
@@ -218,6 +230,7 @@ export const {
     useUpdateProductMutation,
     useDeleteProductMutation,
     useToggleProductVisibilityMutation,
+    useDuplicateProductMutation,
     useSearchProductsQuery,
     useLazySearchProductsQuery,
     useGetProductsByTypeQuery,

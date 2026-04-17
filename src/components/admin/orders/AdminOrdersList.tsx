@@ -26,6 +26,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/utils/format";
@@ -59,6 +60,7 @@ export function AdminOrdersList() {
     const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showSendMessageModal, setShowSendMessageModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [messageSubject, setMessageSubject] = useState("");
     const [messageBody, setMessageBody] = useState("");
 
@@ -145,11 +147,11 @@ export function AdminOrdersList() {
 
     const handleBulkDelete = async () => {
         if (selectedIds.size === 0) return;
-        if (!confirm(`Delete ${selectedIds.size} order(s)? This will remove them from the list.`)) return;
         try {
             const result = await bulkDelete({ orderIds: Array.from(selectedIds) }).unwrap();
             toast.success(`Deleted ${result.deleted} of ${result.total} order(s)`);
             clearSelection();
+            setShowDeleteConfirm(false);
         } catch (err: any) {
             toast.error(err?.data?.message || "Failed to delete orders");
         }
@@ -241,7 +243,7 @@ export function AdminOrdersList() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={handleBulkDelete}
+                                onClick={() => setShowDeleteConfirm(true)}
                                 disabled={isDeleting}
                                 className="text-destructive hover:text-destructive"
                             >
@@ -547,6 +549,15 @@ export function AdminOrdersList() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <ConfirmActionDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete selected orders?"
+                description={`This action cannot be undone. It will permanently remove ${selectedIds.size} selected order(s).`}
+                confirmLabel="Delete"
+                onConfirm={handleBulkDelete}
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

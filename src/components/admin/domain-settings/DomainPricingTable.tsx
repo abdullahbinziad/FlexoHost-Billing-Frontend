@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { DomainPricingModal } from "./DomainPricingModal";
 import { DomainPricingRow } from "./DomainPricingRow";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 
 import { defaultPricingDetail, defaultCurrencyPricing } from "@/lib/domain-constants";
 
@@ -51,6 +52,7 @@ export function DomainPricingTable() {
     // Pricing Modal State
     const [isPricingOpen, setIsPricingOpen] = useState(false);
     const [currentEditingTld, setCurrentEditingTld] = useState<TLD | null>(null);
+    const [tldToDelete, setTldToDelete] = useState<string | null>(null);
 
     const paginatedTlds = useMemo(
         () => tlds.slice((page - 1) * pageSize, page * pageSize),
@@ -119,10 +121,10 @@ export function DomainPricingTable() {
     };
 
     const handleDeleteTld = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this TLD?")) return;
         try {
             await deleteTld(id).unwrap();
             toast.success("TLD deleted");
+            setTldToDelete(null);
         } catch (error) {
             toast.error("Failed to delete TLD");
         }
@@ -232,7 +234,7 @@ export function DomainPricingTable() {
                                 onToggleSelect={toggleSelect}
                                 onOpenPricing={handleOpenPricing}
                                 onUpdateRegistrar={handleUpdateRegistrar}
-                                onDelete={handleDeleteTld}
+                                onDelete={(id) => setTldToDelete(id)}
                                 onToggleSpotlight={handleToggleSpotlight}
                                 onUpdateStatus={handleUpdateStatus}
                             />
@@ -300,6 +302,14 @@ export function DomainPricingTable() {
                 open={isPricingOpen}
                 onOpenChange={setIsPricingOpen}
                 tld={currentEditingTld}
+            />
+            <ConfirmActionDialog
+                open={!!tldToDelete}
+                onOpenChange={(open) => !open && setTldToDelete(null)}
+                title="Delete TLD?"
+                description="This action cannot be undone. The TLD entry will be permanently removed."
+                confirmLabel="Delete"
+                onConfirm={() => tldToDelete && handleDeleteTld(tldToDelete)}
             />
         </div>
     );

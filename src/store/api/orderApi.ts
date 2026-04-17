@@ -7,6 +7,7 @@ export type RunModuleCreateItem = {
     whmPackage?: string;
     username?: string;
     password?: string;
+    registrar?: string;
     runModuleCreate?: boolean;
     sendWelcomeEmail?: boolean;
 };
@@ -68,7 +69,7 @@ export const orderApi = api.injectEndpoints({
             invalidatesTags: (result, error, { orderId }) => [{ type: "Order", id: orderId }],
         }),
         runModuleCreate: builder.mutation<
-            { results: Array<{ itemIndex: number; success: boolean; serverId?: string; accountUsername?: string; error?: string }> },
+            { results: Array<{ itemIndex: number; success: boolean; orderItemId?: string; serverId?: string; accountUsername?: string; error?: string }> },
             { orderId: string; items: RunModuleCreateItem[] }
         >({
             query: ({ orderId, items }) => ({

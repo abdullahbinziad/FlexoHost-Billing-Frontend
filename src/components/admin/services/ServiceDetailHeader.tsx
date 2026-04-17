@@ -6,12 +6,14 @@ import { BackButton } from "@/components/ui/back-button";
 import { Server, HardDrive, Globe, ExternalLink, Loader2, Mail } from "lucide-react";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
 import { getServiceDisplayDomain } from "./utils";
+import { getPendingStatusLabel } from "@/utils/serviceStatusLabel";
 
 const STATUS_VARIANTS: Record<string, string> = {
   active: "bg-green-500 text-white hover:bg-green-600",
   suspended: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
   expired: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   terminated: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+  cancelled: "bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-300",
   pending: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
   provisioning: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
 };
@@ -55,6 +57,10 @@ export function ServiceDetailHeader({
   const statusKey = service.status?.toLowerCase() ?? "pending";
   const typeKey = service.productType ?? "hosting";
   const displayIdentifier = getServiceDisplayDomain(service);
+  const statusLabel =
+    statusKey === "pending" || statusKey === "provisioning"
+      ? getPendingStatusLabel(service.status, service.pendingReason)
+      : service.status;
   const icon = TYPE_ICONS[typeKey] ?? <Server className="w-6 h-6" />;
   const iconBg = TYPE_ICON_BG[typeKey] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
 
@@ -70,10 +76,10 @@ export function ServiceDetailHeader({
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge
-                className={STATUS_VARIANTS[statusKey] ?? ""}
+                className={`capitalize ${STATUS_VARIANTS[statusKey] ?? ""}`}
                 variant={STATUS_VARIANTS[statusKey] ? "default" : "secondary"}
               >
-                {service.status}
+                {statusLabel}
               </Badge>
               {displayIdentifier && (
                 <>

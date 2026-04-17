@@ -48,6 +48,15 @@ export const serverApi = api.injectEndpoints({
             invalidatesTags: (result, error, id) => [{ type: "Server", id }, { type: "Server", id: "LIST" }],
         }),
 
+        duplicateServer: builder.mutation<ServerConfig, string>({
+            query: (id) => ({
+                url: `/servers/${id}/duplicate`,
+                method: "POST",
+            }),
+            transformResponse: (response: ApiResponse<ServerConfig>) => response.data,
+            invalidatesTags: [{ type: "Server", id: "LIST" }],
+        }),
+
         getServerPackages: builder.query<{ packages: { name?: string; [k: string]: unknown }[] }, string>({
             query: (serverId) => `/servers/${serverId}/packages`,
             transformResponse: (response: ApiResponse<{ packages: { name?: string; [k: string]: unknown }[] }>) => ({
@@ -69,15 +78,29 @@ export const serverApi = api.injectEndpoints({
         }),
 
         syncServerAccounts: builder.mutation<
-            { count: number; maxAccounts: number; syncedAt: string },
+            {
+                count: number;
+                maxAccounts: number;
+                syncedAt: string;
+                packages: string[];
+                packageCount: number;
+                packagesSyncedAt: string;
+            },
             string
         >({
             query: (serverId) => ({
                 url: `/servers/${serverId}/sync-accounts`,
                 method: "POST",
             }),
-            transformResponse: (response: ApiResponse<{ count: number; maxAccounts: number; syncedAt: string }>) =>
-                response.data ?? { count: 0, maxAccounts: 0, syncedAt: "" },
+            transformResponse: (response: ApiResponse<{
+                count: number;
+                maxAccounts: number;
+                syncedAt: string;
+                packages: string[];
+                packageCount: number;
+                packagesSyncedAt: string;
+            }>) =>
+                response.data ?? { count: 0, maxAccounts: 0, syncedAt: "", packages: [], packageCount: 0, packagesSyncedAt: "" },
             invalidatesTags: (_result, _error, serverId) => [
                 { type: "Server", id: serverId },
                 { type: "Server", id: "LIST" },
@@ -137,4 +160,5 @@ export const {
     useCreateServerGroupMutation,
     useUpdateServerGroupMutation,
     useDeleteServerGroupMutation,
+    useDuplicateServerMutation,
 } = serverApi;

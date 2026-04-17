@@ -7,16 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import {
     useGetPromotionsQuery,
     useDeletePromotionMutation,
@@ -258,28 +249,14 @@ export default function PromotionsPage() {
                 />
             ) : null}
 
-            <AlertDialog
+            <ConfirmActionDialog
                 open={!!promotionToDelete}
                 onOpenChange={(open) => !open && setPromotionToDelete(null)}
-            >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete promotion?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. The promotion will be permanently removed.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                title="Delete promotion?"
+                description="This action cannot be undone. The promotion will be permanently removed."
+                confirmLabel="Delete"
+                onConfirm={handleDelete}
+            />
         </div>
     );
 }

@@ -50,6 +50,21 @@ function getStatusVariant(status?: AutomationRunStatus) {
 function summarizeResult(run: AutomationRunItem) {
   if (run.errorMessage) return run.errorMessage;
   if (!run.result) return "—";
+  const processed = run.result.processed;
+  const createdInvoices = run.result.createdInvoices;
+  const skippedExisting = run.result.skippedExisting;
+  const failed = run.result.failed;
+
+  const isBillableRecurringSummary =
+    typeof processed === "number" &&
+    typeof createdInvoices === "number" &&
+    typeof skippedExisting === "number" &&
+    typeof failed === "number";
+
+  if (isBillableRecurringSummary) {
+    return `Processed: ${processed} | Created: ${createdInvoices} | Skipped: ${skippedExisting} | Failed: ${failed}`;
+  }
+
   return Object.entries(run.result)
     .slice(0, 3)
     .map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`)

@@ -43,6 +43,10 @@ export interface ServerConfig {
     accountCount?: number;
     /** When account count was last synced (ISO string). */
     accountCountSyncedAt?: string;
+    /** Last synced WHM package names from this server. */
+    whmPackages?: string[];
+    /** When packages were last synced (ISO string). */
+    whmPackagesSyncedAt?: string;
 
     // Stats (for display)
     stats?: {

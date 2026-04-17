@@ -1,19 +1,37 @@
-import { useState } from "react";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { useGetServersQuery } from "@/store/api/serverApi";
+import { getEligibleServersForHostingOrderItem } from "@/utils/hostingOrderServerFilter";
 
 const DOMAIN_REGISTRARS = ["Dynadot", "Namely", "ConnectReseller"] as const;
 
 interface OrderItemsCardProps {
     order: any;
+    manualConfigByItemId?: Record<string, {
+        username?: string;
+        password?: string;
+        serverId?: string;
+        registrar?: string;
+        runModuleCreate?: boolean;
+        sendWelcomeEmail?: boolean;
+    }>;
+    onManualConfigChange?: (itemId: string, updates: Partial<{
+        username?: string;
+        password?: string;
+        serverId?: string;
+        registrar?: string;
+        runModuleCreate?: boolean;
+        sendWelcomeEmail?: boolean;
+    }>) => void;
 }
 
-export function OrderItemsCard({ order }: OrderItemsCardProps) {
+export function OrderItemsCard({ order, manualConfigByItemId = {}, onManualConfigChange }: OrderItemsCardProps) {
     const formatCurrency = useFormatCurrency();
-    const [selectedRegistrarByItem, setSelectedRegistrarByItem] = useState<Record<number, string>>({});
+    const { data: servers = [] } = useGetServersQuery();
 
     return (
         <Card className="shadow-sm border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -27,6 +45,21 @@ export function OrderItemsCard({ order }: OrderItemsCardProps) {
             <CardContent className="p-0">
                 <div className="divide-y divide-gray-100 dark:divide-gray-800">
                     {order.items.map((item: any, index: number) => (
+                        (() => {
+                            const itemId = String(item._raw?._id || "");
+                            const manualConfig = manualConfigByItemId[itemId] || {};
+                            const eligibleHostingServers =
+                                item.type === "HOSTING"
+                                    ? getEligibleServersForHostingOrderItem(servers, item._raw)
+                                    : [];
+                            const isPaid = order.paymentStatus === "paid";
+                            const isFailed = Boolean(item.provisioningError) || String(item.provisioningStatus || "").toUpperCase() === "FAILED";
+                            const isProvisioned = item.type === "HOSTING"
+                                ? Boolean(item.username)
+                                : String(item.provisioningStatus || "").toUpperCase() === "ACTIVE";
+                            const showManualFallback = isPaid && isFailed;
+
+                            return (
                         <div
                             key={index}
                             className={`p-6 transition-colors hover:bg-gray-50/30 dark:hover:bg-gray-800/30 border-l-4 ${
@@ -114,82 +147,162 @@ export function OrderItemsCard({ order }: OrderItemsCardProps) {
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    {item.username ? (
-                                                        <span className="text-green-600 dark:text-green-400 font-medium">Provisioned • Account: {item.username}</span>
-                                                    ) : item.provisioningError ? (
+                                                    {isProvisioned ? (
+                                                        <span className="text-green-600 dark:text-green-400 font-medium">
+                                                            Account Created Successfully - {item.domain ?? item._raw?.configSnapshot?.primaryDomain ?? "—"}
+                                                        </span>
+                                                    ) : isFailed ? (
                                                         <span className="text-red-600 dark:text-red-400 font-medium" title={item.provisioningError}>
                                                             Provisioning failed: {item.provisioningError}
                                                         </span>
-                                                    ) : order.paymentStatus === "paid" ? (
+                                                    ) : isPaid ? (
                                                         <span className="text-amber-600 dark:text-amber-400">Provisioning in progress…</span>
                                                     ) : (
                                                         <span className="text-gray-500">Auto-provisioned when invoice is paid</span>
                                                     )}
                                                 </div>
                                             </div>
+                                            {showManualFallback && (
+                                                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                                    <Input
+                                                        placeholder="Username"
+                                                        value={manualConfig.username || ""}
+                                                        onChange={(e) => onManualConfigChange?.(itemId, { username: e.target.value })}
+                                                    />
+                                                    <Input
+                                                        placeholder="Password"
+                                                        type="text"
+                                                        value={manualConfig.password || ""}
+                                                        onChange={(e) => onManualConfigChange?.(itemId, { password: e.target.value })}
+                                                    />
+                                                    <div className="space-y-1">
+                                                        <Select
+                                                            value={manualConfig.serverId || ""}
+                                                            onValueChange={(value) => onManualConfigChange?.(itemId, { serverId: value })}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Select server" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {eligibleHostingServers.map((server) => (
+                                                                    <SelectItem key={server.id} value={server.id}>
+                                                                        {server.name || server.hostname || server.id}
+                                                                        {typeof server.accountCount === "number" && typeof server.maxAccounts === "number"
+                                                                            ? ` (${server.accountCount}/${server.maxAccounts})`
+                                                                            : ""}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <p className="text-[11px] text-muted-foreground">
+                                                            Only servers matching this order&apos;s location (
+                                                            {String(item._raw?.configSnapshot?.serverLocation || "—")}), product server group, and free
+                                                            capacity.
+                                                        </p>
+                                                        {eligibleHostingServers.length === 0 ? (
+                                                            <p className="text-xs text-amber-700 dark:text-amber-300">
+                                                                No eligible cPanel server found. Check Server Config (groups, location, WHM sync) or
+                                                                capacity.
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 md:col-span-3">
+                                                        <Checkbox
+                                                            id={`run-module-${itemId}`}
+                                                            checked={manualConfig.runModuleCreate !== false}
+                                                            onCheckedChange={(checked) => onManualConfigChange?.(itemId, { runModuleCreate: checked === true })}
+                                                        />
+                                                        <label htmlFor={`run-module-${itemId}`} className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                            Run Module Create
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
                                     {/* DOMAIN Config */}
                                     {item.type === "DOMAIN" && (
                                         <div className="bg-orange-600/5 rounded-lg border border-orange-600/10 p-4 mt-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="space-y-1.5">
-                                                    <label className="text-xs font-medium text-gray-500">Domain Provider</label>
-                                                    <Select
-                                                        value={selectedRegistrarByItem[index] || DOMAIN_REGISTRARS[0]?.toLowerCase() || ""}
-                                                        onValueChange={(v) =>
-                                                            setSelectedRegistrarByItem((prev) => ({ ...prev, [index]: v }))
-                                                        }
-                                                    >
-                                                        <SelectTrigger className="h-8 bg-white">
-                                                            <SelectValue placeholder="Select Provider" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {DOMAIN_REGISTRARS.map((r) => (
-                                                                <SelectItem key={r} value={r.toLowerCase()}>
-                                                                    {r}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                            <div className="text-sm">
+                                                {isProvisioned ? (
+                                                    <span className="text-green-600 dark:text-green-400 font-medium">
+                                                        Domain {String(item._raw?.actionType || "").toUpperCase() === "TRANSFER" ? "Transfer" : "Registration"} Completed - {item.domain || item._raw?.configSnapshot?.domainName || "—"}
+                                                    </span>
+                                                ) : isFailed ? (
+                                                    <span className="text-red-600 dark:text-red-400 font-medium" title={item.provisioningError}>
+                                                        Provisioning failed: {item.provisioningError}
+                                                    </span>
+                                                ) : isPaid ? (
+                                                    <span className="text-amber-600 dark:text-amber-400">Provisioning in progress…</span>
+                                                ) : (
+                                                    <span className="text-gray-500">Auto-processed when invoice is paid</span>
+                                                )}
                                             </div>
 
-                                            <div className="flex flex-wrap gap-6 mt-4 pt-3 border-t border-orange-600/10">
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id={`send-register-${index}`}
-                                                        defaultChecked
-                                                        className="data-[state=checked]:bg-orange-600 border-orange-600/30"
-                                                    />
-                                                    <label
-                                                        htmlFor={`send-register-${index}`}
-                                                        className="text-xs font-medium text-gray-700 dark:text-gray-300"
-                                                    >
-                                                        Send to Register
-                                                    </label>
-                                                </div>
+                                            {showManualFallback && (
+                                                <>
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                                        <div className="space-y-1.5">
+                                                            <label className="text-xs font-medium text-gray-500">Domain Provider</label>
+                                                            <Select
+                                                                value={manualConfig.registrar || DOMAIN_REGISTRARS[0]?.toLowerCase() || ""}
+                                                                onValueChange={(v) => onManualConfigChange?.(itemId, { registrar: v })}
+                                                            >
+                                                                <SelectTrigger className="h-8 bg-white">
+                                                                    <SelectValue placeholder="Select Provider" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {DOMAIN_REGISTRARS.map((r) => (
+                                                                        <SelectItem key={r} value={r.toLowerCase()}>
+                                                                            {r}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </div>
+                                                    </div>
 
-                                                <div className="flex items-center space-x-2">
-                                                    <Checkbox
-                                                        id={`send-domain-email-${index}`}
-                                                        defaultChecked
-                                                        className="data-[state=checked]:bg-orange-600 border-orange-600/30"
-                                                    />
-                                                    <label
-                                                        htmlFor={`send-domain-email-${index}`}
-                                                        className="text-xs font-medium text-gray-700 dark:text-gray-300"
-                                                    >
-                                                        Send Welcome Email
-                                                    </label>
-                                                </div>
-                                            </div>
+                                                    <div className="flex flex-wrap gap-6 mt-4 pt-3 border-t border-orange-600/10">
+                                                        <div className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                id={`send-register-${itemId}`}
+                                                                checked={manualConfig.runModuleCreate !== false}
+                                                                onCheckedChange={(checked) => onManualConfigChange?.(itemId, { runModuleCreate: checked === true })}
+                                                                className="data-[state=checked]:bg-orange-600 border-orange-600/30"
+                                                            />
+                                                            <label
+                                                                htmlFor={`send-register-${itemId}`}
+                                                                className="text-xs font-medium text-gray-700 dark:text-gray-300"
+                                                            >
+                                                                {String(item._raw?.actionType || "").toUpperCase() === "TRANSFER" ? "Run Transfer Module" : "Run Register Module"}
+                                                            </label>
+                                                        </div>
+
+                                                        <div className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                id={`send-domain-email-${itemId}`}
+                                                                checked={manualConfig.sendWelcomeEmail !== false}
+                                                                onCheckedChange={(checked) => onManualConfigChange?.(itemId, { sendWelcomeEmail: checked === true })}
+                                                                className="data-[state=checked]:bg-orange-600 border-orange-600/30"
+                                                            />
+                                                            <label
+                                                                htmlFor={`send-domain-email-${itemId}`}
+                                                                className="text-xs font-medium text-gray-700 dark:text-gray-300"
+                                                            >
+                                                                Send Confirmation Email
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
+                            );
+                        })()
                     ))}
 
                     <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">

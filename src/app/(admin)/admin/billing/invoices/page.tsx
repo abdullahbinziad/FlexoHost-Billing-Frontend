@@ -233,7 +233,16 @@ export default function AdminInvoicesPage() {
                                         </Link>
                                     </TableCell>
                                     <TableCell className="text-gray-600 dark:text-gray-300">
-                                        {invoice.billedTo?.customerName || invoice.billedTo?.companyName || "—"}
+                                        {invoice.clientId ? (
+                                            <Link
+                                                href={`/admin/clients/${invoice.clientId}`}
+                                                className="hover:underline text-blue-600 dark:text-blue-400"
+                                            >
+                                                {invoice.billedTo?.customerName || invoice.billedTo?.companyName || "—"}
+                                            </Link>
+                                        ) : (
+                                            invoice.billedTo?.customerName || invoice.billedTo?.companyName || "—"
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-gray-500">{formatDate(invoice.invoiceDate)}</TableCell>
                                     <TableCell className="text-gray-500">{formatDate(invoice.dueDate)}</TableCell>

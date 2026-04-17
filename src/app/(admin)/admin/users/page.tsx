@@ -37,6 +37,7 @@ import { Search, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 
 export default function AdminUsersPage() {
   const currentUserRole = useSelector((s: RootState) => s.auth?.user?.role ?? "");
@@ -286,25 +287,14 @@ export default function AdminUsersPage() {
         />
       )}
 
-      <AlertDialog open={!!userToDelete} onOpenChange={(o) => !o && setUserToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate user?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The user will be deactivated and cannot log in. You can reactivate them later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Deactivate
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmActionDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title="Deactivate user?"
+        description="This action cannot be undone. The user will be deactivated and cannot log in."
+        confirmLabel="Deactivate"
+        onConfirm={handleDelete}
+      />
 
       <AlertDialog open={showBulkModal} onOpenChange={setShowBulkModal}>
         <AlertDialogContent>

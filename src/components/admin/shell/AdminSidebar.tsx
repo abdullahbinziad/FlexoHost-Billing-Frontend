@@ -14,6 +14,7 @@ import {
     SidebarFooter,
 } from "@/components/shared/sidebar";
 import type { RootState } from "@/store";
+import { useGetOrdersQuery } from "@/store/api/orderApi";
 
 interface AdminSidebarProps {
     isOpen: boolean;
@@ -22,7 +23,21 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     const user = useSelector((s: RootState) => s.auth?.user ?? null);
-    const navItems = useMemo(() => filterAdminNavByRole(adminNavItems, user), [user]);
+    const { data: pendingOrdersData } = useGetOrdersQuery({ status: "pending", page: 1, limit: 1 });
+    const pendingOrdersCount = pendingOrdersData?.totalResults ?? 0;
+    const navItems = useMemo(() => {
+        const filtered = filterAdminNavByRole(adminNavItems, user);
+        const pendingBadge = pendingOrdersCount > 0 ? String(pendingOrdersCount) : undefined;
+        return filtered.map((item) => {
+            if (item.href !== "/admin/orders" || !item.submenu) return item;
+            return {
+                ...item,
+                submenu: item.submenu.map((subItem) =>
+                    subItem.href === "/admin/orders" ? { ...subItem, badge: pendingBadge } : subItem
+                ),
+            };
+        });
+    }, [user, pendingOrdersCount]);
 
     const { isCollapsed, toggleCollapse, isMounted } = useSidebar();
     const {
