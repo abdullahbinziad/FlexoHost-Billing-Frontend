@@ -13,7 +13,7 @@ export interface DomainTableRowProps {
   onSelect: (domainId: string, selected: boolean) => void;
   onToggleAutoRenewal: (domainId: string, enabled: boolean) => void;
   onRenew: (domainId: string) => void;
-  onManage: (domainId: string) => void;
+  onManage: (domain: Domain) => void;
 }
 
 const DOMAIN_STATUS_COLORS: Record<Domain["status"], string> = {
@@ -99,7 +99,7 @@ export function DomainTableRow({
           <Button
             variant="default"
             size="sm"
-            onClick={() => onManage(domain.name)}
+            onClick={() => onManage(domain)}
             className="h-8"
           >
             Manage

@@ -121,12 +121,18 @@ export const adminNavItems: NavItem[] = [
         requiredPermissions: [
             "settings:read",
             "settings:update_billing",
+            "domain_settings:defaults_read",
             "roles:list",
             "users:list",
             "migration:run",
         ],
         submenu: [
             ...ADMIN_SETTINGS_CORE_SUBMENU,
+            {
+                label: "Domain",
+                href: "/admin/domain",
+                requiredPermissions: ["domain_settings:defaults_read"],
+            },
             { label: "Roles", href: "/admin/roles", requiredPermissions: ["roles:list"] },
             { label: "Manage User", href: "/admin/users", requiredPermissions: ["users:list"] },
             { label: "WHMCS Migration", href: "/admin/migration", requiredPermissions: ["migration:run"] },

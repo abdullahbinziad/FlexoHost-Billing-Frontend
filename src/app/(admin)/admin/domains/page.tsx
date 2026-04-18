@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Loader2, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -82,6 +82,19 @@ export default function AdminDomainsInventoryPage() {
     () => registrarConfigs.filter((item) => item.implemented),
     [registrarConfigs]
   );
+  const reconcileRegistrarOptions = useMemo(
+    () => activeRegistrarConfigs.filter((item) => item.supportsRegistrarInventory),
+    [activeRegistrarConfigs]
+  );
+
+  useEffect(() => {
+    if (
+      selectedRegistrarKey &&
+      !reconcileRegistrarOptions.some((r) => r.key === selectedRegistrarKey)
+    ) {
+      setSelectedRegistrarKey("");
+    }
+  }, [reconcileRegistrarOptions, selectedRegistrarKey]);
 
   const resetSelection = () => {
     setSelectedIds(new Set());
@@ -144,7 +157,7 @@ export default function AdminDomainsInventoryPage() {
 
   const handleReconcile = async () => {
     if (!selectedRegistrarKey) {
-      toast.error("Select a registrar first");
+      toast.error("Select a registrar that supports domain listing");
       return;
     }
     try {
@@ -508,6 +521,10 @@ export default function AdminDomainsInventoryPage() {
           <CardTitle className="text-lg">Registrar Reconcile / Import</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Only registrars that expose a domain list API appear here (e.g. Dynadot). Others are managed per
+            domain from client services or TLD routing.
+          </p>
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             <div className="w-full md:max-w-xs">
               <label className="mb-2 block text-sm font-medium text-muted-foreground">
@@ -518,16 +535,26 @@ export default function AdminDomainsInventoryPage() {
                   <SelectValue placeholder="Select registrar" />
                 </SelectTrigger>
                 <SelectContent>
-                  {activeRegistrarConfigs.map((registrar) => (
-                    <SelectItem key={registrar.key} value={registrar.key}>
-                      {registrar.name}
-                    </SelectItem>
-                  ))}
+                  {reconcileRegistrarOptions.length === 0 ? (
+                    <p className="px-2 py-3 text-sm text-muted-foreground">
+                      No connected registrar exposes account-wide domain listing. Sync and inventory still work
+                      per domain row above.
+                    </p>
+                  ) : (
+                    reconcileRegistrarOptions.map((registrar) => (
+                      <SelectItem key={registrar.key} value={registrar.key}>
+                        {registrar.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleReconcile} disabled={isReconciling}>
+              <Button
+                onClick={handleReconcile}
+                disabled={isReconciling || !selectedRegistrarKey || reconcileRegistrarOptions.length === 0}
+              >
                 {isReconciling ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -540,7 +567,11 @@ export default function AdminDomainsInventoryPage() {
               <Button
                 variant="outline"
                 onClick={handleImportSelected}
-                disabled={isImporting || selectedMissingDomains.size === 0}
+                disabled={
+                  isImporting ||
+                  selectedMissingDomains.size === 0 ||
+                  reconcileRegistrarOptions.length === 0
+                }
               >
                 {isImporting ? (
                   <>

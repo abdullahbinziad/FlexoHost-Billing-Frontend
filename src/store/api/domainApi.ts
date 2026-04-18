@@ -82,6 +82,8 @@ export interface RegistrarConfig {
   implemented: boolean;
   isActive: boolean;
   configFields: RegistrarConfigField[];
+  /** Registrar supports listing domains for admin reconcile (e.g. Dynadot); Namely may omit until implemented. */
+  supportsRegistrarInventory?: boolean;
 }
 
 export interface AdminDomainInventoryItem {
@@ -168,6 +170,15 @@ export interface ImportRegistrarDomainsResponse {
   }>;
 }
 
+/** Global domain defaults (Mongo-backed; replaces env DOMAIN_DEFAULT_*). */
+export interface DomainSystemSettingsDto {
+  defaultRegistrarKey: string;
+  nameserver1: string;
+  nameserver2: string;
+  nameserver3: string;
+  nameserver4: string;
+}
+
 function withClientId(clientId?: string) {
   return clientId ? { clientId } : undefined;
 }
@@ -178,13 +189,17 @@ function mapDomainFromApi(item: {
   serviceNumber?: string;
   status?: string;
   domainName?: string;
+  registrar?: string;
   expiresAt?: string | Date;
   nameservers?: string[];
   registrarLock?: boolean;
   hasEppCode?: boolean;
-  details?: { registrar?: string; registeredAt?: string; transferStatus?: string };
+  details?: { domainName?: string; registrar?: string; registeredAt?: string; transferStatus?: string };
 }): Domain {
-  const name = item.domainName ?? "";
+  const name =
+    (item.domainName && String(item.domainName).trim()) ||
+    (item.details?.domainName && String(item.details.domainName).trim()) ||
+    "";
   const status = (item.status?.toLowerCase() ?? "active") as Domain["status"];
   const expiresAt = item.expiresAt ? (typeof item.expiresAt === "string" ? item.expiresAt : new Date(item.expiresAt).toISOString().slice(0, 10)) : "";
   return {
@@ -195,7 +210,7 @@ function mapDomainFromApi(item: {
     expirationDate: expiresAt,
     autoRenewal: true,
     registrationDate: item.details?.registeredAt ? (typeof item.details.registeredAt === "string" ? item.details.registeredAt.slice(0, 10) : "") : "",
-    registrar: item.details?.registrar,
+    registrar: item.registrar ?? item.details?.registrar,
     transferStatus: item.details?.transferStatus,
     registrarLock: item.registrarLock,
     serviceId: item.serviceId,
@@ -245,6 +260,34 @@ export const domainApi = api.injectEndpoints({
         };
       },
       providesTags: (_result, _err, { clientId }) => [{ type: "Domain", id: `CLIENT-${clientId}` }],
+    }),
+    getDomainSystemDefaults: builder.query<DomainSystemSettingsDto, void>({
+      query: () => "/domains/admin/system-defaults",
+      transformResponse: (response: ApiResponse<DomainSystemSettingsDto>) =>
+        response.data ?? {
+          defaultRegistrarKey: "dynadot",
+          nameserver1: "",
+          nameserver2: "",
+          nameserver3: "",
+          nameserver4: "",
+        },
+      providesTags: [{ type: "Domain", id: "SYSTEM-DEFAULTS" }],
+    }),
+    updateDomainSystemDefaults: builder.mutation<DomainSystemSettingsDto, Partial<DomainSystemSettingsDto>>({
+      query: (body) => ({
+        url: "/domains/admin/system-defaults",
+        method: "PUT",
+        body,
+      }),
+      transformResponse: (response: ApiResponse<DomainSystemSettingsDto>) =>
+        response.data ?? {
+          defaultRegistrarKey: "dynadot",
+          nameserver1: "",
+          nameserver2: "",
+          nameserver3: "",
+          nameserver4: "",
+        },
+      invalidatesTags: [{ type: "Domain", id: "SYSTEM-DEFAULTS" }],
     }),
     getAdminRegistrarConfigs: builder.query<RegistrarConfig[], void>({
       query: () => ({
@@ -486,6 +529,8 @@ export const domainApi = api.injectEndpoints({
 export const {
   useGetDomainsQuery,
   useGetDomainsByClientQuery,
+  useGetDomainSystemDefaultsQuery,
+  useUpdateDomainSystemDefaultsMutation,
   useGetAdminRegistrarConfigsQuery,
   useGetAdminDomainsQuery,
   useSyncAdminDomainMutation,
