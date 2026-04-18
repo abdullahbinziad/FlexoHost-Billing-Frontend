@@ -13,7 +13,7 @@ import {
     useDeletePromotionMutation,
     useTogglePromotionActiveMutation,
 } from "@/store/api/promotionApi";
-import { Plus, Search, Pencil, Trash2, Power, PowerOff } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Power, PowerOff, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
@@ -62,6 +62,15 @@ export default function PromotionsPage() {
             return isNaN(date.getTime()) ? "-" : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
         } catch {
             return "-";
+        }
+    };
+
+    const copyPromoCode = async (code: string) => {
+        try {
+            await navigator.clipboard.writeText(code);
+            toast.success("Code copied to clipboard");
+        } catch {
+            toast.error("Failed to copy code");
         }
     };
 
@@ -170,8 +179,16 @@ export default function PromotionsPage() {
                                 ) : (
                                     promotions.map((promo) => (
                                         <TableRow key={promo._id}>
-                                            <TableCell className="font-mono font-medium">
-                                                {promo.code}
+                                            <TableCell>
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex max-w-full items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left font-mono font-medium hover:bg-muted/80 transition-colors cursor-pointer"
+                                                    title="Click to copy"
+                                                    onClick={() => void copyPromoCode(promo.code)}
+                                                >
+                                                    <span className="truncate">{promo.code}</span>
+                                                    <Copy className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+                                                </button>
                                             </TableCell>
                                             <TableCell>{promo.name}</TableCell>
                                             <TableCell className="capitalize">{promo.type}</TableCell>

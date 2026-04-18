@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useGetServersQuery } from "@/store/api/serverApi";
 import { getEligibleServersForHostingOrderItem } from "@/utils/hostingOrderServerFilter";
+import { getOrderItemProvisionUiState } from "@/utils/orderItemProvisionUi";
 
 const DOMAIN_REGISTRARS = ["Dynadot", "Namely", "ConnectReseller"] as const;
 
@@ -52,12 +53,20 @@ export function OrderItemsCard({ order, manualConfigByItemId = {}, onManualConfi
                                 item.type === "HOSTING"
                                     ? getEligibleServersForHostingOrderItem(servers, item._raw)
                                     : [];
-                            const isPaid = order.paymentStatus === "paid";
-                            const isFailed = Boolean(item.provisioningError) || String(item.provisioningStatus || "").toUpperCase() === "FAILED";
-                            const isProvisioned = item.type === "HOSTING"
-                                ? Boolean(item.username)
-                                : String(item.provisioningStatus || "").toUpperCase() === "ACTIVE";
-                            const showManualFallback = isPaid && isFailed;
+                            const {
+                                isPaid,
+                                isProvisioned,
+                                isFailed,
+                                showManualFallback,
+                            } = getOrderItemProvisionUiState(
+                                {
+                                    type: item.type,
+                                    username: item.username,
+                                    provisioningStatus: item.provisioningStatus,
+                                    provisioningError: item.provisioningError,
+                                },
+                                order.paymentStatus
+                            );
 
                             return (
                         <div
@@ -165,12 +174,12 @@ export function OrderItemsCard({ order, manualConfigByItemId = {}, onManualConfi
                                             {showManualFallback && (
                                                 <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                                                     <Input
-                                                        placeholder="Username"
+                                                        placeholder="cPanel username (optional; auto from domain if empty)"
                                                         value={manualConfig.username || ""}
                                                         onChange={(e) => onManualConfigChange?.(itemId, { username: e.target.value })}
                                                     />
                                                     <Input
-                                                        placeholder="Password"
+                                                        placeholder="Password (optional; auto-generated if empty)"
                                                         type="text"
                                                         value={manualConfig.password || ""}
                                                         onChange={(e) => onManualConfigChange?.(itemId, { password: e.target.value })}

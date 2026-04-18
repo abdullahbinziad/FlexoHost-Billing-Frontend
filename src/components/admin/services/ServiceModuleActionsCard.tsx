@@ -86,17 +86,20 @@ export function ServiceModuleActionsCard({
     return `${base}${randomLetters(3)}`.slice(0, 16);
   };
   const displayDomain = getServiceDisplayDomain(service);
-  const suggestedUsername = useMemo(() => {
-    return generateUsernameFromDomain(displayDomain);
-  }, [displayDomain]);
   const generateStrongPassword = () => {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
     let out = "";
     for (let i = 0; i < 16; i++) out += chars[Math.floor(Math.random() * chars.length)];
     return out;
   };
-  const [moduleUsername, setModuleUsername] = useState(suggestedUsername);
-  const [modulePassword, setModulePassword] = useState(generateStrongPassword());
+  const [moduleUsername, setModuleUsername] = useState(() => {
+    const saved = service.moduleContext?.accountUsername?.trim();
+    if (saved) return saved;
+    return generateUsernameFromDomain(displayDomain);
+  });
+  const [modulePassword, setModulePassword] = useState(() =>
+    service.moduleContext?.hasSavedPassword ? "" : generateStrongPassword()
+  );
   const [moduleServerId, setModuleServerId] = useState("");
   const [modulePackage, setModulePackage] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string>("");

@@ -9,28 +9,10 @@ import { toast } from "sonner";
 import { useGetServersQuery } from "@/store/api/serverApi";
 import { getEligibleServersForHostingOrderItem } from "@/utils/hostingOrderServerFilter";
 import { ORDER_PAYMENT_STATUS, ORDER_STATUS } from "@/constants/status";
+import { getOrderItemProvisionUiState } from "@/utils/orderItemProvisionUi";
 
 interface AdminOrderDetailsProps {
     orderId: string;
-}
-
-function generateSuggestedUsernameFromDomain(domain: string): string {
-    const base = (domain || "")
-        .replace(/^www\./i, "")
-        .split("/")[0]
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, "")
-        .slice(0, 10) || "user";
-    return `${base}${Math.floor(100 + Math.random() * 900)}`.slice(0, 16);
-}
-
-function generateStrongPassword(length = 16): string {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
-    let out = "";
-    for (let i = 0; i < length; i++) {
-        out += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return out;
 }
 
 export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
@@ -147,8 +129,8 @@ export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
                             ? suggestedServerId || fromMeta
                             : fromMeta;
                     next[itemId] = {
-                        username: item.username || generateSuggestedUsernameFromDomain(domain),
-                        password: generateStrongPassword(),
+                        username: item.username || "",
+                        password: "",
                         serverId: pick,
                         registrar: (item._raw?.configSnapshot?.registrar as string) || "dynadot",
                         runModuleCreate: true,
@@ -209,12 +191,16 @@ export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
     const handleAcceptOrder = async () => {
         try {
             const manualCandidates = (order.items || []).filter((item: any) => {
-                const status = String(item.provisioningStatus || "").toUpperCase();
-                const isProvisioned = item.type === "HOSTING"
-                    ? Boolean(item.username)
-                    : status === "ACTIVE";
-                const isFailed = Boolean(item.provisioningError) || status === "FAILED";
-                return order.paymentStatus === "paid" && !isProvisioned && isFailed && (item.type === "HOSTING" || item.type === "DOMAIN");
+                const { showManualFallback } = getOrderItemProvisionUiState(
+                    {
+                        type: item.type,
+                        username: item.username,
+                        provisioningStatus: item.provisioningStatus,
+                        provisioningError: item.provisioningError,
+                    },
+                    order.paymentStatus
+                );
+                return showManualFallback && (item.type === "HOSTING" || item.type === "DOMAIN");
             });
 
             if (manualCandidates.length > 0) {
