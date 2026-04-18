@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { TLD } from "@/types/admin";
+import { REGISTRAR_PROVIDER, TLD_STATUS } from "@/constants/status";
 
 interface DomainPricingRowProps {
     tld: TLD;
@@ -96,16 +97,16 @@ export function DomainPricingRow({
             </TableCell>
             <TableCell>
                 <Select
-                    value={tld.autoRegistration?.provider || "None"}
+                    value={tld.autoRegistration?.provider || REGISTRAR_PROVIDER.NONE}
                     onValueChange={(val) => onUpdateRegistrar(tld._id, val)}
                 >
                     <SelectTrigger className="h-9 w-full">
                         <SelectValue placeholder="Select Registrar" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Dynadot">Dynadot</SelectItem>
-                        <SelectItem value="namely">Namely</SelectItem>
-                        <SelectItem value="None">None</SelectItem>
+                        <SelectItem value={REGISTRAR_PROVIDER.DYNADOT}>Dynadot</SelectItem>
+                        <SelectItem value={REGISTRAR_PROVIDER.NAMELY}>Namely</SelectItem>
+                        <SelectItem value={REGISTRAR_PROVIDER.NONE}>None</SelectItem>
                     </SelectContent>
                 </Select>
             </TableCell>
@@ -114,10 +115,10 @@ export function DomainPricingRow({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className={`h-8 px-2 text-xs font-semibold ${tld.status === "active" ? "text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30" : "text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"}`}
+                        className={`h-8 px-2 text-xs font-semibold ${tld.status === TLD_STATUS.ACTIVE ? "text-green-600 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30" : "text-gray-500 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"}`}
                         onClick={() => onUpdateStatus(tld)}
                     >
-                        {tld.status === "active" ? "Active" : "Inactive"}
+                        {tld.status === TLD_STATUS.ACTIVE ? "Active" : "Inactive"}
                     </Button>
                     <div className="flex flex-col">
                         <ArrowUp className="w-3 h-3 text-gray-400 cursor-pointer hover:text-gray-600" />

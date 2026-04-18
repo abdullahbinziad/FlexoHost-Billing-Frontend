@@ -12,6 +12,7 @@ import { useGetDomainsByClientQuery } from "@/store/api/domainApi";
 import { useGetClientServicesQuery } from "@/store/api/servicesApi";
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { formatDate } from "@/utils/format";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 export default function ClientSummaryPage() {
   const params = useParams();
@@ -185,7 +186,7 @@ export default function ClientSummaryPage() {
                     </Link>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">{inv.currency} {inv.total?.toFixed(2)}</span>
-                      <Badge variant={inv.status === "PAID" ? "default" : "secondary"} className="text-xs">
+                      <Badge variant={inv.status === INVOICE_STATUS_ADMIN.PAID ? "default" : "secondary"} className="text-xs">
                         {inv.status}
                       </Badge>
                     </div>

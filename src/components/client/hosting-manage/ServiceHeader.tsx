@@ -3,33 +3,57 @@
 import { Check, AlertCircle, Clock, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 interface ServiceHeaderProps {
   service: HostingServiceDetails;
 }
 
 export function ServiceHeader({ service }: ServiceHeaderProps) {
+  const normalizedStatus = normalizeServiceStatus(service.status, {
+    suspendedAt: service.suspendedAt,
+    terminatedAt: service.terminatedAt,
+    cancelledAt: service.cancelledAt,
+  });
   const getStatusConfig = () => {
-    switch (service.status) {
-      case "active":
+    switch (normalizedStatus) {
+      case SERVICE_STATUS.ACTIVE:
         return {
           icon: Check,
           label: "Active",
           className: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800",
         };
-      case "expired":
+      case SERVICE_STATUS.EXPIRED:
         return {
           icon: XCircle,
           label: "Expired",
           className: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
         };
-      case "suspended":
+      case SERVICE_STATUS.SUSPENDED:
         return {
           icon: AlertCircle,
           label: "Suspended",
           className: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
         };
-      case "pending":
+      case SERVICE_STATUS.TERMINATED:
+        return {
+          icon: XCircle,
+          label: "Terminated",
+          className: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
+        };
+      case SERVICE_STATUS.CANCELLED:
+        return {
+          icon: XCircle,
+          label: "Cancelled",
+          className: "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+        };
+      case SERVICE_STATUS.PROVISIONING:
+        return {
+          icon: Clock,
+          label: "Provisioning",
+          className: "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+        };
+      case SERVICE_STATUS.PENDING:
         return {
           icon: Clock,
           label: "Pending",

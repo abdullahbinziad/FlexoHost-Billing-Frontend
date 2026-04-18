@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SELECT_SENTINEL } from "@/constants/status";
 
 export interface ServiceBillingCardProps {
   service: HostingServiceDetails;
@@ -172,12 +173,15 @@ export function ServiceBillingCard({
             Payment method
           </label>
           {editable ? (
-            <Select value={paymentMethod || "__none__"} onValueChange={(value) => onPaymentMethodChange?.(value === "__none__" ? "" : value)}>
+            <Select
+              value={paymentMethod || SELECT_SENTINEL.NONE}
+              onValueChange={(value) => onPaymentMethodChange?.(value === SELECT_SENTINEL.NONE ? "" : value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select payment method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">None</SelectItem>
+                <SelectItem value={SELECT_SENTINEL.NONE}>None</SelectItem>
                 {paymentMethodOptions.map((method) => (
                   <SelectItem key={method.value} value={method.value}>
                     {method.label}

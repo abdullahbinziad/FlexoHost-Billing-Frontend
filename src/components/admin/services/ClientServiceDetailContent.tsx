@@ -31,6 +31,11 @@ import { useGetProductsQuery } from "@/store/api/productApi";
 import { useGetServersQuery } from "@/store/api/serverApi";
 import { getServerGroups } from "@/types/admin";
 import { dedupeHostingProductsForSelect } from "@/utils/hostingPackageOptions";
+import {
+  SERVICE_STATUS,
+  normalizeServiceStatus,
+  type ServiceStatusValue,
+} from "@/constants/serviceStatus";
 
 export interface ClientServiceDetailContentProps {
   clientId: string;
@@ -66,7 +71,7 @@ export function ClientServiceDetailContent({
   );
 
   const [adminNotes, setAdminNotes] = useState("");
-  const [targetStatus, setTargetStatus] = useState("active");
+  const [targetStatus, setTargetStatus] = useState<ServiceStatusValue>(SERVICE_STATUS.ACTIVE);
   const [trackingNextDueDate, setTrackingNextDueDate] = useState("");
   const [autoSuspendAt, setAutoSuspendAt] = useState("");
   const [autoTerminateAt, setAutoTerminateAt] = useState("");
@@ -84,7 +89,11 @@ export function ClientServiceDetailContent({
 
   useEffect(() => {
     setAdminNotes(service?.adminNotes ?? "");
-    setTargetStatus((service?.rawStatus || service?.status || "active").toLowerCase());
+    setTargetStatus(normalizeServiceStatus(service?.rawStatus || service?.status || SERVICE_STATUS.ACTIVE, {
+      suspendedAt: service?.suspendedAt,
+      terminatedAt: service?.terminatedAt,
+      cancelledAt: service?.cancelledAt,
+    }));
     setTrackingNextDueDate(toDateInputValue(service?.nextDueDate));
     setAutoSuspendAt(toLocalInputValue(service?.autoSuspendAt));
     setAutoTerminateAt(toLocalInputValue(service?.autoTerminateAt));
@@ -201,8 +210,12 @@ export function ClientServiceDetailContent({
   const handleSaveStatusTracking = async () => {
     try {
       if (!service) return;
-      const currentStatus = (service.rawStatus || service.status || "").toLowerCase();
-      const desiredStatus = targetStatus.toLowerCase();
+      const currentStatus = normalizeServiceStatus(service.rawStatus || service.status || SERVICE_STATUS.PENDING, {
+        suspendedAt: service.suspendedAt,
+        terminatedAt: service.terminatedAt,
+        cancelledAt: service.cancelledAt,
+      });
+      const desiredStatus = normalizeServiceStatus(targetStatus);
       if (desiredStatus !== currentStatus) {
         await updateStatus({ serviceId, clientId, status: desiredStatus }).unwrap();
       }
@@ -290,7 +303,11 @@ export function ClientServiceDetailContent({
     }
   };
   const isSavingStatusTracking = isSavingAutomation || isUpdatingStatus;
-  const initialStatus = (service?.rawStatus || service?.status || "active").toLowerCase();
+  const initialStatus = normalizeServiceStatus(service?.rawStatus || service?.status || SERVICE_STATUS.ACTIVE, {
+    suspendedAt: service?.suspendedAt,
+    terminatedAt: service?.terminatedAt,
+    cancelledAt: service?.cancelledAt,
+  });
   const initialTrackingNextDueDate = toDateInputValue(service?.nextDueDate);
   const initialAutoSuspendAt = toLocalInputValue(service?.autoSuspendAt);
   const initialAutoTerminateAt = toLocalInputValue(service?.autoTerminateAt);
@@ -437,7 +454,7 @@ export function ClientServiceDetailContent({
             editableNextDueDate={trackingNextDueDate}
             editableAutoSuspendAt={autoSuspendAt}
             editableAutoTerminateAt={autoTerminateAt}
-            onEditableStatusChange={setTargetStatus}
+            onEditableStatusChange={(value) => setTargetStatus(normalizeServiceStatus(value))}
             onEditableNextDueDateChange={setTrackingNextDueDate}
             onEditableAutoSuspendAtChange={setAutoSuspendAt}
             onEditableAutoTerminateAtChange={setAutoTerminateAt}

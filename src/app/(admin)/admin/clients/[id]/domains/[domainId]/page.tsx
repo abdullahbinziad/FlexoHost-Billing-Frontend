@@ -46,6 +46,7 @@ import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { formatDate } from "@/utils/format";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { DOMAIN_STATUS } from "@/constants/status";
 
 const contactSections: Array<keyof DomainContactDetails> = ["registrant", "admin", "tech", "billing"];
 
@@ -344,9 +345,9 @@ export default function DomainDetailsPage({
               <div className="flex items-center gap-2 mt-1">
                 <Badge
                   className={
-                    status === "active"
+                    status === DOMAIN_STATUS.ACTIVE
                       ? "bg-green-500 hover:bg-green-600"
-                      : status === "suspended"
+                      : status === DOMAIN_STATUS.SUSPENDED
                         ? "bg-amber-500"
                         : "bg-gray-500"
                   }

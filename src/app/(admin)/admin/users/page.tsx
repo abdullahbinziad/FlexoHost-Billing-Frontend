@@ -31,6 +31,7 @@ import {
   useDeleteUserMutation,
   type AdminUser,
 } from "@/store/api/userApi";
+import { SELECT_SENTINEL } from "@/constants/status";
 import { useGetRolesQuery } from "@/store/api/roleApi";
 import { RootState } from "@/store";
 import { Search, Trash2, UserPlus } from "lucide-react";
@@ -152,12 +153,18 @@ export default function AdminUsersPage() {
               className="pl-8 w-64"
             />
           </div>
-          <Select value={roleFilter || "__all__"} onValueChange={(v) => { setRoleFilter(v === "__all__" ? "" : v); setPage(1); }}>
+          <Select
+            value={roleFilter || SELECT_SENTINEL.ALL}
+            onValueChange={(v) => {
+              setRoleFilter(v === SELECT_SENTINEL.ALL ? "" : v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">All roles</SelectItem>
+              <SelectItem value={SELECT_SENTINEL.ALL}>All roles</SelectItem>
               {rolesForDropdown.map((r) => {
                 const filterVal = r.slug === "super_admin" ? "superadmin" : r.slug ?? "";
                 return (

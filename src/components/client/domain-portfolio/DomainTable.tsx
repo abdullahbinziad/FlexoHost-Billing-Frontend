@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Domain, DomainTableFilters } from "@/types/domain";
 import { formatDate } from "@/utils/format";
+import { DOMAIN_STATUS } from "@/constants/status";
 import {
   DomainTableRow,
   domainStatusBadgeClassName,
@@ -40,7 +41,7 @@ function DomainPortfolioMobileCard({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className={domainStatusBadgeClassName(domain.status)}>
-              {domain.status === "active" && <Check className="h-4 w-4 shrink-0" />}
+              {domain.status === DOMAIN_STATUS.ACTIVE && <Check className="h-4 w-4 shrink-0" />}
               <span className="capitalize">{domain.status}</span>
             </span>
           </div>

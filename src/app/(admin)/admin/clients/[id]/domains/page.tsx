@@ -24,6 +24,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useGetDomainsByClientQuery } from "@/store/api/domainApi";
 import { formatDate } from "@/utils/format";
+import { DOMAIN_STATUS } from "@/constants/status";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 export default function ClientDomainsPage() {
@@ -129,11 +130,11 @@ export default function ClientDomainsPage() {
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <Badge
-                          variant={domain.status === "active" ? "default" : "secondary"}
+                          variant={domain.status === DOMAIN_STATUS.ACTIVE ? "default" : "secondary"}
                           className={
-                            domain.status === "active"
+                            domain.status === DOMAIN_STATUS.ACTIVE
                               ? "bg-green-500 hover:bg-green-600"
-                              : domain.status === "expired"
+                              : domain.status === DOMAIN_STATUS.EXPIRED
                               ? "bg-red-100 text-red-600 dark:bg-red-900/30"
                               : ""
                           }

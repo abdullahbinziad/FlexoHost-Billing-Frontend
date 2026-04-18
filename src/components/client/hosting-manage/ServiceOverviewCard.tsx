@@ -102,6 +102,30 @@ export function ServiceOverviewCard({ service }: ServiceOverviewCardProps) {
               : "N/A"}
           </p>
         </div>
+
+        {/* Status Timestamps */}
+        {(service.suspendedAt || service.terminatedAt) && (
+          <div className="space-y-2 md:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Calendar className="w-4 h-4" />
+              <span>Status Timeline</span>
+            </div>
+            <div className="space-y-1.5">
+              {service.suspendedAt ? (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  <span className="font-medium">Suspended at:</span>{" "}
+                  {formatDate(service.suspendedAt, "full")}
+                </p>
+              ) : null}
+              {service.terminatedAt ? (
+                <p className="text-sm text-gray-900 dark:text-gray-100">
+                  <span className="font-medium">Terminated at:</span>{" "}
+                  {formatDate(service.terminatedAt, "full")}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

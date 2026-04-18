@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { Invoice } from "@/types/invoice";
+import { INVOICE_STATUS, PAYMENT_REDIRECT_STATUS } from "@/constants/status";
 import { InvoiceHeader } from "./InvoiceHeader";
 import { InvoiceBody } from "./InvoiceBody";
 import { InvoiceActions } from "./InvoiceActions";
@@ -32,15 +33,15 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
   useEffect(() => {
     if (toastShown.current) return;
     const status = searchParams.get("payment");
-    if (status === "success") {
+    if (status === PAYMENT_REDIRECT_STATUS.SUCCESS) {
       toastShown.current = true;
       toast.success("Payment completed successfully!");
       window.history.replaceState(null, "", window.location.pathname);
-    } else if (status === "failed") {
+    } else if (status === PAYMENT_REDIRECT_STATUS.FAILED) {
       toastShown.current = true;
       toast.error("Payment failed. Please try again or use a different method.");
       window.history.replaceState(null, "", window.location.pathname);
-    } else if (status === "cancelled") {
+    } else if (status === PAYMENT_REDIRECT_STATUS.CANCELLED) {
       toastShown.current = true;
       toast.error("Payment was cancelled. You can try again.");
       window.history.replaceState(null, "", window.location.pathname);
@@ -88,7 +89,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
         <div
           className={cn(
             "lg:col-span-2",
-            invoice.status === "unpaid" ? "" : "lg:col-span-3"
+            invoice.status === INVOICE_STATUS.UNPAID ? "" : "lg:col-span-3"
           )}
         >
           <div

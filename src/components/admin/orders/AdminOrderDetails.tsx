@@ -8,6 +8,7 @@ import { OrderSidebar } from "./details/OrderSidebar";
 import { toast } from "sonner";
 import { useGetServersQuery } from "@/store/api/serverApi";
 import { getEligibleServersForHostingOrderItem } from "@/utils/hostingOrderServerFilter";
+import { ORDER_PAYMENT_STATUS, ORDER_STATUS } from "@/constants/status";
 
 interface AdminOrderDetailsProps {
     orderId: string;
@@ -60,10 +61,10 @@ export function AdminOrderDetails({ orderId }: AdminOrderDetailsProps) {
             customOrderId: orderData.orderId || `ORD-${orderData._id?.slice(-6) || ""}`,
             orderNumber: orderData.orderNumber,
             rawStatus,
-            status: (["pending", "active", "cancelled", "fraud", "processing", "on hold", "draft"].includes(mappedStatus) ? mappedStatus.replace(" ", "_") : "pending") as string,
-            paymentStatus: (["paid", "unpaid", "refunded", "incomplete"].includes(mappedPaymentStatus)
+            status: ([ORDER_STATUS.PENDING, ORDER_STATUS.ACTIVE, ORDER_STATUS.CANCELLED, ORDER_STATUS.FRAUD, ORDER_STATUS.PROCESSING, "on hold", ORDER_STATUS.DRAFT].includes(mappedStatus) ? mappedStatus.replace(" ", "_") : ORDER_STATUS.PENDING) as string,
+            paymentStatus: ([ORDER_PAYMENT_STATUS.PAID, ORDER_PAYMENT_STATUS.UNPAID, ORDER_PAYMENT_STATUS.REFUNDED, ORDER_PAYMENT_STATUS.INCOMPLETE].includes(mappedPaymentStatus)
                 ? mappedPaymentStatus
-                : "unpaid") as "paid" | "unpaid" | "refunded" | "incomplete",
+                : ORDER_PAYMENT_STATUS.UNPAID) as "paid" | "unpaid" | "refunded" | "incomplete",
             paymentMethod: orderData.invoice?.paymentMethod || "N/A",
             createdAt: orderData.date,
             totalAmount: orderData.invoice?.total || orderData.total || 0,

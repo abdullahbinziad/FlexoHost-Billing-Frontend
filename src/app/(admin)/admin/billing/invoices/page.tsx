@@ -36,24 +36,25 @@ import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 const STATUS_OPTIONS = [
     { value: "", label: "All" },
-    { value: "UNPAID", label: "Unpaid" },
-    { value: "PAID", label: "Paid" },
-    { value: "OVERDUE", label: "Overdue" },
-    { value: "CANCELLED", label: "Cancelled" },
+    { value: INVOICE_STATUS_ADMIN.UNPAID, label: "Unpaid" },
+    { value: INVOICE_STATUS_ADMIN.PAID, label: "Paid" },
+    { value: INVOICE_STATUS_ADMIN.OVERDUE, label: "Overdue" },
+    { value: INVOICE_STATUS_ADMIN.CANCELLED, label: "Cancelled" },
 ];
 
 const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-        case "PAID":
+        case INVOICE_STATUS_ADMIN.PAID:
             return "bg-green-500 hover:bg-green-600";
-        case "UNPAID":
+        case INVOICE_STATUS_ADMIN.UNPAID:
             return "bg-red-500 hover:bg-red-600";
-        case "OVERDUE":
+        case INVOICE_STATUS_ADMIN.OVERDUE:
             return "bg-orange-500 hover:bg-orange-600";
-        case "CANCELLED":
+        case INVOICE_STATUS_ADMIN.CANCELLED:
             return "bg-gray-500 hover:bg-gray-600";
         default:
             return "bg-yellow-500 hover:bg-yellow-600";
@@ -273,22 +274,22 @@ export default function AdminInvoicesPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    {invoice.status !== "PAID" && (
-                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(invoice._id, "PAID")}>
+                                                    {invoice.status !== INVOICE_STATUS_ADMIN.PAID && (
+                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(invoice._id, INVOICE_STATUS_ADMIN.PAID)}>
                                                             <CheckCircle className="w-4 h-4 mr-2" /> Mark Paid
                                                         </DropdownMenuItem>
                                                     )}
-                                                    {invoice.status !== "UNPAID" && invoice.status !== "OVERDUE" && (
-                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(invoice._id, "UNPAID")}>
+                                                    {invoice.status !== INVOICE_STATUS_ADMIN.UNPAID && invoice.status !== INVOICE_STATUS_ADMIN.OVERDUE && (
+                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(invoice._id, INVOICE_STATUS_ADMIN.UNPAID)}>
                                                             <XCircle className="w-4 h-4 mr-2" /> Mark Unpaid
                                                         </DropdownMenuItem>
                                                     )}
-                                                    {invoice.status !== "CANCELLED" && (
-                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(invoice._id, "CANCELLED")}>
+                                                    {invoice.status !== INVOICE_STATUS_ADMIN.CANCELLED && (
+                                                        <DropdownMenuItem onClick={() => handleUpdateStatus(invoice._id, INVOICE_STATUS_ADMIN.CANCELLED)}>
                                                             <Ban className="w-4 h-4 mr-2" /> Mark Cancelled
                                                         </DropdownMenuItem>
                                                     )}
-                                                    {invoice.status !== "PAID" && invoice.status !== "CANCELLED" && (
+                                                    {invoice.status !== INVOICE_STATUS_ADMIN.PAID && invoice.status !== INVOICE_STATUS_ADMIN.CANCELLED && (
                                                         <DropdownMenuItem onClick={() => handleSendReminder(invoice._id)}>
                                                             <Mail className="w-4 h-4 mr-2" /> Send Reminder
                                                         </DropdownMenuItem>

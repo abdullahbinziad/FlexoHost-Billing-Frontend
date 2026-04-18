@@ -21,6 +21,7 @@ import {
     type InvoiceItemPayload,
 } from "@/store/api/invoiceApi";
 import { toast } from "sonner";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 function toDateInputValue(date: string | Date | undefined) {
     if (!date) return "";
@@ -268,7 +269,7 @@ export default function AdminInvoiceDetailPage({
             )}
 
             {activeTab === "add-payment" && (
-                invoice.status === "PAID" || invoice.balanceDue <= 0 ? (
+                invoice.status === INVOICE_STATUS_ADMIN.PAID || invoice.balanceDue <= 0 ? (
                     <div className="rounded-lg border bg-card p-8 text-center">
                         <p className="text-muted-foreground">This invoice is already paid.</p>
                         <p className="text-sm text-muted-foreground mt-1">No additional payments can be recorded.</p>

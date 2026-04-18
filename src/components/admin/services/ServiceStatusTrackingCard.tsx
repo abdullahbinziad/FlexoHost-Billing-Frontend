@@ -15,6 +15,11 @@ import { Calendar, Globe, Activity } from "lucide-react";
 import { formatDateTime as formatDt } from "@/utils/format";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
 import { getServiceDisplayDomain } from "./utils";
+import {
+  SERVICE_STATUS,
+  normalizeServiceStatus,
+  type ServiceStatusValue,
+} from "@/constants/serviceStatus";
 
 export interface ServiceStatusTrackingCardProps {
   service: HostingServiceDetails;
@@ -22,11 +27,11 @@ export interface ServiceStatusTrackingCardProps {
   onSaveChanges?: () => void;
   isSavingChanges?: boolean;
   disableSaveChanges?: boolean;
-  editableStatus?: string;
+  editableStatus?: ServiceStatusValue;
   editableNextDueDate?: string;
   editableAutoSuspendAt?: string;
   editableAutoTerminateAt?: string;
-  onEditableStatusChange?: (value: string) => void;
+  onEditableStatusChange?: (value: ServiceStatusValue) => void;
   onEditableNextDueDateChange?: (value: string) => void;
   onEditableAutoSuspendAtChange?: (value: string) => void;
   onEditableAutoTerminateAtChange?: (value: string) => void;
@@ -42,7 +47,7 @@ export function ServiceStatusTrackingCard({
   onSaveChanges,
   isSavingChanges = false,
   disableSaveChanges = false,
-  editableStatus = "active",
+  editableStatus = SERVICE_STATUS.ACTIVE,
   editableNextDueDate = "",
   editableAutoSuspendAt = "",
   editableAutoTerminateAt = "",
@@ -52,7 +57,11 @@ export function ServiceStatusTrackingCard({
   onEditableAutoTerminateAtChange,
 }: ServiceStatusTrackingCardProps) {
   const domain = getServiceDisplayDomain(service);
-  const status = (service.status ?? "").toString();
+  const status = normalizeServiceStatus(service.status, {
+    suspendedAt: service.suspendedAt,
+    terminatedAt: service.terminatedAt,
+    cancelledAt: service.cancelledAt,
+  });
   const suspendedAt = service.suspendedAt;
   const terminatedAt = service.terminatedAt;
   const createdAt = service.createdAt;
@@ -134,17 +143,20 @@ export function ServiceStatusTrackingCard({
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Current status
               </Label>
-              <Select value={editableStatus} onValueChange={onEditableStatusChange}>
+              <Select
+                value={editableStatus}
+                onValueChange={(value) => onEditableStatusChange?.(value as ServiceStatusValue)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="terminated">Terminated</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="provisioning">Provisioning</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value={SERVICE_STATUS.ACTIVE}>Active</SelectItem>
+                  <SelectItem value={SERVICE_STATUS.SUSPENDED}>Suspended</SelectItem>
+                  <SelectItem value={SERVICE_STATUS.TERMINATED}>Terminated</SelectItem>
+                  <SelectItem value={SERVICE_STATUS.CANCELLED}>Cancelled</SelectItem>
+                  <SelectItem value={SERVICE_STATUS.PROVISIONING}>Provisioning</SelectItem>
+                  <SelectItem value={SERVICE_STATUS.PENDING}>Pending</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -176,7 +188,7 @@ export function ServiceStatusTrackingCard({
             </label>
             <div>
               <Badge variant="secondary" className="capitalize">
-                {status}
+                {status.toLowerCase()}
               </Badge>
             </div>
           </div>

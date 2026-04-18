@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useGetAllInvoicesQuery } from "@/store/api/invoiceApi";
 import { formatCurrency } from "@/utils/format";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 export interface DashboardRecentInvoicesProps {
   clientId: string;
@@ -52,7 +53,7 @@ export function DashboardRecentInvoices({
                     {formatCurrency(inv.total ?? 0, inv.currency)}
                   </span>
                   <Badge
-                    variant={inv.status === "PAID" ? "default" : "secondary"}
+                    variant={inv.status === INVOICE_STATUS_ADMIN.PAID ? "default" : "secondary"}
                     className="text-xs"
                   >
                     {inv.status}

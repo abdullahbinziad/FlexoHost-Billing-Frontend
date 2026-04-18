@@ -7,6 +7,7 @@ import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
 import { PAYMENT_METHODS } from "./invoice.constants";
 import type { Invoice } from "@/types/invoice";
+import { INVOICE_STATUS } from "@/constants/status";
 
 interface InvoiceActionsProps {
   invoice: Invoice;
@@ -59,7 +60,7 @@ export function InvoiceActions({
     </div>
   );
 
-  if (invoice.status === "unpaid") {
+  if (invoice.status === INVOICE_STATUS.UNPAID) {
     return (
       <div className="lg:col-span-1 print:hidden">
         <div className="sticky top-16 z-10 rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:top-20">

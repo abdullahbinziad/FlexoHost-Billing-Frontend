@@ -18,6 +18,7 @@ import { Settings, AlertTriangle, RefreshCw } from "lucide-react";
 import { SERVER_GROUP_OPTIONS, getServerGroups } from "@/types/admin";
 import type { ProductType, ServerConfig } from "@/types/admin";
 import { useGetServersQuery } from "@/store/api/serverApi";
+import { MODULE_TYPE, SELECT_SENTINEL } from "@/constants/status";
 
 interface ModuleConfigurationProps {
     formData: {
@@ -102,11 +103,11 @@ export function ModuleConfiguration({ formData, setFormData, handleChange }: Mod
                                 <SelectValue placeholder="Select Module" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="cpanel">cPanel</SelectItem>
-                                <SelectItem value="directadmin">DirectAdmin</SelectItem>
-                                <SelectItem value="plesk">Plesk</SelectItem>
-                                <SelectItem value="virtualizor">Virtualizor</SelectItem>
-                                <SelectItem value="none">None / Manual</SelectItem>
+                                <SelectItem value={MODULE_TYPE.CPANEL}>cPanel</SelectItem>
+                                <SelectItem value={MODULE_TYPE.DIRECTADMIN}>DirectAdmin</SelectItem>
+                                <SelectItem value={MODULE_TYPE.PLESK}>Plesk</SelectItem>
+                                <SelectItem value={MODULE_TYPE.VIRTUALIZOR}>Virtualizor</SelectItem>
+                                <SelectItem value={MODULE_TYPE.NONE}>None / Manual</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -136,11 +137,11 @@ export function ModuleConfiguration({ formData, setFormData, handleChange }: Mod
                         <>
                             <div className="flex items-center gap-2">
                                 <Select
-                                    value={formData.whmPackageName?.trim() ? formData.whmPackageName : "__none__"}
+                                    value={formData.whmPackageName?.trim() ? formData.whmPackageName : SELECT_SENTINEL.NONE}
                                     onValueChange={(v) =>
                                         setFormData((prev: any) => ({
                                             ...prev,
-                                            whmPackageName: v === "__none__" ? "" : v,
+                                            whmPackageName: v === SELECT_SENTINEL.NONE ? "" : v,
                                         }))
                                     }
                                     disabled={serversLoading}
@@ -153,7 +154,7 @@ export function ModuleConfiguration({ formData, setFormData, handleChange }: Mod
                                         />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="__none__">— Select package —</SelectItem>
+                                        <SelectItem value={SELECT_SENTINEL.NONE}>— Select package —</SelectItem>
                                         {whmPackageSelectOptions.map((pkg) => (
                                             <SelectItem key={pkg} value={pkg}>
                                                 {pkg}
@@ -161,8 +162,8 @@ export function ModuleConfiguration({ formData, setFormData, handleChange }: Mod
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <div className="flex shrink-0 gap-1 text-muted-foreground">
-                                    <AlertTriangle className="h-5 w-5 text-yellow-600" title="Must match WHM" />
+                                <div className="flex shrink-0 gap-1 text-muted-foreground" title="Must match WHM">
+                                    <AlertTriangle className="h-5 w-5 text-yellow-600" />
                                     <RefreshCw className="h-5 w-5" aria-hidden />
                                 </div>
                             </div>

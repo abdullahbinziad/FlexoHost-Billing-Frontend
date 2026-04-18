@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { formatInvoiceDate, getInvoiceStatusStyles } from "./invoice.utils";
 import type { Invoice } from "@/types/invoice";
+import { INVOICE_STATUS } from "@/constants/status";
 
 interface InvoiceHeaderProps {
   invoice: Invoice;
@@ -44,7 +45,7 @@ export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
               >
                 {invoice.status}
               </span>
-              {invoice.status === "paid" && invoice.paymentMethod && (
+              {invoice.status === INVOICE_STATUS.PAID && invoice.paymentMethod && (
                 <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                   via {invoice.paymentMethod}
                 </span>

@@ -34,6 +34,7 @@ import { getAdminClientServicePath } from "@/components/admin/services/utils";
 import { Plus, Server, HardDrive, Mail, MoreHorizontal } from "lucide-react";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { getPendingStatusLabel } from "@/utils/serviceStatusLabel";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 type ServicePageType = "hosting" | "vps" | "email";
 
@@ -103,8 +104,10 @@ export function ClientServiceListPage({
     try {
       if (confirmAction.type === "cancel") {
         const targetService = services.find((s) => s.id === confirmAction.serviceId);
-        const status = String(targetService?.status || "").toLowerCase();
-        const usePendingCancel = status === "pending" || status === "provisioning";
+        const normalizedStatus = normalizeServiceStatus(targetService?.status);
+        const usePendingCancel =
+          normalizedStatus === SERVICE_STATUS.PENDING ||
+          normalizedStatus === SERVICE_STATUS.PROVISIONING;
         if (usePendingCancel) {
           await cancelPendingService({ serviceId: confirmAction.serviceId, clientId }).unwrap();
         } else {
@@ -172,8 +175,10 @@ export function ClientServiceListPage({
                   ) : (
                     services.map((service) => {
                       const detailsHref = getAdminClientServicePath(clientId, service.id, service.productType);
-                      const normalizedStatus = String(service.status || "").toLowerCase();
-                      const isPendingLike = normalizedStatus === "pending" || normalizedStatus === "provisioning";
+                      const normalizedStatus = normalizeServiceStatus(service.status);
+                      const isPendingLike =
+                        normalizedStatus === SERVICE_STATUS.PENDING ||
+                        normalizedStatus === SERVICE_STATUS.PROVISIONING;
                       const statusLabel = isPendingLike
                         ? getPendingStatusLabel(service.status, service.pendingReason)
                         : service.status;
@@ -295,8 +300,10 @@ export function ClientServiceListPage({
           title={(() => {
             if (confirmAction?.type === "delete") return "Delete service permanently?";
             const targetService = services.find((s) => s.id === confirmAction?.serviceId);
-            const status = String(targetService?.status || "").toLowerCase();
-            const isPendingLike = status === "pending" || status === "provisioning";
+            const normalizedStatus = normalizeServiceStatus(targetService?.status);
+            const isPendingLike =
+              normalizedStatus === SERVICE_STATUS.PENDING ||
+              normalizedStatus === SERVICE_STATUS.PROVISIONING;
             return isPendingLike ? "Cancel pending service?" : "Terminate this service?";
           })()}
           description={
@@ -305,8 +312,10 @@ export function ClientServiceListPage({
                 return "This action cannot be undone. The service record and linked details will be removed.";
               }
               const targetService = services.find((s) => s.id === confirmAction?.serviceId);
-              const status = String(targetService?.status || "").toLowerCase();
-              const isPendingLike = status === "pending" || status === "provisioning";
+              const normalizedStatus = normalizeServiceStatus(targetService?.status);
+              const isPendingLike =
+                normalizedStatus === SERVICE_STATUS.PENDING ||
+                normalizedStatus === SERVICE_STATUS.PROVISIONING;
               return isPendingLike
                 ? "This will cancel the service before activation/provision completion and stop pending provisioning."
                 : "This action cannot be undone. It will terminate the service.";
@@ -315,8 +324,10 @@ export function ClientServiceListPage({
           confirmLabel={(() => {
             if (confirmAction?.type === "delete") return "Delete Service";
             const targetService = services.find((s) => s.id === confirmAction?.serviceId);
-            const status = String(targetService?.status || "").toLowerCase();
-            const isPendingLike = status === "pending" || status === "provisioning";
+            const normalizedStatus = normalizeServiceStatus(targetService?.status);
+            const isPendingLike =
+              normalizedStatus === SERVICE_STATUS.PENDING ||
+              normalizedStatus === SERVICE_STATUS.PROVISIONING;
             return isPendingLike ? "Cancel Pending Service" : "Terminate Service";
           })()}
           onConfirm={handleConfirmAction}

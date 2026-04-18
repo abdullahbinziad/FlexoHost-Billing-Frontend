@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { DOMAIN_SYNC_STATE } from "@/constants/status";
 import {
   useBulkSyncAdminDomainsMutation,
   useGetAdminDomainsQuery,
@@ -310,10 +311,10 @@ export default function AdminDomainsInventoryPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={ALL_VALUE}>All sync states</SelectItem>
-                    <SelectItem value="fresh">Fresh</SelectItem>
-                    <SelectItem value="stale">Stale</SelectItem>
-                    <SelectItem value="never">Never synced</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value={DOMAIN_SYNC_STATE.FRESH}>Fresh</SelectItem>
+                    <SelectItem value={DOMAIN_SYNC_STATE.STALE}>Stale</SelectItem>
+                    <SelectItem value={DOMAIN_SYNC_STATE.NEVER}>Never synced</SelectItem>
+                    <SelectItem value={DOMAIN_SYNC_STATE.FAILED}>Failed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -443,9 +444,9 @@ export default function AdminDomainsInventoryPage() {
                         <div className="flex flex-col gap-1">
                           <Badge
                             variant={
-                              item.syncState === "failed"
+                              item.syncState === DOMAIN_SYNC_STATE.FAILED
                                 ? "destructive"
-                                : item.syncState === "fresh"
+                                : item.syncState === DOMAIN_SYNC_STATE.FRESH
                                   ? "default"
                                   : "secondary"
                             }

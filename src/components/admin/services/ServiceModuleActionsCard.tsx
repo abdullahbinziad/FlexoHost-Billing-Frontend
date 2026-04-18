@@ -32,6 +32,7 @@ import type { Product } from "@/types/admin";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { hasPermission } from "@/types/navigation";
+import { SELECT_SENTINEL } from "@/constants/status";
 
 /** API response shape from admin service actions */
 interface AdminActionResponse {
@@ -345,14 +346,14 @@ export function ServiceModuleActionsCard({
             <div className="space-y-2 md:col-span-4">
               <Label>Server group</Label>
               <Select
-                value={selectedGroup || "__all__"}
-                onValueChange={(v) => setSelectedGroup(v === "__all__" ? "" : v)}
+                value={selectedGroup || SELECT_SENTINEL.ALL}
+                onValueChange={(v) => setSelectedGroup(v === SELECT_SENTINEL.ALL ? "" : v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select server group" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__all__">All groups</SelectItem>
+                  <SelectItem value={SELECT_SENTINEL.ALL}>All groups</SelectItem>
                   {groupOptions.map((group) => (
                     <SelectItem key={group} value={group}>
                       {group}
@@ -364,12 +365,15 @@ export function ServiceModuleActionsCard({
 
             <div className="space-y-2 md:col-span-4">
               <Label>Server selection</Label>
-              <Select value={moduleServerId || "__auto__"} onValueChange={(v) => setModuleServerId(v === "__auto__" ? "" : v)}>
+              <Select
+                value={moduleServerId || SELECT_SENTINEL.AUTO}
+                onValueChange={(v) => setModuleServerId(v === SELECT_SENTINEL.AUTO ? "" : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select server" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__auto__">Auto select server</SelectItem>
+                  <SelectItem value={SELECT_SENTINEL.AUTO}>Auto select server</SelectItem>
                   {filteredServers.map((s: any) => {
                     const id = String(s.id || s._id);
                     const current = typeof s.accountCount === "number" ? s.accountCount : 0;
@@ -387,12 +391,15 @@ export function ServiceModuleActionsCard({
 
             <div className="space-y-2 md:col-span-4">
               <Label>Package selection</Label>
-              <Select value={modulePackage || "__none__"} onValueChange={(v) => setModulePackage(v === "__none__" ? "" : v)}>
+              <Select
+                value={modulePackage || SELECT_SENTINEL.NONE}
+                onValueChange={(v) => setModulePackage(v === SELECT_SENTINEL.NONE ? "" : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select WHM package" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">No package selected</SelectItem>
+                  <SelectItem value={SELECT_SENTINEL.NONE}>No package selected</SelectItem>
                   {packageOptions.map((pkg) => (
                     <SelectItem key={pkg} value={pkg}>
                       {pkg}

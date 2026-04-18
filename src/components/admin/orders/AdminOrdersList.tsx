@@ -48,6 +48,7 @@ import {
     useBulkSendMessageMutation,
 } from "@/store/api/orderApi";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { ORDER_PAYMENT_STATUS, ORDER_STATUS } from "@/constants/status";
 
 export function AdminOrdersList() {
     const formatCurrency = useFormatCurrency();
@@ -82,8 +83,12 @@ export function AdminOrdersList() {
             customOrderId: order.orderId || `ORD-${order._id.slice(-6)}`, // Fallback for old records
             orderNumber: order.orderNumber,
             clientId: order.clientId,
-            status: ['pending', 'active', 'cancelled', 'fraud'].includes(mappedStatus) ? mappedStatus : 'pending',
-            paymentStatus: ['paid', 'unpaid', 'refunded', 'incomplete'].includes(mappedPaymentStatus) ? mappedPaymentStatus : 'unpaid',
+            status: ([ORDER_STATUS.PENDING, ORDER_STATUS.ACTIVE, ORDER_STATUS.CANCELLED, ORDER_STATUS.FRAUD].includes(mappedStatus as any)
+                ? mappedStatus
+                : ORDER_STATUS.PENDING),
+            paymentStatus: ([ORDER_PAYMENT_STATUS.PAID, ORDER_PAYMENT_STATUS.UNPAID, ORDER_PAYMENT_STATUS.REFUNDED, ORDER_PAYMENT_STATUS.INCOMPLETE].includes(mappedPaymentStatus as any)
+                ? mappedPaymentStatus
+                : ORDER_PAYMENT_STATUS.UNPAID),
             userName: order.client?.name || 'Unknown',
             userEmail: order.client?.email || '',
             userId: order.userId || 'N/A',
@@ -184,13 +189,13 @@ export function AdminOrdersList() {
 
     const getStatusColor = (status: string) => {
         switch (status) {
-            case "active":
+            case ORDER_STATUS.ACTIVE:
                 return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-            case "pending":
+            case ORDER_STATUS.PENDING:
                 return "text-red-600 font-medium";
-            case "cancelled":
+            case ORDER_STATUS.CANCELLED:
                 return "text-gray-500 font-medium";
-            case "fraud":
+            case ORDER_STATUS.FRAUD:
                 return "bg-red-100 text-red-900 dark:bg-red-900/50 dark:text-red-300";
             default:
                 return "text-gray-700";
@@ -199,12 +204,12 @@ export function AdminOrdersList() {
 
     const getPaymentStatusColor = (status: string) => {
         switch (status) {
-            case "paid":
+            case ORDER_PAYMENT_STATUS.PAID:
                 return "text-green-600 font-medium";
-            case "unpaid":
-            case "incomplete":
+            case ORDER_PAYMENT_STATUS.UNPAID:
+            case ORDER_PAYMENT_STATUS.INCOMPLETE:
                 return "text-red-500 font-medium";
-            case "refunded":
+            case ORDER_PAYMENT_STATUS.REFUNDED:
                 return "text-orange-500 font-medium";
             default:
                 return "text-gray-500";
@@ -326,10 +331,10 @@ export function AdminOrdersList() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All statuses</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    <SelectItem value="fraud">Fraud</SelectItem>
+                                    <SelectItem value={ORDER_STATUS.ACTIVE}>Active</SelectItem>
+                                    <SelectItem value={ORDER_STATUS.PENDING}>Pending</SelectItem>
+                                    <SelectItem value={ORDER_STATUS.CANCELLED}>Cancelled</SelectItem>
+                                    <SelectItem value={ORDER_STATUS.FRAUD}>Fraud</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -349,10 +354,10 @@ export function AdminOrdersList() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All payments</SelectItem>
-                                    <SelectItem value="paid">Paid</SelectItem>
-                                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                                    <SelectItem value="incomplete">Incomplete</SelectItem>
-                                    <SelectItem value="refunded">Refunded</SelectItem>
+                                    <SelectItem value={ORDER_PAYMENT_STATUS.PAID}>Paid</SelectItem>
+                                    <SelectItem value={ORDER_PAYMENT_STATUS.UNPAID}>Unpaid</SelectItem>
+                                    <SelectItem value={ORDER_PAYMENT_STATUS.INCOMPLETE}>Incomplete</SelectItem>
+                                    <SelectItem value={ORDER_PAYMENT_STATUS.REFUNDED}>Refunded</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

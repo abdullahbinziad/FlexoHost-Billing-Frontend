@@ -2,6 +2,11 @@ import { api } from "./baseApi";
 import { ApiResponse } from "@/types/api";
 import type { HostingService } from "@/types/hosting";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
+import {
+  SERVICE_STATUS,
+  normalizeServiceStatus,
+  toHostingServiceStatus,
+} from "@/constants/serviceStatus";
 
 /** Backend service list item (enriched with displayName, identifier, serverLocation) */
 export interface ClientServiceApiItem {
@@ -52,13 +57,7 @@ export interface ClientServiceWithDetailsResponse {
 }
 
 function mapStatus(status: string): HostingService["status"] {
-  const s = (status || "").toLowerCase();
-  if (s === "active") return "active";
-  if (s === "suspended") return "suspended";
-  if (s === "cancelled") return "cancelled";
-  if (s === "terminated") return "terminated";
-  if (s === "provisioning") return "provisioning";
-  return "pending";
+  return toHostingServiceStatus(normalizeServiceStatus(status));
 }
 
 function formatDate(d: string | Date): string {
@@ -83,17 +82,25 @@ function mapProductType(type: string | undefined): HostingService["productType"]
 export function mapServiceToHostingService(s: ClientServiceApiItem): HostingService {
   const nextDue = s.nextDueDate ? new Date(s.nextDueDate) : null;
   const now = new Date();
-  const statusMapped = mapStatus(s.status);
-  const rawStatus = String(s.status || "").toLowerCase();
+  const normalizedStatus = normalizeServiceStatus(s.status, {
+    suspendedAt: s.suspendedAt,
+    terminatedAt: s.terminatedAt,
+    cancelledAt: s.cancelledAt,
+  });
+  const statusMapped = toHostingServiceStatus(normalizedStatus);
+  const rawStatus = String(s.status || "").trim().toUpperCase();
   const hasProvisioningIssue = Boolean(
     (s as any)?.provisioning?.lastError ||
       (s as any)?.provisioningError ||
       (s as any)?.meta?.provisioningLastError
   );
   const pendingReason: HostingService["pendingReason"] | undefined =
-    statusMapped === "provisioning" || rawStatus === "failed" || hasProvisioningIssue
+    normalizedStatus === SERVICE_STATUS.PROVISIONING ||
+    normalizedStatus === SERVICE_STATUS.FAILED ||
+    rawStatus === SERVICE_STATUS.FAILED ||
+    hasProvisioningIssue
       ? "provisioning"
-      : statusMapped === "pending"
+      : normalizedStatus === SERVICE_STATUS.PENDING
         ? "unpaid_invoice"
         : undefined;
   const expiredDaysAgo =

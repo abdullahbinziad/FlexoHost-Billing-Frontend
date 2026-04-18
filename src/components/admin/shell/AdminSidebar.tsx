@@ -15,6 +15,7 @@ import {
 } from "@/components/shared/sidebar";
 import type { RootState } from "@/store";
 import { useGetOrdersQuery } from "@/store/api/orderApi";
+import { ORDER_STATUS } from "@/constants/status";
 
 interface AdminSidebarProps {
     isOpen: boolean;
@@ -23,7 +24,7 @@ interface AdminSidebarProps {
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     const user = useSelector((s: RootState) => s.auth?.user ?? null);
-    const { data: pendingOrdersData } = useGetOrdersQuery({ status: "pending", page: 1, limit: 1 });
+    const { data: pendingOrdersData } = useGetOrdersQuery({ status: ORDER_STATUS.PENDING, page: 1, limit: 1 });
     const pendingOrdersCount = pendingOrdersData?.totalResults ?? 0;
     const navItems = useMemo(() => {
         const filtered = filterAdminNavByRole(adminNavItems, user);

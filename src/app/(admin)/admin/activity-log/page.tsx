@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, Search } from "lucide-react";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { SELECT_SENTINEL } from "@/constants/status";
 
 function formatDate(createdAt: string) {
   const d = new Date(createdAt);
@@ -76,7 +77,7 @@ export default function ActivityLogPage() {
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState("");
   const [searchSubmitted, setSearchSubmitted] = useState("");
-  const ALL_VALUE = "__all__";
+  const ALL_VALUE = SELECT_SENTINEL.ALL;
   const [actorType, setActorType] = useState<string>(ALL_VALUE);
   const [category, setCategory] = useState<string>(ALL_VALUE);
   const [dateFrom, setDateFrom] = useState("");

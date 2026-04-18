@@ -8,6 +8,7 @@ import { ServicesRenewingSoonCard } from "./ServicesRenewingSoonCard";
 import { ClientServicesPageFrame } from "./ClientServicesPageFrame";
 import { useClientServicesPage } from "@/hooks/useClientServicesPage";
 import type { ServicesRenewingSoon } from "@/types/hosting";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 const RENEWING_SOON_DAYS = 30;
 
@@ -22,7 +23,7 @@ export function HostingPage() {
     const now = new Date();
     const cutoff = new Date(now.getTime() + RENEWING_SOON_DAYS * 24 * 60 * 60 * 1000);
     const soon = services.filter((s) => {
-      if (s.status !== "active") return false;
+      if (normalizeServiceStatus(s.status) !== SERVICE_STATUS.ACTIVE) return false;
       const due = s.nextDueDate ? new Date(s.nextDueDate) : null;
       return due && due <= cutoff && due >= now;
     });

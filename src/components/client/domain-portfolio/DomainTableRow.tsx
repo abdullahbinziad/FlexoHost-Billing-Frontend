@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Domain } from "@/types/domain";
 import { formatDate } from "@/utils/format";
+import { DOMAIN_STATUS } from "@/constants/status";
 
 export interface DomainTableRowProps {
   domain: Domain;
@@ -59,7 +60,7 @@ export function DomainTableRow({
       {/* Status */}
       <td className="px-4 py-4 align-middle">
         <span className={domainStatusBadgeClassName(domain.status)}>
-          {domain.status === "active" && <Check className="w-4 h-4 shrink-0" />}
+          {domain.status === DOMAIN_STATUS.ACTIVE && <Check className="w-4 h-4 shrink-0" />}
           <span className="capitalize">{domain.status}</span>
         </span>
       </td>
