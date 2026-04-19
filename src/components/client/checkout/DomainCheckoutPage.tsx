@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useCheckoutRedux } from "@/hooks/useCheckoutRedux";
 import { useValidateCouponMutation } from "@/store/api/promotionApi";
@@ -17,12 +18,14 @@ interface DomainCheckoutPageProps {
 export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
   const { user, isAuthenticated } = useAuth();
   const [validateCoupon] = useValidateCouponMutation();
+  const promoCartValidateSeq = useRef(0);
   const {
     formData,
     orderSummary,
     error,
     setCheckoutMode,
     setProductId,
+    setProductType,
     setBillingContact,
     setAgreeToTerms,
     setPromoCode,
@@ -44,13 +47,14 @@ export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
   useEffect(() => {
     setCheckoutMode("domain");
     setProductId(null);
+    setProductType(null);
     if (referral?.trim()) setReferral(referral.trim().toUpperCase());
-  }, [setCheckoutMode, setProductId, setReferral, referral]);
+  }, [setCheckoutMode, setProductId, setProductType, setReferral, referral]);
 
+  // Apply referral from URL when no promo is set yet.
   useEffect(() => {
     if (!normalizedReferral || !orderSummary || (orderSummary?.subtotal ?? 0) <= 0) return;
-    if (formData.promoCode && formData.promoCode !== normalizedReferral) return;
-    if (formData.promoCode === normalizedReferral && (formData.promoDiscount ?? 0) > 0) return;
+    if (formData.promoCode) return;
 
     let isCancelled = false;
     const applyReferralDiscount = async () => {
@@ -71,7 +75,7 @@ export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
                   : "annually",
         }).unwrap();
         if (!isCancelled && result.valid && result.discountAmount != null) {
-          setPromoApplied(normalizedReferral, result.discountAmount);
+          setPromoApplied(normalizedReferral, result.discountAmount, result.discountMeta);
         }
       } catch {
         // Ignore invalid referral
@@ -82,10 +86,64 @@ export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
   }, [
     normalizedReferral,
     orderSummary?.subtotal,
+    orderSummary?.currency,
     formData.promoCode,
-    formData.promoDiscount,
     formData.billingContact?.id,
     formData.selectedDomain,
+    formData.domainAction,
+    setPromoApplied,
+    validateCoupon,
+  ]);
+
+  // Re-validate with server whenever the cart changes so discount stays correct (meta alone can drift).
+  useEffect(() => {
+    const code = formData.promoCode?.trim();
+    if (!code || !orderSummary || orderSummary.subtotal <= 0) return;
+
+    const seq = ++promoCartValidateSeq.current;
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      try {
+        const result = await validateCoupon({
+          code: code.toUpperCase(),
+          subtotal: orderSummary.subtotal,
+          currency: orderSummary.currency,
+          clientId: formData.billingContact?.id,
+          domainTlds: [formData.selectedDomain?.tld || ""],
+          domainBillingCycle:
+            formData.domainAction === "transfer"
+              ? "annually"
+              : formData.selectedDomain?.period === 2
+                ? "biennially"
+                : formData.selectedDomain?.period === 3
+                  ? "triennially"
+                  : "annually",
+        }).unwrap();
+        if (cancelled || seq !== promoCartValidateSeq.current) return;
+        if (result.valid && result.discountAmount != null) {
+          setPromoApplied(code.toUpperCase(), result.discountAmount, result.discountMeta);
+        }
+      } catch (err: unknown) {
+        const msg =
+          typeof err === "object" && err !== null && "data" in err
+            ? (err as { data?: { message?: string } }).data?.message
+            : undefined;
+        if (msg && /billing cycle|coupon|domain|product|minimum|order/i.test(msg)) {
+          toast.error(msg);
+        }
+      }
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [
+    formData.promoCode,
+    orderSummary?.subtotal,
+    orderSummary?.currency,
+    formData.billingContact?.id,
+    formData.selectedDomain?.tld,
+    formData.selectedDomain?.period,
     formData.domainAction,
     setPromoApplied,
     validateCoupon,
@@ -111,7 +169,11 @@ export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
       : [];
 
   useEffect(() => {
-    if (!formData.billingContact && billingContacts.length > 0) {
+    const hasValidBillingContact =
+      Boolean(formData.billingContact?.id) &&
+      billingContacts.some((contact) => contact.id === formData.billingContact?.id);
+
+    if (!hasValidBillingContact && billingContacts.length > 0) {
       setBillingContact(billingContacts[0]);
     }
   }, [billingContacts, formData.billingContact, setBillingContact]);
@@ -240,13 +302,19 @@ export function DomainCheckoutPage({ referral }: DomainCheckoutPageProps) {
                   }).unwrap();
 
                   if (result.valid && result.discountAmount != null) {
-                    setPromoApplied(code.trim().toUpperCase(), result.discountAmount);
-                    return true;
+                    setPromoApplied(code.trim().toUpperCase(), result.discountAmount, result.discountMeta);
+                    return { success: true };
                   }
 
-                  return false;
-                } catch {
-                  return false;
+                  return { success: false, error: "Invalid or expired promo code." };
+                } catch (error: any) {
+                  return {
+                    success: false,
+                    error:
+                      error?.data?.message ||
+                      error?.data?.error ||
+                      "Failed to apply promo code.",
+                  };
                 }
               }}
               onPromoCodeRemove={() => {

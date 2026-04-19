@@ -46,8 +46,6 @@ type BillingCycleKey =
 
 type ProductCategory = "hosting" | "vps" | "email";
 
-const COMMISSION_RATE = 0.2;
-
 const BILLING_CYCLES: Array<{ id: BillingCycleKey; label: string }> = [
   { id: "monthly", label: "1 month" },
   { id: "quarterly", label: "3 months" },
@@ -83,7 +81,9 @@ type ReferralProductRowModel = {
   productRef: string;
   cyclePricing: PricingDetail;
   affiliateLink: string;
+  buyerPays: number;
   estimatedCommission: number;
+  commissionRatePercent: number;
   categoryMeta: (typeof CATEGORY_META)[ProductCategory];
   Icon: (typeof CATEGORY_META)[ProductCategory]["icon"];
   allFeatures: string[];
@@ -131,6 +131,10 @@ function getProductReference(product: Product) {
   return String(extendedProduct.id || extendedProduct._id || extendedProduct.pid || "");
 }
 
+function round2(value: number) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
 function buildAffiliateLink(params: {
   origin: string;
   product: Product;
@@ -172,6 +176,8 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
   }, []);
 
   const referralCode = affiliateDashboard?.profile?.referralCode?.trim().toUpperCase() || "";
+  const commissionRatePercent = Math.max(0, affiliateDashboard?.profile?.commissionRate ?? 0);
+  const referralDiscountRatePercent = Math.max(0, affiliateDashboard?.profile?.referralDiscountRate ?? 0);
 
   const allProducts = useMemo(() => storeProductsData?.products ?? [], [storeProductsData?.products]);
 
@@ -203,17 +209,22 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
           currencyCode: selectedCurrency.code,
           referralCode,
         });
-        const estimatedCommission = cyclePricing.price * COMMISSION_RATE;
+        const basePrice = Number(cyclePricing.price) || 0;
+        const discountAmount = round2(basePrice * (referralDiscountRatePercent / 100));
+        const buyerPays = round2(Math.max(basePrice - discountAmount, 0));
+        // Commission % applies to catalog base price (before referral discount), matching checkout payouts
+        const estimatedCommission = round2(basePrice * (commissionRatePercent / 100));
         const categoryMeta = CATEGORY_META[selectedCategory];
         const allFeatures = (product.features || []).filter(Boolean);
-        const hasDiscount = cyclePricing.renewPrice > cyclePricing.price;
-        const discountAmount = hasDiscount ? cyclePricing.renewPrice - cyclePricing.price : 0;
+        const hasDiscount = discountAmount > 0;
         return {
           product,
           productRef,
           cyclePricing,
           affiliateLink,
+          buyerPays,
           estimatedCommission,
+          commissionRatePercent,
           categoryMeta,
           Icon: categoryMeta.icon,
           allFeatures,
@@ -229,6 +240,8 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
     selectedCategory,
     selectedCurrency.code,
     siteOrigin,
+    commissionRatePercent,
+    referralDiscountRatePercent,
   ]);
 
   const selectedCycleLabel =
@@ -451,7 +464,9 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                     productRef,
                     cyclePricing,
                     affiliateLink,
+                    buyerPays,
                     estimatedCommission,
+                    commissionRatePercent,
                     categoryMeta,
                     Icon,
                     allFeatures,
@@ -536,13 +551,13 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                             Buyer pays
                           </p>
                           <p className="text-lg font-semibold tracking-tight">
-                            {formatCurrency(cyclePricing.price, selectedCurrency.code)}
+                            {formatCurrency(buyerPays, selectedCurrency.code)}
                           </p>
                           <p className="text-xs text-muted-foreground">for {selectedCycleLabel.toLowerCase()}</p>
                           {hasDiscount ? (
                             <div className="mt-2 space-y-1">
                               <p className="text-xs text-muted-foreground line-through">
-                                {formatCurrency(cyclePricing.renewPrice, selectedCurrency.code)}
+                                {formatCurrency(cyclePricing.price, selectedCurrency.code)}
                               </p>
                               <p className="text-xs font-medium text-foreground">
                                 Discount {formatCurrency(discountAmount, selectedCurrency.code)}
@@ -562,7 +577,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                             {formatCurrency(estimatedCommission, selectedCurrency.code)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {Math.round(COMMISSION_RATE * 100)}% commission rate
+                            {commissionRatePercent}% commission rate
                           </p>
                           <p className="mt-2 text-xs text-muted-foreground">
                             Earned when the referral completes payment.
@@ -610,7 +625,9 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                         productRef,
                         cyclePricing,
                         affiliateLink,
+                        buyerPays,
                         estimatedCommission,
+                        commissionRatePercent,
                         categoryMeta,
                         Icon,
                         allFeatures,
@@ -690,7 +707,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                           <TableCell className="align-top text-right">
                             <div className="space-y-2">
                               <div className="text-lg font-semibold tracking-tight">
-                                {formatCurrency(cyclePricing.price, selectedCurrency.code)}
+                                {formatCurrency(buyerPays, selectedCurrency.code)}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 for {selectedCycleLabel.toLowerCase()}
@@ -698,7 +715,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                               {hasDiscount ? (
                                 <div className="space-y-1">
                                   <div className="text-xs text-muted-foreground line-through">
-                                    {formatCurrency(cyclePricing.renewPrice, selectedCurrency.code)}
+                                    {formatCurrency(cyclePricing.price, selectedCurrency.code)}
                                   </div>
                                   <div className="text-xs font-medium text-foreground">
                                     Discount {formatCurrency(discountAmount, selectedCurrency.code)}
@@ -717,7 +734,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                                 {formatCurrency(estimatedCommission, selectedCurrency.code)}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {Math.round(COMMISSION_RATE * 100)}% commission rate
+                                {commissionRatePercent}% commission rate
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 Earned when the referral completes payment.
