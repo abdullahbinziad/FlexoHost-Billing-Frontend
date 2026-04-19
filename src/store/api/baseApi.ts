@@ -1,11 +1,18 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../index";
+import type { AppDispatch } from "@/store";
 
 import { getAccessToken } from "@/utils/tokenManager";
 import { getCsrfToken, fetchCsrfToken, clearCsrfToken } from "@/lib/csrfToken";
 import { API_CONFIG } from "@/config/api";
 import { clearActingAs } from "@/store/slices/activeClientSlice";
 import { clearActingAsStorage } from "@/store/slices/activeClientPersistence";
+import {
+  isAuthPublicUnauthorizedPath,
+  isGuestAuthFlowRoute,
+  performAuthSessionCleanup,
+  redirectToLoginAfterSessionExpired,
+} from "@/utils/authSessionExpired";
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_CONFIG.BASE_URL,
@@ -80,7 +87,19 @@ async function baseQueryWith403Clear(
 
 export const api = createApi({
   reducerPath: "api",
-  baseQuery: baseQueryWith403Clear,
+  baseQuery: async (args, baseQueryApi, extraOptions) => {
+    const result = await baseQueryWith403Clear(args, baseQueryApi, extraOptions);
+    const err = result.error as { status?: number } | undefined;
+    if (err?.status === 401) {
+      const path = getRequestPath(args);
+      if (!isAuthPublicUnauthorizedPath(path) && !isGuestAuthFlowRoute()) {
+        performAuthSessionCleanup(baseQueryApi.dispatch as AppDispatch);
+        baseQueryApi.dispatch(api.util.resetApiState());
+        redirectToLoginAfterSessionExpired();
+      }
+    }
+    return result;
+  },
   tagTypes: [
     "User",
     "Product",

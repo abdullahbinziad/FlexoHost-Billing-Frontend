@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useEffect, useMemo, useRef } from "react";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
 import type { RootState } from "@/store";
 import { useCheckoutRedux } from "@/hooks/useCheckoutRedux";
 import { useValidateCouponMutation } from "@/store/api/promotionApi";
@@ -18,6 +19,7 @@ import type {
   BillingContact,
   PaymentMethod,
 } from "@/types/checkout";
+import { normalizeBillingCycleKey } from "@/utils/promoDiscount";
 
 interface CheckoutPageProps {
   productName: string;
@@ -110,12 +112,14 @@ export function CheckoutPage({
     setAgreeToTerms,
     setCheckoutMode,
     setProductId,
+    setProductType,
     setReferral,
     setNewAccountInfo,
     handleCheckout,
   } = useCheckoutRedux(billingCycleOptions, productName);
 
   const [validateCoupon] = useValidateCouponMutation();
+  const promoCartValidateSeq = useRef(0);
   const selectedServerLocation = formData.serverLocation || serverLocations[0];
   const normalizedReferral = referral?.trim().toUpperCase();
   const isReferralDiscountApplied =
@@ -123,22 +127,40 @@ export function CheckoutPage({
     formData.promoCode === normalizedReferral &&
     (orderSummary?.discount ?? 0) > 0;
 
+  const couponBillingCycleAllowList = useMemo(() => {
+    const m = formData.promoDiscountMeta;
+    if (m?.kind === "promotion" && m.productBillingCycles?.length) {
+      return m.productBillingCycles;
+    }
+    return null;
+  }, [formData.promoDiscountMeta]);
+
   // Store product ID in checkout state on mount
   useEffect(() => {
     setCheckoutMode("service");
     if (product?._id || product?.id) {
       setProductId(product._id || product.id);
+      const typeSlug =
+        product?.type != null
+          ? String(product.type)
+          : (product as { category?: string })?.category != null
+            ? String((product as { category?: string }).category)
+            : null;
+      setProductType(typeSlug);
+    } else {
+      setProductId(null);
+      setProductType(null);
     }
     if (referral?.trim()) {
       setReferral(referral.trim().toUpperCase());
     }
-  }, [product, referral, setCheckoutMode, setProductId, setReferral]);
+  }, [product, referral, setCheckoutMode, setProductId, setProductType, setReferral]);
 
+  // Apply referral from URL once when no promo is set yet (does not block manual promo codes).
   useEffect(() => {
     if (!normalizedReferral) return;
+    if (formData.promoCode) return;
     if ((orderSummary?.subtotal ?? 0) <= 0) return;
-    if (formData.promoCode && formData.promoCode !== normalizedReferral) return;
-    if (formData.promoCode === normalizedReferral && (formData.promoDiscount ?? 0) > 0) return;
 
     let isCancelled = false;
 
@@ -157,14 +179,19 @@ export function CheckoutPage({
           currency: selectedCurrency.code,
           clientId: formData.billingContact?.id,
           productIds: product?._id || product?.id ? [String(product._id || product.id)] : undefined,
-          productTypes: product?.type ? [product.type] : undefined,
+          productTypes:
+            product?.type != null
+              ? [String(product.type)]
+              : (product as { category?: string })?.category != null
+                ? [String((product as { category?: string }).category)]
+                : undefined,
           productBillingCycle: formData.billingCycle,
           domainTlds,
           domainBillingCycle: formData.selectedDomain ? domainBillingCycle : undefined,
         }).unwrap();
 
         if (!isCancelled && result.valid && result.discountAmount != null) {
-          setPromoApplied(normalizedReferral, result.discountAmount);
+          setPromoApplied(normalizedReferral, result.discountAmount, result.discountMeta);
         }
       } catch {
         // Ignore invalid referral discounts and leave checkout usable.
@@ -178,9 +205,8 @@ export function CheckoutPage({
     };
   }, [
     normalizedReferral,
-    orderSummary?.subtotal,
     formData.promoCode,
-    formData.promoDiscount,
+    orderSummary?.subtotal,
     formData.billingContact?.id,
     formData.billingCycle,
     formData.selectedDomain,
@@ -190,20 +216,109 @@ export function CheckoutPage({
     validateCoupon,
   ]);
 
+  // Keep promo discount in sync with the server whenever the cart changes (billing cycle, domain, subtotal, etc.).
+  // Client-side meta recompute can drift (e.g. product id string shape); the API is the source of truth.
+  useEffect(() => {
+    const code = formData.promoCode?.trim();
+    if (!code) return;
+    const subtotal = orderSummary?.subtotal ?? 0;
+    if (subtotal <= 0) return;
+
+    const seq = ++promoCartValidateSeq.current;
+    let cancelled = false;
+    const t = window.setTimeout(async () => {
+      try {
+        const domainTlds = formData.selectedDomain?.tld
+          ? [formData.selectedDomain.tld.startsWith(".") ? formData.selectedDomain.tld : `.${formData.selectedDomain.tld}`]
+          : [];
+        const domainPeriod = formData.selectedDomain?.period ?? 1;
+        const domainBillingCycle =
+          domainPeriod === 1 ? "annually" : domainPeriod === 2 ? "biennially" : "triennially";
+
+        const result = await validateCoupon({
+          code: code.toUpperCase(),
+          subtotal,
+          currency: selectedCurrency.code,
+          clientId: formData.billingContact?.id,
+          productIds: product?._id || product?.id ? [String(product._id || product.id)] : undefined,
+          productTypes:
+            product?.type != null
+              ? [String(product.type)]
+              : (product as { category?: string })?.category != null
+                ? [String((product as { category?: string }).category)]
+                : undefined,
+          productBillingCycle: formData.billingCycle,
+          domainTlds,
+          domainBillingCycle: formData.selectedDomain ? domainBillingCycle : undefined,
+        }).unwrap();
+
+        if (cancelled || seq !== promoCartValidateSeq.current) return;
+        if (result.valid && result.discountAmount != null) {
+          setPromoApplied(code.toUpperCase(), result.discountAmount, result.discountMeta);
+        }
+      } catch (err: unknown) {
+        const msg =
+          typeof err === "object" && err !== null && "data" in err
+            ? (err as { data?: { message?: string } }).data?.message
+            : undefined;
+        if (msg && /billing cycle|coupon|domain|product|minimum|order/i.test(msg)) {
+          toast.error(msg);
+        }
+      }
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [
+    formData.promoCode,
+    orderSummary?.subtotal,
+    formData.billingContact?.id,
+    formData.billingCycle,
+    formData.selectedDomain?.tld,
+    formData.selectedDomain?.period,
+    formData.domainAction,
+    product,
+    selectedCurrency.code,
+    setPromoApplied,
+    validateCoupon,
+  ]);
+
   // Set default selections
   useEffect(() => {
-    // Set default billing cycle if not set
-    if (!formData.billingCycle && billingCycleOptions.length > 0) {
-      const initial = initialBillingCycle && billingCycleOptions.find(opt => opt.id === initialBillingCycle)
-        ? initialBillingCycle
-        : billingCycleOptions[0].id;
-      setBillingCycle(initial as any);
+    if (billingCycleOptions.length === 0) return;
+
+    const current = formData.billingCycle;
+    const isCurrentInOptions = Boolean(
+      current && billingCycleOptions.some((opt) => opt.id === current)
+    );
+
+    // Snap to a valid cycle when unset, invalid for this product, or URL requests a matching option
+    if (!isCurrentInOptions) {
+      const fromQuery = initialBillingCycle?.trim();
+      const exactUrl = fromQuery
+        ? billingCycleOptions.find((opt) => opt.id === fromQuery)
+        : undefined;
+      const normUrl = fromQuery
+        ? billingCycleOptions.find(
+            (opt) =>
+              normalizeBillingCycleKey(String(opt.id)) ===
+              normalizeBillingCycleKey(fromQuery)
+          )
+        : undefined;
+      const next = (exactUrl ?? normUrl ?? billingCycleOptions[0]).id;
+      setBillingCycle(next as any);
     }
 
     if (!formData.serverLocation && serverLocations.length > 0) {
       setServerLocation(serverLocations[0]);
     }
-    if (!formData.billingContact && billingContacts.length > 0) {
+    const hasValidBillingContact =
+      Boolean(formData.billingContact?.id) &&
+      billingContacts.some((contact) => contact.id === formData.billingContact?.id);
+
+    if (!hasValidBillingContact && billingContacts.length > 0) {
       setBillingContact(billingContacts[0]);
     }
   }, [
@@ -218,6 +333,23 @@ export function CheckoutPage({
     setServerLocation,
     setBillingContact,
   ]);
+
+  // If the applied coupon only allows certain cycles, move off an ineligible selection.
+  useEffect(() => {
+    if (!couponBillingCycleAllowList?.length) return;
+    const current = formData.billingCycle;
+    if (!current) return;
+    const ok = couponBillingCycleAllowList.some(
+      (c) => normalizeBillingCycleKey(c) === normalizeBillingCycleKey(String(current))
+    );
+    if (ok) return;
+    const next = billingCycleOptions.find((opt) =>
+      couponBillingCycleAllowList.some(
+        (c) => normalizeBillingCycleKey(c) === normalizeBillingCycleKey(String(opt.id))
+      )
+    );
+    if (next) setBillingCycle(next.id as any);
+  }, [couponBillingCycleAllowList, formData.billingCycle, billingCycleOptions, setBillingCycle]);
 
   // Set initial billing cycle if provided and valid
   // This needs to happen efficiently without causing infinite loops
@@ -256,6 +388,8 @@ export function CheckoutPage({
                 options={billingCycleOptions}
                 selected={(formData.billingCycle || initialBillingCycle || "monthly") as any}
                 onSelect={setBillingCycle}
+                couponAllowedBillingCycles={couponBillingCycleAllowList ?? undefined}
+                appliedCouponCode={formData.promoCode}
               />
             </div>
 
@@ -318,7 +452,9 @@ export function CheckoutPage({
               hasDomain={!!formData.selectedDomain}
               onPromoCodeApply={async (code: string) => {
                 const subtotal = orderSummary?.subtotal ?? 0;
-                if (subtotal <= 0) return false;
+                if (subtotal <= 0) {
+                  return { success: false, error: "Order subtotal must be greater than 0." };
+                }
                 try {
                   const domainTlds = formData.selectedDomain?.tld
                     ? [formData.selectedDomain.tld.startsWith(".") ? formData.selectedDomain.tld : `.${formData.selectedDomain.tld}`]
@@ -332,18 +468,29 @@ export function CheckoutPage({
                     currency: selectedCurrency.code,
                     clientId: formData.billingContact?.id,
                     productIds: product?._id || product?.id ? [String(product._id || product.id)] : undefined,
-                    productTypes: product?.type ? [product.type] : undefined,
+                    productTypes:
+                      product?.type != null
+                        ? [String(product.type)]
+                        : (product as { category?: string })?.category != null
+                          ? [String((product as { category?: string }).category)]
+                          : undefined,
                     productBillingCycle: formData.billingCycle,
                     domainTlds,
                     domainBillingCycle: formData.selectedDomain ? domainBillingCycle : undefined,
                   }).unwrap();
                   if (result.valid && result.discountAmount != null) {
-                    setPromoApplied(code.trim().toUpperCase(), result.discountAmount);
-                    return true;
+                    setPromoApplied(code.trim().toUpperCase(), result.discountAmount, result.discountMeta);
+                    return { success: true };
                   }
-                  return false;
-                } catch {
-                  return false;
+                  return { success: false, error: "Invalid or expired promo code." };
+                } catch (error: any) {
+                  return {
+                    success: false,
+                    error:
+                      error?.data?.message ||
+                      error?.data?.error ||
+                      "Failed to apply promo code.",
+                  };
                 }
               }}
               onPromoCodeRemove={() => {

@@ -78,6 +78,11 @@ export interface OrderItem {
   quantity: number;
 }
 
+/** Meta returned when a promo is applied (from /promotions/validate). */
+export type PromoDiscountMeta =
+  | { kind: "promotion"; productBillingCycles?: string[] }
+  | { kind: "affiliate" };
+
 export interface CheckoutFormData {
   billingCycle: BillingCycle;
   domainAction: DomainAction;
@@ -90,6 +95,7 @@ export interface CheckoutFormData {
   paymentMethod: PaymentMethod;
   promoCode?: string;
   promoDiscount?: number;
+  promoDiscountMeta?: PromoDiscountMeta;
   referral?: string;
   agreeToTerms: boolean;
 }
