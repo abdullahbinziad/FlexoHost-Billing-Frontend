@@ -7,8 +7,13 @@ export function getServiceDisplayDomain(service: {
   identifier?: string;
   name?: string;
 }): string {
-  if (service.identifier && service.identifier !== "—") return service.identifier;
-  if (service.domain) return service.domain;
+  const domain = (service.domain || "").trim();
+  const identifier = (service.identifier || "").trim();
+  const isMissing = (v: string) => !v || v === "—";
+
+  /** Prefer resolved primary domain (details) over list identifier (can be username or stale). */
+  if (!isMissing(domain)) return domain;
+  if (!isMissing(identifier)) return identifier;
   if (service.name) return service.name;
   return "—";
 }

@@ -236,11 +236,9 @@ export default function ViewSearchClients() {
                                     ID <ChevronDown className="h-3 w-3" />
                                 </div>
                             </TableHead>
-                            <TableHead className="text-white font-semibold">First Name</TableHead>
-                            <TableHead className="text-white font-semibold">Last Name</TableHead>
+                            <TableHead className="text-white font-semibold">Full Name</TableHead>
                             <TableHead className="text-white font-semibold">Company Name</TableHead>
                             <TableHead className="text-white font-semibold">Email Address</TableHead>
-                            <TableHead className="text-white font-semibold">Services</TableHead>
                             <TableHead className="text-white font-semibold">Created</TableHead>
                             <TableHead className="text-right text-white font-semibold pr-4">Status</TableHead>
                         </TableRow>
@@ -248,7 +246,7 @@ export default function ViewSearchClients() {
                     <TableBody>
                         {clients.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                                     No clients found.
                                 </TableCell>
                             </TableRow>
@@ -273,12 +271,7 @@ export default function ViewSearchClients() {
                                         </TableCell>
                                         <TableCell className="text-blue-600 font-medium">
                                             <Link href={`/admin/clients/${client._id}`} className="hover:underline">
-                                                {client.firstName}
-                                            </Link>
-                                        </TableCell>
-                                        <TableCell className="text-blue-600 font-medium">
-                                            <Link href={`/admin/clients/${client._id}`} className="hover:underline">
-                                                {client.lastName}
+                                                {[client.firstName, client.lastName].filter(Boolean).join(" ") || "—"}
                                             </Link>
                                         </TableCell>
                                         <TableCell className="text-gray-600 dark:text-gray-300">
@@ -291,7 +284,6 @@ export default function ViewSearchClients() {
                                                 {getEmail(client)}
                                             </Link>
                                         </TableCell>
-                                        <TableCell>—</TableCell>
                                         <TableCell className="text-gray-500">{formatDate(client.createdAt)}</TableCell>
                                         <TableCell className="text-right pr-4">
                                             <Badge

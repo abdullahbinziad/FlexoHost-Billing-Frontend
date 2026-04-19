@@ -2,6 +2,7 @@
 
 import { useDispatch, useSelector } from "react-redux";
 import { useMemo, useEffect } from "react";
+import { toast } from "sonner";
 import type { RootState } from "@/store";
 import { useLoader } from "@/contexts/LoaderContext";
 import {
@@ -26,6 +27,7 @@ import {
   setError,
   clearCheckout,
   setProductId,
+  setProductType,
   setReferral,
   setNewAccountInfo,
 } from "@/store/slices/checkoutSlice";
@@ -43,6 +45,7 @@ import type {
   DomainSearchResult,
   OrderSummary,
   OrderItem,
+  PromoDiscountMeta,
 } from "@/types/checkout";
 import { useCreateOrderMutation } from "@/store/api/checkoutApi";
 import { useGetTldsQuery } from "@/store/api/tldApi";
@@ -208,10 +211,14 @@ export function useCheckoutRedux(
     setPaymentMethod: (method: PaymentMethod) =>
       dispatch(setPaymentMethod(method)),
     setPromoCode: (code: string | undefined) => dispatch(setPromoCode(code)),
-    setPromoApplied: (code: string, discountAmount: number) =>
-      dispatch(setPromoApplied({ code, discountAmount })),
+    setPromoApplied: (
+      code: string,
+      discountAmount: number,
+      discountMeta?: PromoDiscountMeta | null
+    ) => dispatch(setPromoApplied({ code, discountAmount, discountMeta: discountMeta ?? undefined })),
     setAgreeToTerms: (agree: boolean) => dispatch(setAgreeToTerms(agree)),
     setProductId: (id: string | null) => dispatch(setProductId(id)),
+    setProductType: (type: string | null) => dispatch(setProductType(type)),
     setReferral: (ref: string | null) => dispatch(setReferral(ref)),
     setNewAccountInfo: (info: NewAccountInfo | null) => dispatch(setNewAccountInfo(info)),
     setStep: (step: number) => dispatch(setStep(step)),
@@ -293,36 +300,45 @@ export function useCheckoutRedux(
 
   // Handle checkout
   const handleCheckout = async () => {
+    const fail = (message: string) => {
+      dispatch(setError(message));
+      toast.error(message);
+    };
+
     // Validate form
     if (!checkout.formData.agreeToTerms) {
-      dispatch(setError("Please agree to the Terms of Service"));
+      fail("Please agree to the Terms of Service");
       return;
     }
 
     // Domain is mandatory — must register, transfer, or use own domain
     if (!checkout.formData.selectedDomain) {
-      dispatch(setError(isDomainOnly ? "Please select a domain to continue." : "Please configure a domain name for your hosting product."));
+      fail(
+        isDomainOnly
+          ? "Please select a domain to continue."
+          : "Please configure a domain name for your hosting product."
+      );
       return;
     }
 
     if (!isDomainOnly && !checkout.productId) {
-      dispatch(setError("Product not found. Please try again."));
+      fail("Product not found. Please try again.");
       return;
     }
 
     if (!checkout.formData.billingContact) {
-      dispatch(setError("Please select a billing contact"));
+      fail("Please select a billing contact");
       return;
     }
 
     if (!isDomainOnly && !checkout.formData.serverLocation) {
-      dispatch(setError("Please select a server location"));
+      fail("Please select a server location");
       return;
     }
 
     const payload = buildOrderPayload();
     if (!payload) {
-      dispatch(setError("Incomplete order data. Please fill all required fields."));
+      fail("Incomplete order data. Please fill all required fields.");
       return;
     }
 
@@ -349,9 +365,10 @@ export function useCheckoutRedux(
         return;
       }
     } catch (error: any) {
-      dispatch(
-        setError(error?.data?.message || "Failed to create order. Please try again.")
-      );
+      const message =
+        error?.data?.message || "Failed to create order. Please try again.";
+      dispatch(setError(message));
+      toast.error(message);
     } finally {
       if (!didRedirect) {
         dispatch(setLoading(false));

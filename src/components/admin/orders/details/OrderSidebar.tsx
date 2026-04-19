@@ -1,39 +1,43 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Check, X, ShieldAlert, Trash2, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 
 interface OrderSidebarProps {
     order: any;
     onStatusChange?: (status: string) => void;
+    onAcceptOrder?: () => void;
     isUpdatingStatus?: boolean;
 }
 
-export function OrderSidebar({ order, onStatusChange, isUpdatingStatus }: OrderSidebarProps) {
+export function OrderSidebar({ order, onStatusChange, onAcceptOrder, isUpdatingStatus }: OrderSidebarProps) {
     const rawStatus = order.rawStatus || order.status || "PENDING_PAYMENT";
     const invoiceId = order.invoice?._id ?? order.invoiceId;
+    const [confirmAction, setConfirmAction] = useState<"cancel" | "fraud" | "close" | null>(null);
 
     const handleStatus = (status: string) => {
         if (!onStatusChange) return;
         onStatusChange(status);
     };
 
-    const handleAccept = () => handleStatus("ACTIVE");
-    const handleCancel = () => {
-        if (!confirm("Set this order to Cancelled? The client will see the order as cancelled.")) return;
-        handleStatus("CANCELLED");
+    const handleAccept = () => {
+        if (onAcceptOrder) return onAcceptOrder();
+        handleStatus("ACTIVE");
     };
-    const handleSetFraud = () => {
-        if (!confirm("Mark this order as Fraud? This status is used for suspicious or fraudulent orders.")) return;
-        handleStatus("FRAUD");
-    };
-    const handleDelete = () => {
-        if (!confirm("Cancel and close this order? This will set status to Cancelled.")) return;
-        handleStatus("CANCELLED");
+    const handleCancel = () => setConfirmAction("cancel");
+    const handleSetFraud = () => setConfirmAction("fraud");
+    const handleDelete = () => setConfirmAction("close");
+    const handleConfirm = () => {
+        if (!confirmAction) return;
+        if (confirmAction === "fraud") handleStatus("FRAUD");
+        else handleStatus("CANCELLED");
+        setConfirmAction(null);
     };
 
     const isPending = rawStatus === "PENDING_PAYMENT" || rawStatus === "DRAFT" || rawStatus === "PROCESSING";
@@ -222,6 +226,19 @@ export function OrderSidebar({ order, onStatusChange, isUpdatingStatus }: OrderS
                     </div>
                 </CardContent>
             </Card>
+            <ConfirmActionDialog
+                open={!!confirmAction}
+                onOpenChange={(open) => !open && setConfirmAction(null)}
+                title={confirmAction === "fraud" ? "Set order as fraud?" : "Cancel this order?"}
+                description={
+                    confirmAction === "fraud"
+                        ? "This marks the order as suspicious/fraudulent."
+                        : "This action cannot be undone. It will set the order status to cancelled."
+                }
+                confirmLabel={confirmAction === "fraud" ? "Set as Fraud" : "Cancel Order"}
+                onConfirm={handleConfirm}
+                isLoading={isUpdatingStatus}
+            />
         </div>
     );
 }

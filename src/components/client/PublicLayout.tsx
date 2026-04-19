@@ -48,10 +48,10 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
             {/* Public Header */}
-            <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 print:hidden">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <header className="sticky top-0 z-50 border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 print:hidden">
+                <div className="container mx-auto flex min-h-16 items-center justify-between gap-2 px-3 py-2 sm:px-4">
                     <Link href="/" className="flex items-center gap-2">
-                        <div className="relative h-10 w-40">
+                        <div className="relative h-10 w-28 sm:w-40">
                             <Image
                                 src={logoSrc}
                                 alt="FlexoHost Logo"
@@ -62,20 +62,20 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                         </div>
                     </Link>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-end gap-1.5 sm:gap-3">
                         {/* Currency Switcher (only on purchase/pricing pages) */}
                         {shouldShowCurrencySwitcher(pathname) && <CurrencySwitcher />}
 
                         {/* Dark Mode Toggle */}
                         <DarkModeToggle />
 
-                        <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
+                        <div className="mx-1 hidden h-6 w-px bg-gray-200 dark:bg-gray-700 sm:block"></div>
 
                         <Link href={`/auth/login?redirect=${encodeURIComponent(pathname || '/')}`}>
-                            <Button variant="ghost">Login</Button>
+                            <Button variant="ghost" size="sm" className="px-2 sm:px-3">Login</Button>
                         </Link>
-                        <Link href="/auth/register">
-                            <Button>Get Started</Button>
+                        <Link href="/auth/register" className="hidden sm:inline-flex">
+                            <Button size="sm">Get Started</Button>
                         </Link>
                     </div>
                 </div>

@@ -11,9 +11,10 @@ import type {
   DomainSearchResult,
   OrderSummary,
   NewAccountInfo,
+  PromoDiscountMeta,
 } from "@/types/checkout";
 
-interface CheckoutState {
+export interface CheckoutState {
   mode: CheckoutMode;
   formData: Partial<CheckoutFormData>;
   orderSummary: OrderSummary | null;
@@ -21,6 +22,7 @@ interface CheckoutState {
   error: string | null;
   step: number;
   productId: string | null;
+  productType: string | null;
   referral: string | null;
   newAccountInfo: NewAccountInfo | null;
 }
@@ -39,9 +41,12 @@ const initialState: CheckoutState = {
   error: null,
   step: 1,
   productId: null,
+  productType: null,
   referral: null,
   newAccountInfo: null,
 };
+
+export const initialCheckoutState: CheckoutState = initialState;
 
 const checkoutSlice = createSlice({
   name: "checkout",
@@ -94,14 +99,22 @@ const checkoutSlice = createSlice({
     },
     setPromoCode: (state, action: PayloadAction<string | undefined>) => {
       state.formData.promoCode = action.payload;
-      if (!action.payload) state.formData.promoDiscount = undefined;
+      if (!action.payload) {
+        state.formData.promoDiscount = undefined;
+        state.formData.promoDiscountMeta = undefined;
+      }
     },
     setPromoApplied: (
       state,
-      action: PayloadAction<{ code: string; discountAmount: number }>
+      action: PayloadAction<{
+        code: string;
+        discountAmount: number;
+        discountMeta?: PromoDiscountMeta | null;
+      }>
     ) => {
       state.formData.promoCode = action.payload.code;
       state.formData.promoDiscount = action.payload.discountAmount;
+      state.formData.promoDiscountMeta = action.payload.discountMeta ?? undefined;
     },
     setAgreeToTerms: (state, action: PayloadAction<boolean>) => {
       state.formData.agreeToTerms = action.payload;
@@ -111,6 +124,9 @@ const checkoutSlice = createSlice({
     },
     setProductId: (state, action: PayloadAction<string | null>) => {
       state.productId = action.payload;
+    },
+    setProductType: (state, action: PayloadAction<string | null>) => {
+      state.productType = action.payload;
     },
     setNewAccountInfo: (state, action: PayloadAction<NewAccountInfo | null>) => {
       state.newAccountInfo = action.payload;
@@ -174,6 +190,7 @@ export const {
   setAgreeToTerms,
   setReferral,
   setProductId,
+  setProductType,
   setNewAccountInfo,
   updateFormData,
   setOrderSummary,

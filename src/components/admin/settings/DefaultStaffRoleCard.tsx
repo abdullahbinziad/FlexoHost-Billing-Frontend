@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useGetRolesQuery } from "@/store/api/roleApi";
 import type { BillingSettings } from "@/store/api/settingsApi";
+import { SELECT_SENTINEL } from "@/constants/status";
 
 interface DefaultStaffRoleCardProps {
   form: BillingSettings;
@@ -35,14 +36,14 @@ export function DefaultStaffRoleCard({ form, onChange }: DefaultStaffRoleCardPro
         <div>
           <Label>Default role for new staff</Label>
           <Select
-            value={form.defaultStaffRoleId ?? "__none__"}
-            onValueChange={(v) => onChange("defaultStaffRoleId", v === "__none__" ? null : v)}
+            value={form.defaultStaffRoleId ?? SELECT_SENTINEL.NONE}
+            onValueChange={(v) => onChange("defaultStaffRoleId", v === SELECT_SENTINEL.NONE ? null : v)}
           >
             <SelectTrigger className="mt-1">
               <SelectValue placeholder="None (no auto-assign)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__none__">None</SelectItem>
+              <SelectItem value={SELECT_SENTINEL.NONE}>None</SelectItem>
               {roles.map((r) => {
                 const rid = String(r.id ?? r._id ?? "");
                 return (

@@ -12,23 +12,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, Plus, Trash2, Edit, Filter, X } from "lucide-react";
-import { useGetServersQuery, useDeleteServerMutation, useSyncServerAccountsMutation } from "@/store/api/serverApi";
+import { RefreshCw, Plus, Trash2, Edit, Filter, X, CopyPlus } from "lucide-react";
+import { useGetServersQuery, useDeleteServerMutation, useSyncServerAccountsMutation, useDuplicateServerMutation } from "@/store/api/serverApi";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { devLog } from "@/lib/devLog";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import { getServerGroups, SERVER_GROUP_OPTIONS, type ServerConfig, type ServerGroupOption } from "@/types/admin";
 
 const SERVER_LOCATIONS = [
@@ -46,6 +36,7 @@ type FilterLocation = "all" | (typeof SERVER_LOCATIONS)[number];
 export default function ServerConfigPage() {
     const { data: servers = [], isLoading, refetch } = useGetServersQuery();
     const [deleteServer] = useDeleteServerMutation();
+    const [duplicateServer] = useDuplicateServerMutation();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
 
@@ -67,6 +58,19 @@ export default function ServerConfigPage() {
             toast.success("Server deleted successfully");
         } catch (error) {
             toast.error("Failed to delete server");
+            devLog(error);
+        }
+    };
+
+    const handleDuplicateServer = async (id: string) => {
+        try {
+            const cloned = await duplicateServer(id).unwrap();
+            toast.success("Server duplicated. Opening copy in editor…");
+            if (typeof window !== "undefined") {
+                window.location.href = `/admin/server-config/${(cloned as any).id ?? (cloned as any)._id}`;
+            }
+        } catch (error) {
+            toast.error("Failed to duplicate server");
             devLog(error);
         }
     };
@@ -206,6 +210,7 @@ export default function ServerConfigPage() {
                                         key={server.id}
                                         server={server}
                                         onDelete={() => handleDeleteServer(server.id)}
+                                        onDuplicate={() => handleDuplicateServer(server.id)}
                                     />
                                 ))}
 
@@ -222,6 +227,7 @@ export default function ServerConfigPage() {
                                         key={server.id}
                                         server={server}
                                         onDelete={() => handleDeleteServer(server.id)}
+                                        onDuplicate={() => handleDuplicateServer(server.id)}
                                     />
                                 ))}
 
@@ -233,6 +239,7 @@ export default function ServerConfigPage() {
                                         key={server.id}
                                         server={server}
                                         onDelete={() => handleDeleteServer(server.id)}
+                                        onDuplicate={() => handleDuplicateServer(server.id)}
                                     />
                                 ))}
                         </>
@@ -256,8 +263,9 @@ export default function ServerConfigPage() {
     );
 }
 
-function ServerRow({ server, onDelete }: { server: ServerConfig; onDelete: () => void }) {
+function ServerRow({ server, onDelete, onDuplicate }: { server: ServerConfig; onDelete: () => void; onDuplicate: () => void }) {
     const [syncAccounts, { isLoading: isSyncing }] = useSyncServerAccountsMutation();
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const isCpanel = server.module?.type === "cpanel";
     const accountsDisplay =
         server.accountCount != null
@@ -267,7 +275,7 @@ function ServerRow({ server, onDelete }: { server: ServerConfig; onDelete: () =>
     const handleSyncAccounts = async () => {
         try {
             const result = await syncAccounts(server.id).unwrap();
-            toast.success(`Accounts: ${result.count} / ${result.maxAccounts}`);
+            toast.success(`Synced: ${result.count}/${result.maxAccounts} accounts, ${result.packageCount} package(s)`);
         } catch (err: unknown) {
             const message = err && typeof err === "object" && "data" in err
                 ? (err as { data?: { message?: string } }).data?.message
@@ -329,38 +337,37 @@ function ServerRow({ server, onDelete }: { server: ServerConfig; onDelete: () =>
                         </Button>
                     </Link>
 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                title="Delete Server"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Server?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Are you sure you want to delete <strong>{server.name}</strong>? This action
-                                    cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={onDelete}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        title="Duplicate Server"
+                        onClick={onDuplicate}
+                    >
+                        <CopyPlus className="w-4 h-4" />
+                    </Button>
+
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Delete Server"
+                        onClick={() => setShowDeleteConfirm(true)}
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
                 </div>
             </div>
+            <ConfirmActionDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete server?"
+                description={`This action cannot be undone. The server "${server.name}" will be permanently removed.`}
+                confirmLabel="Delete"
+                onConfirm={() => {
+                    onDelete();
+                    setShowDeleteConfirm(false);
+                }}
+            />
         </div>
     );
 }

@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ServerConfig } from "@/types/admin";
 import { Database, Eye, EyeOff } from "lucide-react";
+import { MODULE_TYPE } from "@/constants/status";
 
 interface ModuleConfigProps {
     formData: Omit<ServerConfig, "id">;
@@ -44,10 +45,10 @@ export function ModuleConfig({ formData, handleModuleChange }: ModuleConfigProps
                                 <SelectValue placeholder="Select module" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="cpanel">cPanel</SelectItem>
-                                <SelectItem value="directadmin">DirectAdmin</SelectItem>
-                                <SelectItem value="plesk">Plesk</SelectItem>
-                                <SelectItem value="virtualizor">Virtualizor</SelectItem>
+                                <SelectItem value={MODULE_TYPE.CPANEL}>cPanel</SelectItem>
+                                <SelectItem value={MODULE_TYPE.DIRECTADMIN}>DirectAdmin</SelectItem>
+                                <SelectItem value={MODULE_TYPE.PLESK}>Plesk</SelectItem>
+                                <SelectItem value={MODULE_TYPE.VIRTUALIZOR}>Virtualizor</SelectItem>
                             </SelectContent>
                         </Select>
                         <Button type="button" variant="outline" size="sm" className="h-9 px-4 text-purple-600 hover:text-purple-700 hover:bg-purple-50 border-purple-200">

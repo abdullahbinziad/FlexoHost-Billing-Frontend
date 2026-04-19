@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Loader2, Shield } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import { useGetMyClientProfileQuery } from "@/store/api/clientApi";
 import {
   useGetGrantsForClientQuery,
@@ -33,6 +34,7 @@ export default function GrantAccessPage() {
   const [revokeGrant, { isLoading: revoking }] = useRevokeGrantMutation();
 
   const [editingGrant, setEditingGrant] = useState<AccessGrant | null>(null);
+  const [grantToRevoke, setGrantToRevoke] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -82,11 +84,11 @@ export default function GrantAccessPage() {
 
   const handleRevoke = useCallback(
     async (grantId: string) => {
-      if (!confirm("Revoke this access?")) return;
       setError(null);
       try {
         await revokeGrant({ clientId, grantId }).unwrap();
         setSuccess("Access revoked.");
+        setGrantToRevoke(null);
       } catch (err: unknown) {
         const message =
           err && typeof err === "object" && "data" in err && err.data && typeof (err.data as { message?: string }).message === "string"
@@ -145,7 +147,7 @@ export default function GrantAccessPage() {
             grants={grants}
             isLoading={grantsLoading}
             onEdit={(grant) => setEditingGrant(grant)}
-            onRevoke={handleRevoke}
+            onRevoke={(grantId) => setGrantToRevoke(grantId)}
             isRevoking={revoking}
           />
         </CardContent>
@@ -163,6 +165,15 @@ export default function GrantAccessPage() {
         isSubmitting={updating}
         error={editError}
         onClearError={() => setEditError(null)}
+      />
+      <ConfirmActionDialog
+        open={!!grantToRevoke}
+        onOpenChange={(open) => !open && setGrantToRevoke(null)}
+        title="Revoke access?"
+        description="This action cannot be undone. The selected user will immediately lose access to shared services."
+        confirmLabel="Revoke"
+        onConfirm={() => grantToRevoke && handleRevoke(grantToRevoke)}
+        isLoading={revoking}
       />
     </div>
   );

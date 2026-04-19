@@ -14,6 +14,7 @@ import { DashboardStatCard } from "./DashboardStatCard";
 import { DashboardRecentInvoices } from "./DashboardRecentInvoices";
 import { DashboardRecentTickets } from "./DashboardRecentTickets";
 import { DashboardQuickLinks } from "./DashboardQuickLinks";
+import { INVOICE_STATUS_ADMIN, TICKET_STATUS } from "@/constants/status";
 
 export function ClientDashboard() {
   const { activeClientId, isProfileLoading, isActingAs, myProfile } = useActiveClient();
@@ -54,13 +55,13 @@ export function ClientDashboard() {
   const orderCount = ordersData?.totalResults ?? 0;
   const services = servicesData?.services ?? [];
   const unpaidCount = useMemo(
-    () => (invoicesData?.results ?? []).filter((inv) => inv.status !== "PAID").length,
+    () => (invoicesData?.results ?? []).filter((inv) => inv.status !== INVOICE_STATUS_ADMIN.PAID).length,
     [invoicesData?.results]
   );
   const openTicketsCount = useMemo(
     () =>
       (ticketsData?.results ?? []).filter(
-        (t) => t.status !== "closed" && t.status !== "resolved"
+        (t) => t.status !== TICKET_STATUS.CLOSED && t.status !== TICKET_STATUS.RESOLVED
       ).length,
     [ticketsData?.results]
   );
@@ -70,7 +71,7 @@ export function ClientDashboard() {
     today.setHours(0, 0, 0, 0);
     return invs.filter(
       (inv) =>
-        (inv.status === "UNPAID" || inv.status === "OVERDUE") &&
+        (inv.status === INVOICE_STATUS_ADMIN.UNPAID || inv.status === INVOICE_STATUS_ADMIN.OVERDUE) &&
         inv.dueDate &&
         new Date(inv.dueDate) < today
     ).length;

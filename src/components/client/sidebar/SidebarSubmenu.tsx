@@ -29,13 +29,18 @@ export function SidebarSubmenu({
               href={subItem.href}
               onClick={onLinkClick}
               className={cn(
-                "flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 isSubActive
                   ? "bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-semibold"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
               )}
             >
               <span>{subItem.label}</span>
+              {subItem.badge && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-yellow-400 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-yellow-950">
+                  {subItem.badge}
+                </span>
+              )}
             </Link>
             {hasNested && (
               <ul className="mt-1 ml-2 space-y-0.5 border-l-2 border-gray-100 dark:border-gray-800 pl-3">

@@ -12,8 +12,13 @@ import {
   saveActingAs,
   clearActingAsStorage,
 } from "./slices/activeClientPersistence";
-import checkoutReducer from "./slices/checkoutSlice";
+import checkoutReducer, { clearCheckout, resetCheckout } from "./slices/checkoutSlice";
 import currencyReducer from "./slices/currencySlice";
+import {
+  clearCheckoutStateStorage,
+  loadCheckoutState,
+  saveCheckoutState,
+} from "./slices/checkoutPersistence";
 
 const activeClientPersistenceMiddleware: Middleware = () => (next) => (action) => {
   const result = next(action);
@@ -25,6 +30,21 @@ const activeClientPersistenceMiddleware: Middleware = () => (next) => (action) =
   return result;
 };
 
+const checkoutPersistenceMiddleware: Middleware =
+  (storeApi) => (next) => (action) => {
+    const result = next(action);
+
+    if (clearCheckout.match(action) || resetCheckout.match(action)) {
+      clearCheckoutStateStorage();
+      return result;
+    }
+
+    saveCheckoutState(storeApi.getState().checkout);
+    return result;
+  };
+
+const preloadedCheckoutState = loadCheckoutState();
+
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
@@ -34,8 +54,17 @@ export const store = configureStore({
     currency: currencyReducer,
     // Add other slices here
   },
+  preloadedState: preloadedCheckoutState
+    ? {
+        checkout: preloadedCheckoutState,
+      }
+    : undefined,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware, activeClientPersistenceMiddleware),
+    getDefaultMiddleware().concat(
+      api.middleware,
+      activeClientPersistenceMiddleware,
+      checkoutPersistenceMiddleware
+    ),
 });
 
 setupListeners(store.dispatch);

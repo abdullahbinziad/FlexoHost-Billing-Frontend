@@ -5,6 +5,7 @@
 
 import { api } from "./baseApi";
 import { Promotion } from "@/types/admin/coupon";
+import type { PromoDiscountMeta } from "@/types/checkout";
 import { ApiResponse } from "@/types/api";
 
 export interface PromotionQueryParams {
@@ -112,7 +113,15 @@ export const promotionApi = api.injectEndpoints({
         }),
 
         validateCoupon: builder.mutation<
-            { valid: boolean; promotionId?: string; code?: string; discountAmount?: number; name?: string; source?: "promotion" | "affiliate" },
+            {
+                valid: boolean;
+                promotionId?: string;
+                code?: string;
+                discountAmount?: number;
+                name?: string;
+                source?: "promotion" | "affiliate";
+                discountMeta?: PromoDiscountMeta;
+            },
             { code: string; subtotal: number; currency?: string; clientId?: string; productIds?: string[]; productTypes?: string[]; productBillingCycle?: string; domainTlds?: string[]; domainBillingCycle?: string; isFirstOrder?: boolean }
         >({
             query: (body) => ({

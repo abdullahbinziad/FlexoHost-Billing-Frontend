@@ -31,12 +31,14 @@ import {
   useDeleteUserMutation,
   type AdminUser,
 } from "@/store/api/userApi";
+import { SELECT_SENTINEL } from "@/constants/status";
 import { useGetRolesQuery } from "@/store/api/roleApi";
 import { RootState } from "@/store";
 import { Search, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 
 export default function AdminUsersPage() {
   const currentUserRole = useSelector((s: RootState) => s.auth?.user?.role ?? "");
@@ -151,12 +153,18 @@ export default function AdminUsersPage() {
               className="pl-8 w-64"
             />
           </div>
-          <Select value={roleFilter || "__all__"} onValueChange={(v) => { setRoleFilter(v === "__all__" ? "" : v); setPage(1); }}>
+          <Select
+            value={roleFilter || SELECT_SENTINEL.ALL}
+            onValueChange={(v) => {
+              setRoleFilter(v === SELECT_SENTINEL.ALL ? "" : v);
+              setPage(1);
+            }}
+          >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Filter by role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">All roles</SelectItem>
+              <SelectItem value={SELECT_SENTINEL.ALL}>All roles</SelectItem>
               {rolesForDropdown.map((r) => {
                 const filterVal = r.slug === "super_admin" ? "superadmin" : r.slug ?? "";
                 return (
@@ -286,25 +294,14 @@ export default function AdminUsersPage() {
         />
       )}
 
-      <AlertDialog open={!!userToDelete} onOpenChange={(o) => !o && setUserToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate user?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The user will be deactivated and cannot log in. You can reactivate them later.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Deactivate
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmActionDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        title="Deactivate user?"
+        description="This action cannot be undone. The user will be deactivated and cannot log in."
+        confirmLabel="Deactivate"
+        onConfirm={handleDelete}
+      />
 
       <AlertDialog open={showBulkModal} onOpenChange={setShowBulkModal}>
         <AlertDialogContent>

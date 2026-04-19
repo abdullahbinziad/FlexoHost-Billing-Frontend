@@ -6,14 +6,17 @@ import { BackButton } from "@/components/ui/back-button";
 import { Server, HardDrive, Globe, ExternalLink, Loader2, Mail } from "lucide-react";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
 import { getServiceDisplayDomain } from "./utils";
+import { getPendingStatusLabel } from "@/utils/serviceStatusLabel";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 const STATUS_VARIANTS: Record<string, string> = {
-  active: "bg-green-500 text-white hover:bg-green-600",
-  suspended: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
-  expired: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  terminated: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
-  pending: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
-  provisioning: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  [SERVICE_STATUS.ACTIVE]: "bg-green-500 text-white hover:bg-green-600",
+  [SERVICE_STATUS.SUSPENDED]: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+  [SERVICE_STATUS.EXPIRED]: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  [SERVICE_STATUS.TERMINATED]: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+  [SERVICE_STATUS.CANCELLED]: "bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-300",
+  [SERVICE_STATUS.PENDING]: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  [SERVICE_STATUS.PROVISIONING]: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
 };
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -52,9 +55,17 @@ export function ServiceDetailHeader({
 }: ServiceDetailHeaderProps) {
   if (!service) return null;
 
-  const statusKey = service.status?.toLowerCase() ?? "pending";
+  const statusKey = normalizeServiceStatus(service.status, {
+    suspendedAt: service.suspendedAt,
+    terminatedAt: service.terminatedAt,
+    cancelledAt: service.cancelledAt,
+  });
   const typeKey = service.productType ?? "hosting";
   const displayIdentifier = getServiceDisplayDomain(service);
+  const statusLabel =
+    statusKey === SERVICE_STATUS.PENDING || statusKey === SERVICE_STATUS.PROVISIONING
+      ? getPendingStatusLabel(service.status, service.pendingReason)
+      : service.status;
   const icon = TYPE_ICONS[typeKey] ?? <Server className="w-6 h-6" />;
   const iconBg = TYPE_ICON_BG[typeKey] ?? "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400";
 
@@ -70,10 +81,10 @@ export function ServiceDetailHeader({
             </h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge
-                className={STATUS_VARIANTS[statusKey] ?? ""}
+                className={`capitalize ${STATUS_VARIANTS[statusKey] ?? ""}`}
                 variant={STATUS_VARIANTS[statusKey] ? "default" : "secondary"}
               >
-                {service.status}
+                {statusLabel}
               </Badge>
               {displayIdentifier && (
                 <>

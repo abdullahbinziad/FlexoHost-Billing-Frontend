@@ -31,6 +31,8 @@ import { toast } from "sonner";
 import { DomainPricingModal } from "./DomainPricingModal";
 import { DomainPricingRow } from "./DomainPricingRow";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
+import { REGISTRAR_PROVIDER, TLD_STATUS } from "@/constants/status";
 
 import { defaultPricingDetail, defaultCurrencyPricing } from "@/lib/domain-constants";
 
@@ -46,11 +48,12 @@ export function DomainPricingTable() {
 
     // New TLD State
     const [newTldName, setNewTldName] = useState("");
-    const [newTldRegistrar, setNewTldRegistrar] = useState("None");
+    const [newTldRegistrar, setNewTldRegistrar] = useState<string>(REGISTRAR_PROVIDER.NONE);
 
     // Pricing Modal State
     const [isPricingOpen, setIsPricingOpen] = useState(false);
     const [currentEditingTld, setCurrentEditingTld] = useState<TLD | null>(null);
+    const [tldToDelete, setTldToDelete] = useState<string | null>(null);
 
     const paginatedTlds = useMemo(
         () => tlds.slice((page - 1) * pageSize, page * pageSize),
@@ -94,8 +97,8 @@ export function DomainPricingTable() {
     // General Updates
     const handleUpdateRegistrar = async (id: string, registrar: string) => {
         try {
-            const enabled = registrar !== "None";
-            const provider = registrar === "None" ? "" : registrar;
+            const enabled = registrar !== REGISTRAR_PROVIDER.NONE;
+            const provider = registrar === REGISTRAR_PROVIDER.NONE ? "" : registrar;
             await updateTld({
                 id,
                 body: {
@@ -109,7 +112,7 @@ export function DomainPricingTable() {
     };
 
     const handleUpdateStatus = async (tld: TLD) => {
-        const newStatus = tld.status === "active" ? "inactive" : "active";
+        const newStatus = tld.status === TLD_STATUS.ACTIVE ? TLD_STATUS.INACTIVE : TLD_STATUS.ACTIVE;
         try {
             await updateTld({ id: tld._id, body: { status: newStatus } }).unwrap();
             toast.success(`TLD status updated to ${newStatus}`);
@@ -119,10 +122,10 @@ export function DomainPricingTable() {
     };
 
     const handleDeleteTld = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this TLD?")) return;
         try {
             await deleteTld(id).unwrap();
             toast.success("TLD deleted");
+            setTldToDelete(null);
         } catch (error) {
             toast.error("Failed to delete TLD");
         }
@@ -148,15 +151,15 @@ export function DomainPricingTable() {
                     idProtection: true
                 },
                 autoRegistration: {
-                    enabled: newTldRegistrar !== "None",
-                    provider: newTldRegistrar === "None" ? "" : newTldRegistrar
+                    enabled: newTldRegistrar !== REGISTRAR_PROVIDER.NONE,
+                    provider: newTldRegistrar === REGISTRAR_PROVIDER.NONE ? "" : newTldRegistrar
                 },
-                status: "active"
+                status: TLD_STATUS.ACTIVE
             }).unwrap();
 
             toast.success("TLD added successfully");
             setNewTldName("");
-            setNewTldRegistrar("None");
+            setNewTldRegistrar(REGISTRAR_PROVIDER.NONE);
         } catch (error) {
             toast.error("Failed to add TLD");
         }
@@ -232,7 +235,7 @@ export function DomainPricingTable() {
                                 onToggleSelect={toggleSelect}
                                 onOpenPricing={handleOpenPricing}
                                 onUpdateRegistrar={handleUpdateRegistrar}
-                                onDelete={handleDeleteTld}
+                                onDelete={(id) => setTldToDelete(id)}
                                 onToggleSpotlight={handleToggleSpotlight}
                                 onUpdateStatus={handleUpdateStatus}
                             />
@@ -256,9 +259,9 @@ export function DomainPricingTable() {
                                         <SelectValue placeholder="Select Registrar" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Dynadot">Dynadot</SelectItem>
-                                        <SelectItem value="namely">Namely</SelectItem>
-                                        <SelectItem value="None">None</SelectItem>
+                                        <SelectItem value={REGISTRAR_PROVIDER.DYNADOT}>Dynadot</SelectItem>
+                                        <SelectItem value={REGISTRAR_PROVIDER.NAMELY}>Namely</SelectItem>
+                                        <SelectItem value={REGISTRAR_PROVIDER.NONE}>None</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </TableCell>
@@ -300,6 +303,14 @@ export function DomainPricingTable() {
                 open={isPricingOpen}
                 onOpenChange={setIsPricingOpen}
                 tld={currentEditingTld}
+            />
+            <ConfirmActionDialog
+                open={!!tldToDelete}
+                onOpenChange={(open) => !open && setTldToDelete(null)}
+                title="Delete TLD?"
+                description="This action cannot be undone. The TLD entry will be permanently removed."
+                confirmLabel="Delete"
+                onConfirm={() => tldToDelete && handleDeleteTld(tldToDelete)}
             />
         </div>
     );

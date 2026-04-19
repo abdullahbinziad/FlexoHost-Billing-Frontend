@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useGetClientServicesQuery } from "@/store/api/servicesApi";
+import {
+  useAdminCancelPendingServiceMutation,
+  useAdminDeleteServiceMutation,
+  useAdminTerminateServiceMutation,
+  useGetClientServicesQuery,
+} from "@/store/api/servicesApi";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { getAdminClientServicePath } from "@/components/admin/services/utils";
 import { Plus, Server, HardDrive, Mail, MoreHorizontal } from "lucide-react";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { getPendingStatusLabel } from "@/utils/serviceStatusLabel";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 type ServicePageType = "hosting" | "vps" | "email";
 
@@ -34,6 +43,8 @@ const statusBadge: Record<string, string> = {
   suspended: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
   expired: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
   pending: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  cancelled: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  terminated: "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
 };
 
 const queryTypeMap: Record<ServicePageType, "HOSTING" | "VPS" | "EMAIL"> = {
@@ -72,6 +83,10 @@ export function ClientServiceListPage({
   const formatCurrency = useFormatCurrency();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [terminateService, { isLoading: isTerminating }] = useAdminTerminateServiceMutation();
+  const [cancelPendingService, { isLoading: isCancellingPending }] = useAdminCancelPendingServiceMutation();
+  const [deleteService, { isLoading: isDeleting }] = useAdminDeleteServiceMutation();
+  const [confirmAction, setConfirmAction] = useState<{ type: "cancel" | "delete"; serviceId: string } | null>(null);
   const { data, isLoading, error } = useGetClientServicesQuery(
     { clientId, params: { type: queryTypeMap[type], page, limit: pageSize } },
     { skip: !clientId }
@@ -82,6 +97,32 @@ export function ClientServiceListPage({
   const totalPages = data?.pages ?? 1;
   const icon = iconMap[type];
   const color = colorMap[type];
+  const isConfirmBusy = isTerminating || isCancellingPending || isDeleting;
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    try {
+      if (confirmAction.type === "cancel") {
+        const targetService = services.find((s) => s.id === confirmAction.serviceId);
+        const normalizedStatus = normalizeServiceStatus(targetService?.status);
+        const usePendingCancel =
+          normalizedStatus === SERVICE_STATUS.PENDING ||
+          normalizedStatus === SERVICE_STATUS.PROVISIONING;
+        if (usePendingCancel) {
+          await cancelPendingService({ serviceId: confirmAction.serviceId, clientId }).unwrap();
+        } else {
+          await terminateService({ serviceId: confirmAction.serviceId, clientId }).unwrap();
+        }
+        toast.success("Service cancelled");
+      } else {
+        await deleteService({ serviceId: confirmAction.serviceId, clientId }).unwrap();
+        toast.success("Service deleted");
+      }
+      setConfirmAction(null);
+    } catch (e: any) {
+      toast.error(e?.data?.message || e?.message || `Failed to ${confirmAction.type} service`);
+    }
+  };
 
   return (
     <Card className="border-none shadow-none">
@@ -134,6 +175,18 @@ export function ClientServiceListPage({
                   ) : (
                     services.map((service) => {
                       const detailsHref = getAdminClientServicePath(clientId, service.id, service.productType);
+                      const normalizedStatus = normalizeServiceStatus(service.status);
+                      const isPendingLike =
+                        normalizedStatus === SERVICE_STATUS.PENDING ||
+                        normalizedStatus === SERVICE_STATUS.PROVISIONING;
+                      const statusLabel = isPendingLike
+                        ? getPendingStatusLabel(service.status, service.pendingReason)
+                        : service.status;
+                      const cancelActionLabel = isPendingLike ? "Cancel Pending Service" : "Terminate Service";
+                      const cancelConfirmTitle = isPendingLike ? "Cancel pending service?" : "Terminate this service?";
+                      const cancelConfirmDescription = isPendingLike
+                        ? "This will cancel the service before activation/provision completion and stop pending provisioning."
+                        : "This action cannot be undone. It will terminate the service.";
 
                       return (
                         <TableRow key={service.id}>
@@ -181,10 +234,10 @@ export function ClientServiceListPage({
                           <TableCell>{service.nextDueDate || "—"}</TableCell>
                           <TableCell>
                             <Badge
-                              className={statusBadge[service.status] || ""}
+                              className={`capitalize ${statusBadge[service.status] || ""}`}
                               variant={statusBadge[service.status] ? "default" : "secondary"}
                             >
-                              {service.status}
+                              {statusLabel}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -200,8 +253,19 @@ export function ClientServiceListPage({
                                   <DropdownMenuItem>View Details</DropdownMenuItem>
                                 </Link>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">
-                                  Request Cancellation
+                                <DropdownMenuItem
+                                  className="text-amber-600"
+                                  disabled={isTerminating}
+                                  onClick={() => setConfirmAction({ type: "cancel", serviceId: service.id })}
+                                >
+                                  {cancelActionLabel}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  disabled={isDeleting}
+                                  onClick={() => setConfirmAction({ type: "delete", serviceId: service.id })}
+                                >
+                                  Delete Service
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -230,6 +294,45 @@ export function ClientServiceListPage({
             }}
           />
         </div>
+        <ConfirmActionDialog
+          open={!!confirmAction}
+          onOpenChange={(open) => !open && setConfirmAction(null)}
+          title={(() => {
+            if (confirmAction?.type === "delete") return "Delete service permanently?";
+            const targetService = services.find((s) => s.id === confirmAction?.serviceId);
+            const normalizedStatus = normalizeServiceStatus(targetService?.status);
+            const isPendingLike =
+              normalizedStatus === SERVICE_STATUS.PENDING ||
+              normalizedStatus === SERVICE_STATUS.PROVISIONING;
+            return isPendingLike ? "Cancel pending service?" : "Terminate this service?";
+          })()}
+          description={
+            (() => {
+              if (confirmAction?.type === "delete") {
+                return "This action cannot be undone. The service record and linked details will be removed.";
+              }
+              const targetService = services.find((s) => s.id === confirmAction?.serviceId);
+              const normalizedStatus = normalizeServiceStatus(targetService?.status);
+              const isPendingLike =
+                normalizedStatus === SERVICE_STATUS.PENDING ||
+                normalizedStatus === SERVICE_STATUS.PROVISIONING;
+              return isPendingLike
+                ? "This will cancel the service before activation/provision completion and stop pending provisioning."
+                : "This action cannot be undone. It will terminate the service.";
+            })()
+          }
+          confirmLabel={(() => {
+            if (confirmAction?.type === "delete") return "Delete Service";
+            const targetService = services.find((s) => s.id === confirmAction?.serviceId);
+            const normalizedStatus = normalizeServiceStatus(targetService?.status);
+            const isPendingLike =
+              normalizedStatus === SERVICE_STATUS.PENDING ||
+              normalizedStatus === SERVICE_STATUS.PROVISIONING;
+            return isPendingLike ? "Cancel Pending Service" : "Terminate Service";
+          })()}
+          onConfirm={handleConfirmAction}
+          isLoading={isConfirmBusy}
+        />
       </CardContent>
     </Card>
   );

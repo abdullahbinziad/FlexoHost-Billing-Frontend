@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { ArrowRight, Tag, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ interface OrderSummaryCardProps {
   onAgreeToTermsChange: (agree: boolean) => void;
   onCheckout: () => void;
   checkoutLoading?: boolean;
-  onPromoCodeApply?: (code: string) => Promise<boolean>;
+  onPromoCodeApply?: (code: string) => Promise<{ success: boolean; error?: string }>;
   onPromoCodeRemove?: () => void;
   appliedPromoCode?: string;
   appliedDiscountLabel?: string;
@@ -51,15 +52,20 @@ export function OrderSummaryCard({
     setPromoError(null);
 
     try {
-      const success = await onPromoCodeApply(promoCode.trim().toUpperCase());
-      if (success) {
+      const result = await onPromoCodeApply(promoCode.trim().toUpperCase());
+      if (result.success) {
         setPromoCode("");
         setIsExpanded(false);
+        toast.success("Promo code applied.");
       } else {
-        setPromoError("Invalid or expired promo code");
+        const errMsg = result.error || "Invalid or expired promo code";
+        setPromoError(errMsg);
+        toast.error(errMsg);
       }
     } catch (error) {
-      setPromoError("Failed to apply promo code. Please try again.");
+      const errMsg = "Failed to apply promo code. Please try again.";
+      setPromoError(errMsg);
+      toast.error(errMsg);
     } finally {
       setIsApplying(false);
     }

@@ -9,15 +9,16 @@ import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { cn } from "@/lib/utils";
 import { CheckCircle, XCircle, Ban, Mail, Trash2 } from "lucide-react";
 import type { InvoiceApiResponse } from "@/store/api/invoiceApi";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 const getStatusColor = (status: string) => {
     switch (status?.toUpperCase()) {
-        case "PAID":
+        case INVOICE_STATUS_ADMIN.PAID:
             return "bg-emerald-500/90 text-white";
-        case "UNPAID":
-        case "OVERDUE":
+        case INVOICE_STATUS_ADMIN.UNPAID:
+        case INVOICE_STATUS_ADMIN.OVERDUE:
             return "bg-rose-500/90 text-white";
-        case "CANCELLED":
+        case INVOICE_STATUS_ADMIN.CANCELLED:
             return "bg-slate-500/90 text-white";
         default:
             return "bg-amber-500/90 text-white";
@@ -144,8 +145,8 @@ export function AdminInvoiceSummary({
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onStatusChange("UNPAID")}
-                        disabled={isUpdating || (invoice.status === "UNPAID" || invoice.status === "OVERDUE")}
+                        onClick={() => onStatusChange(INVOICE_STATUS_ADMIN.UNPAID)}
+                        disabled={isUpdating || (invoice.status === INVOICE_STATUS_ADMIN.UNPAID || invoice.status === INVOICE_STATUS_ADMIN.OVERDUE)}
                         className="h-9 gap-1.5 w-full justify-start"
                     >
                         <XCircle className="h-3.5 w-3.5 shrink-0" />
@@ -156,8 +157,8 @@ export function AdminInvoiceSummary({
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => onStatusChange("CANCELLED")}
-                        disabled={isUpdating || invoice.status === "CANCELLED"}
+                        onClick={() => onStatusChange(INVOICE_STATUS_ADMIN.CANCELLED)}
+                        disabled={isUpdating || invoice.status === INVOICE_STATUS_ADMIN.CANCELLED}
                         className="h-9 gap-1.5 w-full justify-start"
                     >
                         <Ban className="h-3.5 w-3.5 shrink-0" />
@@ -170,7 +171,7 @@ export function AdminInvoiceSummary({
                             variant="outline"
                             size="sm"
                             onClick={onSendReminder}
-                            disabled={isUpdating || invoice.status === "PAID" || invoice.status === "CANCELLED"}
+                            disabled={isUpdating || invoice.status === INVOICE_STATUS_ADMIN.PAID || invoice.status === INVOICE_STATUS_ADMIN.CANCELLED}
                             className="h-9 gap-1.5 w-full justify-start"
                         >
                             <Mail className="h-3.5 w-3.5 shrink-0" />
@@ -195,8 +196,8 @@ export function AdminInvoiceSummary({
                     {/* 5. Mark Paid (last in order) - full width */}
                     <Button
                         size="sm"
-                        onClick={() => onStatusChange("PAID")}
-                        disabled={isUpdating || invoice.status === "PAID"}
+                        onClick={() => onStatusChange(INVOICE_STATUS_ADMIN.PAID)}
+                        disabled={isUpdating || invoice.status === INVOICE_STATUS_ADMIN.PAID}
                         className="col-span-2 h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700 w-full justify-start"
                     >
                         <CheckCircle className="h-3.5 w-3.5 shrink-0" />

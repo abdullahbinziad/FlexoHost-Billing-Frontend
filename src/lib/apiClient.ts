@@ -7,6 +7,14 @@ import { API_CONFIG } from '@/config/api';
 import { getAccessToken } from '@/utils/tokenManager';
 import { getCsrfToken } from '@/lib/csrfToken';
 import { devLog } from '@/lib/devLog';
+import { store } from '@/store';
+import { api } from '@/store/api/baseApi';
+import {
+    isAuthPublicUnauthorizedPath,
+    isGuestAuthFlowRoute,
+    performAuthSessionCleanup,
+    redirectToLoginAfterSessionExpired,
+} from '@/utils/authSessionExpired';
 
 export interface ApiResponse<T = any> {
     success: boolean;
@@ -111,6 +119,17 @@ class ApiClient {
             }
 
             if (!response.ok) {
+                if (
+                    response.status === 401 &&
+                    typeof window !== 'undefined' &&
+                    !isAuthPublicUnauthorizedPath(endpoint) &&
+                    !isGuestAuthFlowRoute()
+                ) {
+                    performAuthSessionCleanup(store.dispatch);
+                    store.dispatch(api.util.resetApiState());
+                    redirectToLoginAfterSessionExpired();
+                }
+
                 // Handle different error status codes
                 let errorMessage = data.message || 'Request failed';
 

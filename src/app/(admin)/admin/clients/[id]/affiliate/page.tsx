@@ -21,6 +21,7 @@ import {
   useUpdateAffiliateClientSettingsMutation,
   useUpdateAffiliateClientStatusMutation,
 } from "@/store/api/affiliateApi";
+import { AFFILIATE_PROFILE_STATUS } from "@/constants/status";
 
 function humanizeStatus(value?: string) {
   return (value || "").replace(/_/g, " ");
@@ -104,11 +105,15 @@ export default function ClientAffiliateAdminPage() {
     }
   };
 
-  const handleStatusChange = async (status: "active" | "paused") => {
+  const handleStatusChange = async (
+    status: (typeof AFFILIATE_PROFILE_STATUS)[keyof typeof AFFILIATE_PROFILE_STATUS]
+  ) => {
     if (!clientId) return;
     try {
       await updateAffiliateClientStatus({ clientId, status }).unwrap();
-      toast.success(`Affiliate ${status === "active" ? "resumed" : "paused"}.`);
+      toast.success(
+        `Affiliate ${status === AFFILIATE_PROFILE_STATUS.ACTIVE ? "resumed" : "paused"}.`
+      );
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to update affiliate status.");
     }
@@ -208,16 +213,16 @@ export default function ClientAffiliateAdminPage() {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={isUpdatingStatus || data.profile?.status === "active"}
-                  onClick={() => handleStatusChange("active")}
+                  disabled={isUpdatingStatus || data.profile?.status === AFFILIATE_PROFILE_STATUS.ACTIVE}
+                  onClick={() => handleStatusChange(AFFILIATE_PROFILE_STATUS.ACTIVE)}
                 >
                   {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : "Resume"}
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={isUpdatingStatus || data.profile?.status === "paused"}
-                  onClick={() => handleStatusChange("paused")}
+                  disabled={isUpdatingStatus || data.profile?.status === AFFILIATE_PROFILE_STATUS.PAUSED}
+                  onClick={() => handleStatusChange(AFFILIATE_PROFILE_STATUS.PAUSED)}
                 >
                   {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : "Pause"}
                 </Button>

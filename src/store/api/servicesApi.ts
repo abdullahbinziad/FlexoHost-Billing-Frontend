@@ -2,6 +2,11 @@ import { api } from "./baseApi";
 import { ApiResponse } from "@/types/api";
 import type { HostingService } from "@/types/hosting";
 import type { HostingServiceDetails } from "@/types/hosting-manage";
+import {
+  SERVICE_STATUS,
+  normalizeServiceStatus,
+  toHostingServiceStatus,
+} from "@/constants/serviceStatus";
 
 /** Backend service list item (enriched with displayName, identifier, serverLocation) */
 export interface ClientServiceApiItem {
@@ -20,6 +25,8 @@ export interface ClientServiceApiItem {
   suspendedAt?: string;
   /** ISO date string - when the service was terminated (admin tracking) */
   terminatedAt?: string;
+  /** ISO date string - when the service was cancelled before activation */
+  cancelledAt?: string;
   createdAt?: string;
   updatedAt?: string;
   graceUntil?: string;
@@ -50,12 +57,7 @@ export interface ClientServiceWithDetailsResponse {
 }
 
 function mapStatus(status: string): HostingService["status"] {
-  const s = (status || "").toLowerCase();
-  if (s === "active") return "active";
-  if (s === "suspended") return "suspended";
-  if (s === "terminated" || s === "failed") return "terminated";
-  if (s === "provisioning") return "provisioning";
-  return "pending";
+  return toHostingServiceStatus(normalizeServiceStatus(status));
 }
 
 function formatDate(d: string | Date): string {
@@ -80,7 +82,27 @@ function mapProductType(type: string | undefined): HostingService["productType"]
 export function mapServiceToHostingService(s: ClientServiceApiItem): HostingService {
   const nextDue = s.nextDueDate ? new Date(s.nextDueDate) : null;
   const now = new Date();
-  const statusMapped = mapStatus(s.status);
+  const normalizedStatus = normalizeServiceStatus(s.status, {
+    suspendedAt: s.suspendedAt,
+    terminatedAt: s.terminatedAt,
+    cancelledAt: s.cancelledAt,
+  });
+  const statusMapped = toHostingServiceStatus(normalizedStatus);
+  const rawStatus = String(s.status || "").trim().toUpperCase();
+  const hasProvisioningIssue = Boolean(
+    (s as any)?.provisioning?.lastError ||
+      (s as any)?.provisioningError ||
+      (s as any)?.meta?.provisioningLastError
+  );
+  const pendingReason: HostingService["pendingReason"] | undefined =
+    normalizedStatus === SERVICE_STATUS.PROVISIONING ||
+    normalizedStatus === SERVICE_STATUS.FAILED ||
+    rawStatus === SERVICE_STATUS.FAILED ||
+    hasProvisioningIssue
+      ? "provisioning"
+      : normalizedStatus === SERVICE_STATUS.PENDING
+        ? "unpaid_invoice"
+        : undefined;
   const expiredDaysAgo =
     nextDue && nextDue < now && (statusMapped === "terminated" || statusMapped === "expired")
       ? Math.floor((now.getTime() - nextDue.getTime()) / (24 * 60 * 60 * 1000))
@@ -97,8 +119,13 @@ export function mapServiceToHostingService(s: ClientServiceApiItem): HostingServ
     renewalDate: formatDate(s.nextDueDate),
     suspendedAt: s.suspendedAt ? (typeof s.suspendedAt === "string" ? s.suspendedAt : new Date(s.suspendedAt).toISOString()) : undefined,
     terminatedAt: s.terminatedAt ? (typeof s.terminatedAt === "string" ? s.terminatedAt : new Date(s.terminatedAt).toISOString()) : undefined,
-    createdAt: s.createdAt ? (typeof s.createdAt === "string" ? s.createdAt : new Date(s.createdAt).toISOString()) : undefined,
-    updatedAt: s.updatedAt ? (typeof s.updatedAt === "string" ? s.updatedAt : new Date(s.updatedAt).toISOString()) : undefined,
+    cancelledAt: s.cancelledAt
+      ? typeof s.cancelledAt === "string"
+        ? s.cancelledAt
+        : new Date(s.cancelledAt).toISOString()
+      : undefined,
+    createdAt: (s.meta?.trackingCreatedAt as string | undefined) || (s.createdAt ? (typeof s.createdAt === "string" ? s.createdAt : new Date(s.createdAt).toISOString()) : undefined),
+    updatedAt: (s.meta?.trackingUpdatedAt as string | undefined) || (s.updatedAt ? (typeof s.updatedAt === "string" ? s.updatedAt : new Date(s.updatedAt).toISOString()) : undefined),
     graceUntil: s.graceUntil ? (typeof s.graceUntil === "string" ? s.graceUntil : new Date(s.graceUntil).toISOString()) : undefined,
     autoSuspendAt: s.meta?.autoSuspendAt ?? undefined,
     autoTerminateAt: s.meta?.autoTerminateAt ?? undefined,
@@ -109,6 +136,7 @@ export function mapServiceToHostingService(s: ClientServiceApiItem): HostingServ
     },
     productType: mapProductType(s.type),
     serverLocation: s.serverLocation,
+    pendingReason,
   };
 }
 
@@ -123,15 +151,18 @@ export function mapServiceWithDetailsToHostingDetails(
   const diskMb = details.resourceLimits?.diskMb ?? 0;
   const bandwidthMb = details.resourceLimits?.bandwidthMb ?? 0;
 
+  const orderedLoc = (svc as { meta?: { orderedServerLocation?: string } }).meta?.orderedServerLocation;
+
   return {
     ...base,
-    serverLocation: details.serverLocation ?? base.serverLocation,
+    serverLocation: details.serverLocation ?? orderedLoc ?? base.serverLocation,
     domain:
-      details.domainName ||
       details.primaryDomain ||
+      details.domainName ||
       (base.identifier && base.identifier !== "—" ? base.identifier : "—"),
     rawStatus: svc.status,
-    packageName: base.name,
+    packageName: ((svc as any).meta?.adminPackageName as string) || base.name,
+    packageProductId: ((svc as any).meta?.adminPackageProductId as string) || undefined,
     usage: {
       disk: {
         used: 0,
@@ -145,15 +176,34 @@ export function mapServiceWithDetailsToHostingDetails(
       },
     },
     billing: {
-      firstPaymentAmount: svc.priceSnapshot?.total ?? base.pricing.amount,
+      firstPaymentAmount: Number((svc as any).meta?.adminBillingFirstPaymentAmount ?? svc.priceSnapshot?.total ?? base.pricing.amount),
       recurringAmount: base.pricing.amount,
       billingCycle: base.pricing.billingCycle.charAt(0).toUpperCase() + base.pricing.billingCycle.slice(1),
-      paymentMethod: "—",
-      registrationDate: formatDate((svc as any).createdAt) || "—",
+      paymentMethod: String((svc as any).meta?.adminBillingPaymentMethod ?? "—"),
+      registrationDate: formatDate(((svc as any).meta?.adminBillingRegistrationDate as string) || (svc as any).createdAt) || "—",
       nextDueDate: base.nextDueDate ?? "—",
       currency: base.pricing.currency,
     },
     adminNotes: (svc as any).meta?.adminNotes ?? "",
+    moduleContext: {
+      accountUsername: (details as any)?.accountUsername || ((svc as any).meta?.lastModuleUsername as string) || undefined,
+      serverId: ((details as any)?.serverId ? String((details as any).serverId) : undefined) || ((svc as any).meta?.lastModuleServerId as string) || undefined,
+      serverGroup: ((svc as any).meta?.lastModuleServerGroup as string) || undefined,
+      serverLocation:
+        (details as any)?.serverLocation ||
+        ((svc as any).meta?.orderedServerLocation as string) ||
+        ((svc as any).meta?.lastModuleServerLocation as string) ||
+        base.serverLocation ||
+        undefined,
+      whmPackage:
+        ((svc as any).meta?.lastModuleWhmPackage as string) ||
+        ((svc as any).meta?.orderedWhmPackage as string) ||
+        ((details as any)?.packageId ? String((details as any).packageId) : undefined) ||
+        undefined,
+      hasSavedPassword: Boolean((svc as any).meta?.lastModulePasswordEncrypted),
+      lastPasswordUpdatedAt: ((svc as any).meta?.lastModulePasswordUpdatedAt as string) || undefined,
+      lastUsedAt: ((svc as any).meta?.lastModuleUsedAt as string) || undefined,
+    },
   };
 }
 
@@ -166,6 +216,7 @@ export interface GetClientServicesParams {
 
 export type AutomationTaskKey =
   | "renewals"
+  | "billable-items-recurring"
   | "overdue-suspensions"
   | "invoice-reminders"
   | "terminations"
@@ -393,6 +444,38 @@ export const servicesApi = api.injectEndpoints({
         return tags;
       },
     }),
+    adminCancelPendingService: builder.mutation<
+      { data: unknown },
+      string | { serviceId: string; clientId?: string }
+    >({
+      query: (arg) => ({
+        url: `/services/admin/${typeof arg === "string" ? arg : arg.serviceId}/cancel-pending`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _err, arg) => {
+        const id = typeof arg === "string" ? arg : arg.serviceId;
+        const clientId = typeof arg === "object" ? arg.clientId : undefined;
+        const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id }];
+        if (clientId) tags.push({ type: "Service", id: `LIST-${clientId}` });
+        return tags;
+      },
+    }),
+    adminDeleteService: builder.mutation<
+      { data: unknown },
+      string | { serviceId: string; clientId?: string }
+    >({
+      query: (arg) => ({
+        url: `/services/admin/${typeof arg === "string" ? arg : arg.serviceId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_result, _err, arg) => {
+        const id = typeof arg === "string" ? arg : arg.serviceId;
+        const clientId = typeof arg === "object" ? arg.clientId : undefined;
+        const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id }];
+        if (clientId) tags.push({ type: "Service", id: `LIST-${clientId}` });
+        return tags;
+      },
+    }),
     adminChangePackage: builder.mutation<
       { data: unknown },
       { serviceId: string; plan: string; clientId?: string }
@@ -408,18 +491,82 @@ export const servicesApi = api.injectEndpoints({
         return tags;
       },
     }),
+    adminChangePassword: builder.mutation<
+      { data: unknown },
+      { serviceId: string; password: string; username?: string; clientId?: string }
+    >({
+      query: ({ serviceId, password, username }) => ({
+        url: `/services/admin/${serviceId}/change-password`,
+        method: "POST",
+        body: { password, username },
+      }),
+      invalidatesTags: (_result, _err, { serviceId, clientId }) => {
+        const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id: serviceId }];
+        if (clientId) tags.push({ type: "Service", id: `LIST-${clientId}` });
+        return tags;
+      },
+    }),
+    adminRevealModulePassword: builder.mutation<
+      { password: string; message?: string },
+      { serviceId: string }
+    >({
+      query: ({ serviceId }) => ({
+        url: `/services/admin/${serviceId}/module-password`,
+        method: "GET",
+      }),
+      transformResponse: (response: ApiResponse<{ password: string }>) => ({
+        password: response.data?.password ?? "",
+        message: response.message,
+      }),
+    }),
     adminRetryProvision: builder.mutation<
       { data: unknown },
-      string | { serviceId: string; clientId?: string }
+      string | {
+        serviceId: string;
+        clientId?: string;
+        username?: string;
+        password?: string;
+        serverId?: string;
+        serverGroup?: string;
+        serverLocation?: string;
+        plan?: string;
+        whmPackage?: string;
+      }
     >({
       query: (arg) => ({
         url: `/services/admin/${typeof arg === "string" ? arg : arg.serviceId}/retry-provision`,
         method: "POST",
+        body: typeof arg === "string"
+          ? {}
+          : {
+            username: arg.username,
+            password: arg.password,
+            serverId: arg.serverId,
+            serverGroup: arg.serverGroup,
+            serverLocation: arg.serverLocation,
+            plan: arg.plan,
+            whmPackage: arg.whmPackage,
+          },
       }),
       invalidatesTags: (_result, _err, arg) => {
         const id = typeof arg === "string" ? arg : arg.serviceId;
         const clientId = typeof arg === "object" ? arg.clientId : undefined;
         const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id }];
+        if (clientId) tags.push({ type: "Service", id: `LIST-${clientId}` });
+        return tags;
+      },
+    }),
+    adminUpdateStatus: builder.mutation<
+      { data: unknown; message?: string },
+      { serviceId: string; status: string; clientId?: string }
+    >({
+      query: ({ serviceId, status }) => ({
+        url: `/services/admin/${serviceId}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: (_result, _err, { serviceId, clientId }) => {
+        const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id: serviceId }];
         if (clientId) tags.push({ type: "Service", id: `LIST-${clientId}` });
         return tags;
       },
@@ -432,6 +579,37 @@ export const servicesApi = api.injectEndpoints({
         url: `/services/admin/${serviceId}/automation`,
         method: "POST",
         body: { autoSuspendAt: autoSuspendAt ?? null, autoTerminateAt: autoTerminateAt ?? null },
+      }),
+      invalidatesTags: (_result, _err, { serviceId, clientId }) => {
+        const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id: serviceId }];
+        if (clientId) tags.push({ type: "Service", id: `LIST-${clientId}` });
+        return tags;
+      },
+    }),
+    adminUpdateServiceProfile: builder.mutation<
+      { data: unknown; message?: string },
+      {
+        serviceId: string;
+        clientId?: string;
+        productId?: string;
+        packageName?: string;
+        primaryDomain?: string;
+        serverLocation?: string;
+        billingCycle?: string;
+        nextDueDate?: string;
+        registrationDate?: string;
+        paymentMethod?: string;
+        firstPaymentAmount?: number;
+        createdAt?: string;
+        updatedAt?: string;
+        recurringAmount?: number;
+        currency?: string;
+      }
+    >({
+      query: ({ serviceId, ...body }) => ({
+        url: `/services/admin/${serviceId}/profile`,
+        method: "PATCH",
+        body,
       }),
       invalidatesTags: (_result, _err, { serviceId, clientId }) => {
         const tags: Array<{ type: "Service"; id: string }> = [{ type: "Service", id: serviceId }];
@@ -542,9 +720,15 @@ export const {
   useAdminSuspendServiceMutation,
   useAdminUnsuspendServiceMutation,
   useAdminTerminateServiceMutation,
+  useAdminCancelPendingServiceMutation,
+  useAdminDeleteServiceMutation,
   useAdminChangePackageMutation,
+  useAdminChangePasswordMutation,
+  useAdminRevealModulePasswordMutation,
   useAdminRetryProvisionMutation,
+  useAdminUpdateStatusMutation,
   useAdminUpdateAutomationMutation,
+  useAdminUpdateServiceProfileMutation,
   useAdminUpdateServiceNotesMutation,
   useGetAutomationSummaryQuery,
   useGetAutomationRunsQuery,

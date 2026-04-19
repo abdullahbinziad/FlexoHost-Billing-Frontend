@@ -18,6 +18,7 @@ export function normalizeRole(role: unknown): string {
 export interface SubMenuItem {
   label: string;
   href: string;
+  badge?: string;
   requiredPermissions?: string[];
   /** Nested submenu (e.g. Billable Items → Add / Recurring / Uninvoiced) */
   submenu?: SubMenuItem[];

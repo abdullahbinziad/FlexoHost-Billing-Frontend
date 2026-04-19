@@ -25,6 +25,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { formatDate } from "@/utils/format";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { TICKET_STATUS } from "@/constants/status";
 
 const STATUS_LABELS: Record<string, string> = {
   open: "Open",
@@ -223,7 +224,7 @@ export default function ClientTicketsPage() {
                     <TableCell>
                       <Badge
                         variant={
-                          t.status === "closed" || t.status === "resolved"
+                          t.status === TICKET_STATUS.CLOSED || t.status === TICKET_STATUS.RESOLVED
                             ? "outline"
                             : "secondary"
                         }

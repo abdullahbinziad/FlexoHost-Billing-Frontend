@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { TicketStatusBadge, TICKET_STATUS_LABELS } from "@/components/shared/ticket/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/shared/ticket/TicketPriorityBadge";
 import { devLog } from "@/lib/devLog";
+import { TICKET_STATUS } from "@/constants/status";
 
 const CLIENT_STATUS_LABELS: Record<string, string> = {
   ...TICKET_STATUS_LABELS,
@@ -60,7 +61,7 @@ export default function ClientTicketDetailPage() {
   };
 
   const isClosedOrResolved =
-    ticket?.status === "closed" || ticket?.status === "resolved";
+    ticket?.status === TICKET_STATUS.CLOSED || ticket?.status === TICKET_STATUS.RESOLVED;
 
   const handleReloadMessages = async () => {
     const result = await refetch();
@@ -264,7 +265,7 @@ export default function ClientTicketDetailPage() {
         <Card className="border-muted bg-muted/30">
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
             This ticket is{" "}
-            {ticket.status === "resolved" ? "resolved" : "closed"}. Open a new
+            {ticket.status === TICKET_STATUS.RESOLVED ? "resolved" : "closed"}. Open a new
             ticket if you need further assistance.
           </CardContent>
         </Card>

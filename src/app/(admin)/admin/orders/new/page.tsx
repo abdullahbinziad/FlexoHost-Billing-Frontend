@@ -33,6 +33,7 @@ import type { ClientListItem } from "@/store/api/clientApi";
 import type { Product } from "@/types/admin";
 import type { TLD } from "@/types/admin";
 import { toast } from "sonner";
+import { SELECT_SENTINEL } from "@/constants/status";
 
 const FALLBACK_PAYMENT_METHODS = [
     { id: "manual", name: "Manual / Bank Transfer" },
@@ -128,7 +129,15 @@ export default function AddNewOrderPage() {
     const [orderStatus, setOrderStatus] = useState("PENDING_PAYMENT");
 
     const [products, setProducts] = useState<ProductRow[]>([
-        { id: "1", productId: "__none__", domain: "", billingCycle: "annually", serverLocation: "__auto__", quantity: 1, priceOverride: "" }
+        {
+            id: "1",
+            productId: SELECT_SENTINEL.NONE,
+            domain: "",
+            billingCycle: "annually",
+            serverLocation: SELECT_SENTINEL.AUTO,
+            quantity: 1,
+            priceOverride: "",
+        }
     ]);
     const [domains, setDomains] = useState<DomainRow[]>([]);
 
@@ -179,7 +188,7 @@ export default function AddNewOrderPage() {
     const addProductRow = () => {
         setProducts([...products, {
             id: Math.random().toString(36).slice(2, 9),
-            productId: "__none__", domain: "", billingCycle: "annually", serverLocation: "__auto__", quantity: 1, priceOverride: ""
+            productId: SELECT_SENTINEL.NONE, domain: "", billingCycle: "annually", serverLocation: SELECT_SENTINEL.AUTO, quantity: 1, priceOverride: ""
         }]);
     };
     const removeProductRow = (id: string) => {
@@ -203,7 +212,7 @@ export default function AddNewOrderPage() {
     const addDomainRow = () => {
         setDomains([...domains, {
             id: Math.random().toString(36).slice(2, 9),
-            type: "register", domain: "", tld: "__none__", period: "1", eppCode: "", priceOverride: ""
+            type: "register", domain: "", tld: SELECT_SENTINEL.NONE, period: "1", eppCode: "", priceOverride: ""
         }]);
     };
     const removeDomainRow = (id: string) => {
@@ -213,20 +222,20 @@ export default function AddNewOrderPage() {
         setDomains(domains.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
     };
 
-    const hasProduct = products.some((p) => p.productId && p.productId !== "__none__");
-    const hasDomain = domains.some((d) => d.domain && d.tld && d.tld !== "__none__");
+    const hasProduct = products.some((p) => p.productId && p.productId !== SELECT_SENTINEL.NONE);
+    const hasDomain = domains.some((d) => d.domain && d.tld && d.tld !== SELECT_SENTINEL.NONE);
 
     const calculateTotal = useCallback(() => {
         let total = 0;
         products.forEach((p) => {
-            if (!p.productId || p.productId === "__none__") return;
+            if (!p.productId || p.productId === SELECT_SENTINEL.NONE) return;
             const prod = hostingVpsProducts.find((x) => (x.id ?? (x as any)._id) === p.productId);
             let price = prod ? getProductPrice(prod, currency, p.billingCycle) : 0;
             if (p.priceOverride) price = parseFloat(p.priceOverride) || price;
             total += price * p.quantity;
         });
         domains.forEach((d) => {
-            if (!d.domain || !d.tld || d.tld === "__none__") return;
+            if (!d.domain || !d.tld || d.tld === SELECT_SENTINEL.NONE) return;
             const tldObj = tlds.find((t) => (t.tld || "").replace(/^\./, "") === d.tld.replace(/^\./, ""));
             let price = tldObj ? getTldPrice(tldObj, currency, d.period, d.type) : 0;
             if (d.priceOverride) price = parseFloat(d.priceOverride) || price;
@@ -239,14 +248,14 @@ export default function AddNewOrderPage() {
     const subtotalBeforePromo = useCallback(() => {
         let t = 0;
         products.forEach((p) => {
-            if (!p.productId || p.productId === "__none__") return;
+            if (!p.productId || p.productId === SELECT_SENTINEL.NONE) return;
             const prod = hostingVpsProducts.find((x) => (x.id ?? (x as any)._id) === p.productId);
             let price = prod ? getProductPrice(prod, currency, p.billingCycle) : 0;
             if (p.priceOverride) price = parseFloat(p.priceOverride) || price;
             t += price * p.quantity;
         });
         domains.forEach((d) => {
-            if (!d.domain || !d.tld || d.tld === "__none__") return;
+            if (!d.domain || !d.tld || d.tld === SELECT_SENTINEL.NONE) return;
             const tldObj = tlds.find((t) => (t.tld || "").replace(/^\./, "") === d.tld.replace(/^\./, ""));
             let price = tldObj ? getTldPrice(tldObj, currency, d.period, d.type) : 0;
             if (d.priceOverride) price = parseFloat(d.priceOverride) || price;
@@ -311,8 +320,8 @@ export default function AddNewOrderPage() {
             return;
         }
 
-        const firstProduct = products.find((p) => p.productId && p.productId !== "__none__");
-        const firstDomain = domains.find((d) => d.domain && d.tld && d.tld !== "__none__");
+        const firstProduct = products.find((p) => p.productId && p.productId !== SELECT_SENTINEL.NONE);
+        const firstDomain = domains.find((d) => d.domain && d.tld && d.tld !== SELECT_SENTINEL.NONE);
 
         if (firstDomain) {
             const domainErr = validateDomainName(firstDomain.domain);
@@ -336,7 +345,7 @@ export default function AddNewOrderPage() {
             }
         }
 
-        const serverLoc = firstProduct?.serverLocation === "__auto__" ? "Auto" : (firstProduct?.serverLocation || "Auto");
+        const serverLoc = firstProduct?.serverLocation === SELECT_SENTINEL.AUTO ? "Auto" : (firstProduct?.serverLocation || "Auto");
 
         if (firstProduct) {
             // Product order (with optional domain)
@@ -679,7 +688,7 @@ export default function AddNewOrderPage() {
                                                     <SelectValue placeholder="Select Product..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="__none__">— None —</SelectItem>
+                                                    <SelectItem value={SELECT_SENTINEL.NONE}>— None —</SelectItem>
                                                     {productsLoading && (
                                                         <SelectItem value="__loading__" disabled>
                                                             <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</span>
@@ -736,7 +745,7 @@ export default function AddNewOrderPage() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        {product.productId && product.productId !== "__none__" && (
+                                        {product.productId && product.productId !== SELECT_SENTINEL.NONE && (
                                             <div className="space-y-1.5">
                                                 <Label className="text-sm font-medium">Server Location</Label>
                                                 <Select
@@ -747,7 +756,7 @@ export default function AddNewOrderPage() {
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="__auto__">Auto</SelectItem>
+                                                        <SelectItem value={SELECT_SENTINEL.AUTO}>Auto</SelectItem>
                                                         {serverLocations.map((loc) => (
                                                             <SelectItem key={loc.id} value={loc.id}>{loc.name}</SelectItem>
                                                         ))}
@@ -854,7 +863,7 @@ export default function AddNewOrderPage() {
                                                         <SelectValue placeholder="Select TLD" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="__none__">— Select —</SelectItem>
+                                                        <SelectItem value={SELECT_SENTINEL.NONE}>— Select —</SelectItem>
                                                         {tldsLoading && (
                                                             <SelectItem value="__loading__" disabled>
                                                                 <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</span>
@@ -948,7 +957,7 @@ export default function AddNewOrderPage() {
                             ) : (
                                 <div className="space-y-4">
                                     {products
-                                        .filter((p) => p.productId && p.productId !== "__none__")
+                                        .filter((p) => p.productId && p.productId !== SELECT_SENTINEL.NONE)
                                         .map((p) => {
                                             const prod = hostingVpsProducts.find((x) => (x.id ?? (x as any)._id) === p.productId);
                                             const price = prod ? getProductPrice(prod, currency, p.billingCycle) : 0;
@@ -971,7 +980,7 @@ export default function AddNewOrderPage() {
                                             );
                                         })}
                                     {domains
-                                        .filter((d) => d.domain && d.tld && d.tld !== "__none__")
+                                        .filter((d) => d.domain && d.tld && d.tld !== SELECT_SENTINEL.NONE)
                                         .map((d) => {
                                             const tldObj = tlds.find((t) => (t.tld || "").replace(/^\./, "") === d.tld.replace(/^\./, ""));
                                             const price = tldObj ? getTldPrice(tldObj, currency, d.period, d.type) : 0;

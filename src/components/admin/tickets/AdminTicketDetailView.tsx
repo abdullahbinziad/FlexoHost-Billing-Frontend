@@ -35,6 +35,7 @@ import {
   TICKET_STATUS_LABELS,
 } from "@/components/shared/ticket/TicketStatusBadge";
 import { TicketPriorityBadge } from "@/components/shared/ticket/TicketPriorityBadge";
+import { TICKET_STATUS } from "@/constants/status";
 import { devLog } from "@/lib/devLog";
 
 const ADMIN_STATUS_LABELS: Record<string, string> = {
@@ -172,13 +173,13 @@ export function AdminTicketDetailView({
               <SelectValue placeholder="Change status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="answered">Answered (waiting client)</SelectItem>
-              <SelectItem value="customer_reply">Customer replied</SelectItem>
-              <SelectItem value="on_hold">On hold</SelectItem>
-              <SelectItem value="in_progress">In progress</SelectItem>
-              <SelectItem value="resolved">Resolved</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
+              <SelectItem value={TICKET_STATUS.OPEN}>Open</SelectItem>
+              <SelectItem value={TICKET_STATUS.ANSWERED}>Answered (waiting client)</SelectItem>
+              <SelectItem value={TICKET_STATUS.CUSTOMER_REPLY}>Customer replied</SelectItem>
+              <SelectItem value={TICKET_STATUS.ON_HOLD}>On hold</SelectItem>
+              <SelectItem value={TICKET_STATUS.IN_PROGRESS}>In progress</SelectItem>
+              <SelectItem value={TICKET_STATUS.RESOLVED}>Resolved</SelectItem>
+              <SelectItem value={TICKET_STATUS.CLOSED}>Closed</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -186,7 +187,7 @@ export function AdminTicketDetailView({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          {ticket.status !== "closed" && ticket.status !== "resolved" && (
+          {ticket.status !== TICKET_STATUS.CLOSED && ticket.status !== TICKET_STATUS.RESOLVED && (
             <Card className="border-primary/20">
               <CardHeader className="border-b bg-muted/30 py-4">
                 <h3 className="flex items-center gap-2 text-sm font-semibold">

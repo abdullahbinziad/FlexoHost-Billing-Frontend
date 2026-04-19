@@ -24,6 +24,7 @@ import { useGetInvoiceByIdQuery } from "@/store/api/invoiceApi";
 import { formatDate, formatCurrency } from "@/utils/format";
 import { Loader2 } from "lucide-react";
 import { useSendInvoiceReminderMutation, useUpdateInvoiceStatusMutation } from "@/store/api/invoiceApi";
+import { INVOICE_STATUS } from "@/constants/status";
 
 export default function InvoiceDetailsPage({
   params,
@@ -70,9 +71,9 @@ export default function InvoiceDetailsPage({
   }
 
   const statusBadge =
-    invoice.status === "paid"
+    invoice.status === INVOICE_STATUS.PAID
       ? "bg-green-500 hover:bg-green-600"
-      : invoice.status === "cancelled"
+      : invoice.status === INVOICE_STATUS.CANCELLED
         ? "bg-gray-500"
         : "bg-amber-500 hover:bg-amber-600";
 
@@ -116,12 +117,12 @@ export default function InvoiceDetailsPage({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {invoice.status !== "unpaid" && invoice.status !== "overdue" && (
-                <DropdownMenuItem onClick={() => handleStatusChange("unpaid")}>
+              {invoice.status !== INVOICE_STATUS.UNPAID && invoice.status !== INVOICE_STATUS.OVERDUE && (
+                <DropdownMenuItem onClick={() => handleStatusChange(INVOICE_STATUS.UNPAID)}>
                   Mark Unpaid
                 </DropdownMenuItem>
               )}
-              {invoice.status !== "paid" && (
+              {invoice.status !== INVOICE_STATUS.PAID && (
                 <DropdownMenuItem onClick={handleSendReminder}>
                   Send Reminder
                 </DropdownMenuItem>

@@ -18,6 +18,7 @@ import { useGetAllInvoicesQuery, useGetDashboardStatsQuery } from "@/store/api/i
 import { useGetTicketsQuery } from "@/store/api/ticketApi";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { SalesStatCard } from "./SalesStatCard";
+import { INVOICE_STATUS_ADMIN, TICKET_STATUS } from "@/constants/status";
 
 export function SalesDashboard() {
   const formatCurrency = useFormatCurrency();
@@ -65,7 +66,7 @@ export function SalesDashboard() {
   const openTicketsCount = useMemo(
     () =>
       tickets.filter(
-        (t) => t.status !== "closed" && t.status !== "resolved"
+        (t) => t.status !== TICKET_STATUS.CLOSED && t.status !== TICKET_STATUS.RESOLVED
       ).length,
     [tickets]
   );
@@ -221,11 +222,11 @@ export function SalesDashboard() {
                         {formatCurrency(inv.total ?? 0, inv.currency)}
                       </span>
                       <Badge
-                        variant={inv.status === "PAID" ? "default" : "secondary"}
+                        variant={inv.status === INVOICE_STATUS_ADMIN.PAID ? "default" : "secondary"}
                         className={
-                          inv.status === "PAID"
+                          inv.status === INVOICE_STATUS_ADMIN.PAID
                             ? "bg-green-500 hover:bg-green-600"
-                            : inv.status === "OVERDUE"
+                            : inv.status === INVOICE_STATUS_ADMIN.OVERDUE
                               ? "bg-amber-500 hover:bg-amber-600"
                               : ""
                         }

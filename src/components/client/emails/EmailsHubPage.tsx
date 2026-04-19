@@ -19,24 +19,28 @@ import { DataTablePagination } from "@/components/shared/DataTablePagination";
 import { useClientServicesPage } from "@/hooks/useClientServicesPage";
 import { cn } from "@/lib/utils";
 import type { HostingService } from "@/types/hosting";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 const DEFAULT_PAGE_SIZE = 10;
 
 function statusLabel(status: HostingService["status"]) {
-  switch (status) {
-    case "active":
+  const normalized = normalizeServiceStatus(status);
+  switch (normalized) {
+    case SERVICE_STATUS.ACTIVE:
       return "Active";
-    case "suspended":
+    case SERVICE_STATUS.SUSPENDED:
       return "Suspended";
-    case "pending":
-    case "provisioning":
+    case SERVICE_STATUS.PENDING:
+    case SERVICE_STATUS.PROVISIONING:
       return "Provisioning";
-    case "expired":
+    case SERVICE_STATUS.EXPIRED:
       return "Expired";
-    case "terminated":
+    case SERVICE_STATUS.TERMINATED:
       return "Terminated";
+    case SERVICE_STATUS.CANCELLED:
+      return "Cancelled";
     default:
-      return status;
+      return String(status || "");
   }
 }
 
@@ -45,7 +49,8 @@ const cellBorder =
 
 /** Status cell styling aligned with hosting `ServiceTableRow` for a consistent client-area table. */
 function EmailHostingStatusCell({ status }: { status: HostingService["status"] }) {
-  if (status === "active") {
+  const normalized = normalizeServiceStatus(status);
+  if (normalized === SERVICE_STATUS.ACTIVE) {
     return (
       <span
         className={cn(
@@ -58,17 +63,17 @@ function EmailHostingStatusCell({ status }: { status: HostingService["status"] }
       </span>
     );
   }
-  if (status === "suspended") {
+  if (normalized === SERVICE_STATUS.SUSPENDED) {
     return (
       <span className="inline-flex items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-400">
         Suspended
       </span>
     );
   }
-  if (status === "pending" || status === "provisioning") {
+  if (normalized === SERVICE_STATUS.PENDING || normalized === SERVICE_STATUS.PROVISIONING) {
     return (
       <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-400">
-        {statusLabel(status)}
+        {statusLabel(normalized.toLowerCase() as HostingService["status"])}
       </span>
     );
   }
@@ -89,11 +94,19 @@ export function EmailsHubPage() {
   const eligible = useMemo(
     () =>
       services.filter(
-        (s) =>
-          s.status === "active" ||
-          s.status === "suspended" ||
-          s.status === "pending" ||
-          s.status === "provisioning"
+        (s) => {
+          const normalized = normalizeServiceStatus(s.status, {
+            suspendedAt: s.suspendedAt,
+            terminatedAt: s.terminatedAt,
+            cancelledAt: s.cancelledAt,
+          });
+          return (
+            normalized === SERVICE_STATUS.ACTIVE ||
+            normalized === SERVICE_STATUS.SUSPENDED ||
+            normalized === SERVICE_STATUS.PENDING ||
+            normalized === SERVICE_STATUS.PROVISIONING
+          );
+        }
       ),
     [services]
   );
@@ -168,7 +181,7 @@ export function EmailsHubPage() {
                 {/* Small / medium: stacked rows (readable on narrow viewports) */}
                 <ul className="divide-y divide-gray-200 dark:divide-gray-800 lg:hidden">
                   {paginatedServices.map((service) => {
-                    const canManageEmail = service.status === "active";
+                    const canManageEmail = normalizeServiceStatus(service.status) === SERVICE_STATUS.ACTIVE;
                     return (
                       <li key={service.id}>
                         <button
@@ -205,7 +218,7 @@ export function EmailsHubPage() {
                             <span
                               className={cn(
                                 "text-xs font-medium px-2.5 py-1 rounded-full",
-                                service.status === "active"
+                                normalizeServiceStatus(service.status) === SERVICE_STATUS.ACTIVE
                                   ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
                                   : "bg-muted text-muted-foreground"
                               )}
@@ -247,7 +260,7 @@ export function EmailsHubPage() {
                     </TableHeader>
                     <TableBody className="[&_tr:nth-child(even)]:bg-gray-50/60 dark:[&_tr:nth-child(even)]:bg-gray-900/35 [&_tr]:border-gray-100 dark:[&_tr]:border-gray-800/80">
                       {paginatedServices.map((service) => {
-                        const canManageEmail = service.status === "active";
+                        const canManageEmail = normalizeServiceStatus(service.status) === SERVICE_STATUS.ACTIVE;
                         return (
                           <TableRow
                             key={service.id}

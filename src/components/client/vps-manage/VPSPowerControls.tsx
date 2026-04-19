@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Play, Square, RotateCcw, Power } from "lucide-react";
 import { useState } from "react";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 interface VPSPowerControlsProps {
     status: string;
@@ -21,7 +22,7 @@ export function VPSPowerControls({ status, onAction }: VPSPowerControlsProps) {
         }, 1000);
     };
 
-    const isRunning = status === "active";
+    const isRunning = normalizeServiceStatus(status) === SERVICE_STATUS.ACTIVE;
 
     return (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-5">

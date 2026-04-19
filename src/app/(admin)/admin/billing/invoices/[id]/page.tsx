@@ -4,6 +4,7 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import { AdminInvoiceHeader } from "@/components/admin/invoices/AdminInvoiceHeader";
 import { AdminInvoiceTabs, type AdminInvoiceTabId } from "@/components/admin/invoices/AdminInvoiceTabs";
 import { AdminInvoiceSummary } from "@/components/admin/invoices/AdminInvoiceSummary";
@@ -20,6 +21,7 @@ import {
     type InvoiceItemPayload,
 } from "@/store/api/invoiceApi";
 import { toast } from "sonner";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 function toDateInputValue(date: string | Date | undefined) {
     if (!date) return "";
@@ -35,6 +37,7 @@ export default function AdminInvoiceDetailPage({
     const router = useRouter();
     const { id } = use(params);
     const [activeTab, setActiveTab] = useState<AdminInvoiceTabId>("summary");
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const { data: invoice, isLoading, error } = useGetInvoiceByIdQuery(id, { skip: !id });
     const [updateStatus, { isLoading: isUpdating }] = useUpdateInvoiceStatusMutation();
@@ -93,10 +96,10 @@ export default function AdminInvoiceDetailPage({
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) return;
         try {
             await deleteInvoice(id).unwrap();
             toast.success("Invoice deleted");
+            setShowDeleteConfirm(false);
             router.push("/admin/billing/invoices");
         } catch {
             toast.error("Failed to delete invoice");
@@ -217,7 +220,7 @@ export default function AdminInvoiceDetailPage({
                                 onDueDateChange={setDueDate}
                                 onStatusChange={handleStatusChange}
                                 onSendReminder={handleSendReminder}
-                                onDelete={handleDelete}
+                                onDelete={() => setShowDeleteConfirm(true)}
                                 isUpdating={isUpdating || isSendingReminder || isDeleting}
                                 editable
                             />
@@ -266,7 +269,7 @@ export default function AdminInvoiceDetailPage({
             )}
 
             {activeTab === "add-payment" && (
-                invoice.status === "PAID" || invoice.balanceDue <= 0 ? (
+                invoice.status === INVOICE_STATUS_ADMIN.PAID || invoice.balanceDue <= 0 ? (
                     <div className="rounded-lg border bg-card p-8 text-center">
                         <p className="text-muted-foreground">This invoice is already paid.</p>
                         <p className="text-sm text-muted-foreground mt-1">No additional payments can be recorded.</p>
@@ -325,6 +328,15 @@ export default function AdminInvoiceDetailPage({
                     </div>
                 </div>
             )}
+            <ConfirmActionDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Delete invoice?"
+                description="This action cannot be undone. The invoice will be permanently removed."
+                confirmLabel="Delete"
+                onConfirm={handleDelete}
+                isLoading={isDeleting}
+            />
         </div>
     );
 }

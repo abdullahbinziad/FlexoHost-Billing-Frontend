@@ -27,8 +27,9 @@ import { toast } from "sonner";
 import { MessageSquarePlus, Paperclip, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { devLog } from "@/lib/devLog";
+import { SELECT_SENTINEL, TICKET_DEPARTMENT, TICKET_PRIORITY } from "@/constants/status";
 
-const NONE = "__none__";
+const NONE = SELECT_SENTINEL.NONE;
 
 export default function NewTicketPage() {
   const router = useRouter();
@@ -36,9 +37,9 @@ export default function NewTicketPage() {
   const { activeClientId } = useActiveClient();
   const [subject, setSubject] = useState("");
   const [department, setDepartment] =
-    useState<"technical" | "billing" | "sales" | "support">("support");
+    useState<"technical" | "billing" | "sales" | "support">(TICKET_DEPARTMENT.SUPPORT);
   const [priority, setPriority] =
-    useState<"low" | "normal" | "high" | "urgent">("normal");
+    useState<"low" | "normal" | "high" | "urgent">(TICKET_PRIORITY.NORMAL);
   const [message, setMessage] = useState("");
   const [serviceId, setServiceId] = useState<string>(NONE);
   const [invoiceId, setInvoiceId] = useState<string>(NONE);
@@ -203,10 +204,10 @@ export default function NewTicketPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="support">General Support</SelectItem>
-                    <SelectItem value="technical">Technical</SelectItem>
-                    <SelectItem value="billing">Billing</SelectItem>
-                    <SelectItem value="sales">Sales</SelectItem>
+                    <SelectItem value={TICKET_DEPARTMENT.SUPPORT}>General Support</SelectItem>
+                    <SelectItem value={TICKET_DEPARTMENT.TECHNICAL}>Technical</SelectItem>
+                    <SelectItem value={TICKET_DEPARTMENT.BILLING}>Billing</SelectItem>
+                    <SelectItem value={TICKET_DEPARTMENT.SALES}>Sales</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -226,10 +227,10 @@ export default function NewTicketPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value={TICKET_PRIORITY.LOW}>Low</SelectItem>
+                    <SelectItem value={TICKET_PRIORITY.NORMAL}>Normal</SelectItem>
+                    <SelectItem value={TICKET_PRIORITY.HIGH}>High</SelectItem>
+                    <SelectItem value={TICKET_PRIORITY.URGENT}>Urgent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

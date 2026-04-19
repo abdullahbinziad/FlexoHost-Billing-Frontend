@@ -10,6 +10,7 @@ import { DomainSearchAndFilter } from "./DomainSearchAndFilter";
 import { DomainTable } from "./DomainTable";
 import type { Domain, DomainTableFilters } from "@/types/domain";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { toast } from "sonner";
 
 export function DomainPortfolioPage() {
   const router = useRouter();
@@ -110,8 +111,13 @@ export function DomainPortfolioPage() {
     else alert("Domain not found");
   };
 
-  const handleManage = (domainName: string) => {
-    router.push(`/domains/${encodeURIComponent(domainName)}`);
+  const handleManage = (domain: Domain) => {
+    const target = (domain.name || domain.domainName || "").trim();
+    if (!target) {
+      toast.error("Domain name is not available. Try refreshing the page or contact support.");
+      return;
+    }
+    router.push(`/domains/${encodeURIComponent(target)}`);
   };
 
   const handleAddDomain = () => {

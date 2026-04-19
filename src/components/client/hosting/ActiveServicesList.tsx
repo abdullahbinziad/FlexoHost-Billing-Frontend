@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import type { HostingService } from "@/types/hosting";
 import { ServiceTableRow } from "./ServiceCard";
+import { SERVICE_STATUS, normalizeServiceStatus, type ServiceStatusValue } from "@/constants/serviceStatus";
 
 interface ActiveServicesListProps {
   services: HostingService[];
@@ -28,12 +29,12 @@ export function ActiveServicesList({
   onManage,
   title = "Your Active Hosting Services",
 }: ActiveServicesListProps) {
+  const FILTER_ALL = "ALL" as const;
+  type FilterValue = typeof FILTER_ALL | ServiceStatusValue;
   // Local state for filter dropdown (UI-only)
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   // Local state for filter selection (UI-only)
-  const [filterStatus, setFilterStatus] = useState<
-    "all" | "active" | "expired" | "suspended"
-  >("all");
+  const [filterStatus, setFilterStatus] = useState<FilterValue>(FILTER_ALL);
   // Local state for search input (UI-only)
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -42,8 +43,13 @@ export function ActiveServicesList({
   const filteredServices = useMemo(
     () =>
       services.filter((service) => {
+        const normalized = normalizeServiceStatus(service.status, {
+          suspendedAt: service.suspendedAt,
+          terminatedAt: service.terminatedAt,
+          cancelledAt: service.cancelledAt,
+        });
         const matchesStatus =
-          filterStatus === "all" || service.status === filterStatus;
+          filterStatus === FILTER_ALL || normalized === filterStatus;
         const matchesSearch =
           !searchQuery ||
           service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -116,12 +122,12 @@ export function ActiveServicesList({
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setFilterStatus("all");
+                          setFilterStatus(FILTER_ALL);
                           setIsFilterOpen(false);
                         }}
                         className={cn(
                           "w-full justify-start",
-                          filterStatus === "all"
+                          filterStatus === FILTER_ALL
                             ? "bg-primary/10 dark:bg-primary/20 text-primary font-medium"
                             : ""
                         )}
@@ -132,12 +138,12 @@ export function ActiveServicesList({
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setFilterStatus("active");
+                          setFilterStatus(SERVICE_STATUS.ACTIVE);
                           setIsFilterOpen(false);
                         }}
                         className={cn(
                           "w-full justify-start",
-                          filterStatus === "active"
+                          filterStatus === SERVICE_STATUS.ACTIVE
                             ? "bg-primary/10 dark:bg-primary/20 text-primary font-medium"
                             : ""
                         )}
@@ -148,12 +154,12 @@ export function ActiveServicesList({
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setFilterStatus("expired");
+                          setFilterStatus(SERVICE_STATUS.EXPIRED);
                           setIsFilterOpen(false);
                         }}
                         className={cn(
                           "w-full justify-start",
-                          filterStatus === "expired"
+                          filterStatus === SERVICE_STATUS.EXPIRED
                             ? "bg-primary/10 dark:bg-primary/20 text-primary font-medium"
                             : ""
                         )}
@@ -164,12 +170,12 @@ export function ActiveServicesList({
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setFilterStatus("suspended");
+                          setFilterStatus(SERVICE_STATUS.SUSPENDED);
                           setIsFilterOpen(false);
                         }}
                         className={cn(
                           "w-full justify-start",
-                          filterStatus === "suspended"
+                          filterStatus === SERVICE_STATUS.SUSPENDED
                             ? "bg-primary/10 dark:bg-primary/20 text-primary font-medium"
                             : ""
                         )}

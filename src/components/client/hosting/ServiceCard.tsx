@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { HostingService } from "@/types/hosting";
+import { getPendingStatusLabel } from "@/utils/serviceStatusLabel";
+import { SERVICE_STATUS, normalizeServiceStatus } from "@/constants/serviceStatus";
 
 interface ServiceTableRowProps {
   service: HostingService;
@@ -20,8 +22,13 @@ const cellBorder =
 /** One data row for the hosting services table (used inside TableBody). */
 export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
   const formatCurrency = useFormatCurrency();
-  const isExpired = service.status === "expired";
-  const isActive = service.status === "active";
+  const normalizedStatus = normalizeServiceStatus(service.status, {
+    suspendedAt: service.suspendedAt,
+    terminatedAt: service.terminatedAt,
+    cancelledAt: service.cancelledAt,
+  });
+  const isExpired = normalizedStatus === SERVICE_STATUS.EXPIRED;
+  const isActive = normalizedStatus === SERVICE_STATUS.ACTIVE;
 
   return (
     <TableRow className="border-b border-gray-100 hover:bg-gray-50/70 dark:border-gray-800/80 dark:hover:bg-gray-800/40">
@@ -83,14 +90,24 @@ export function ServiceTableRow({ service, onManage }: ServiceTableRowProps) {
               Active
             </span>
           )}
-          {service.status === "suspended" && (
+          {normalizedStatus === SERVICE_STATUS.SUSPENDED && (
             <span className="inline-flex items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-400">
               Suspended
             </span>
           )}
-          {service.status === "pending" && (
+          {normalizedStatus === SERVICE_STATUS.CANCELLED && (
+            <span className="inline-flex items-center rounded-md border border-orange-200 bg-orange-50 px-2 py-0.5 text-xs font-medium text-orange-900 dark:border-orange-800 dark:bg-orange-950/50 dark:text-orange-300">
+              Cancelled
+            </span>
+          )}
+          {normalizedStatus === SERVICE_STATUS.TERMINATED && (
+            <span className="inline-flex items-center rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800 dark:border-red-800 dark:bg-red-950/50 dark:text-red-300">
+              Terminated
+            </span>
+          )}
+          {(normalizedStatus === SERVICE_STATUS.PENDING || normalizedStatus === SERVICE_STATUS.PROVISIONING) && (
             <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-400">
-              Pending
+              {getPendingStatusLabel(service.status, service.pendingReason)}
             </span>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { devLog } from "@/lib/devLog";
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Filter, Copy } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, EyeOff, Filter, Copy, CopyPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,16 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmActionDialog } from "@/components/shared/ConfirmActionDialog";
 import type { Product, ProductType } from "@/types/admin";
 import { SERVER_GROUP_OPTIONS } from "@/types/admin";
 
@@ -42,6 +33,7 @@ import {
     useGetProductsQuery,
     useDeleteProductMutation,
     useToggleProductVisibilityMutation,
+    useDuplicateProductMutation,
 } from "@/store/api/productApi";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
@@ -80,6 +72,7 @@ export function AdminProductsList({
     // Mutations for delete and toggle visibility
     const [deleteProduct] = useDeleteProductMutation();
     const [toggleVisibility] = useToggleProductVisibilityMutation();
+    const [duplicateProduct] = useDuplicateProductMutation();
 
     // Extract products from API response
     const products = productsData?.products || [];
@@ -148,6 +141,22 @@ export function AdminProductsList({
             toast.success("Checkout link copied to clipboard");
         } catch {
             toast.error("Failed to copy link");
+        }
+    };
+
+    const handleDuplicateProduct = async (product: Product) => {
+        try {
+            const cloned = await duplicateProduct(product.id).unwrap();
+            toast.success("Product duplicated. Opening copy in editor…");
+            if (editProductHref) {
+                const href = editProductHref.replace("{id}", (cloned as any).id ?? (cloned as any)._id);
+                if (typeof window !== "undefined") {
+                    window.location.href = href;
+                }
+            }
+        } catch (error: any) {
+            devLog("Failed to duplicate product:", error);
+            toast.error(error?.data?.message || "Failed to duplicate product");
         }
     };
 
@@ -303,6 +312,16 @@ export function AdminProductsList({
                                                 <Copy className="w-4 h-4" />
                                                 Copy link
                                             </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDuplicateProduct(product)}
+                                                title="Duplicate product"
+                                                className="gap-1.5 shrink-0"
+                                            >
+                                                <CopyPlus className="w-4 h-4" />
+                                                Duplicate
+                                            </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleToggleVisibility(product.id, product.isHidden)}>
                                                 {product.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                             </Button>
@@ -344,23 +363,14 @@ export function AdminProductsList({
 
 
             {/* Delete Confirmation Dialog */}
-            <AlertDialog open={!!productToDelete} onOpenChange={(open) => !open && setProductToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the product
-                            and remove it from our servers.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ConfirmActionDialog
+                open={!!productToDelete}
+                onOpenChange={(open) => !open && setProductToDelete(null)}
+                title="Delete product?"
+                description="This action cannot be undone. The product will be permanently removed."
+                confirmLabel="Delete"
+                onConfirm={confirmDelete}
+            />
         </div>
     );
 }

@@ -33,13 +33,14 @@ import { useGetAllInvoicesQuery } from "@/store/api/invoiceApi";
 import { formatDate } from "@/utils/format";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { DataTablePagination } from "@/components/shared/DataTablePagination";
+import { INVOICE_STATUS_ADMIN } from "@/constants/status";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All" },
-  { value: "UNPAID", label: "Unpaid" },
-  { value: "PAID", label: "Paid" },
-  { value: "OVERDUE", label: "Overdue" },
-  { value: "CANCELLED", label: "Cancelled" },
+  { value: INVOICE_STATUS_ADMIN.UNPAID, label: "Unpaid" },
+  { value: INVOICE_STATUS_ADMIN.PAID, label: "Paid" },
+  { value: INVOICE_STATUS_ADMIN.OVERDUE, label: "Overdue" },
+  { value: INVOICE_STATUS_ADMIN.CANCELLED, label: "Cancelled" },
 ];
 
 export default function ClientInvoicesPage() {
@@ -192,13 +193,13 @@ export default function ClientInvoicesPage() {
                     <TableCell>
                       <Badge
                         className={
-                          inv.status === "PAID"
+                          inv.status === INVOICE_STATUS_ADMIN.PAID
                             ? "bg-green-500 hover:bg-green-600"
-                            : inv.status === "UNPAID" || inv.status === "OVERDUE"
+                            : inv.status === INVOICE_STATUS_ADMIN.UNPAID || inv.status === INVOICE_STATUS_ADMIN.OVERDUE
                             ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 border border-red-200"
                             : ""
                         }
-                        variant={inv.status === "PAID" ? "default" : "secondary"}
+                        variant={inv.status === INVOICE_STATUS_ADMIN.PAID ? "default" : "secondary"}
                       >
                         {inv.status}
                       </Badge>
