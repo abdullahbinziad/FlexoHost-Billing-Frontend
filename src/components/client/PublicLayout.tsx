@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -13,6 +14,7 @@ import { shouldShowCurrencySwitcher } from "@/lib/currencyVisibility";
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const { isAuthenticated, isLoading } = useAuth();
     const [mounted, setMounted] = useState(false);
     const { theme } = useTheme();
@@ -44,6 +46,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
     const logoSrc = theme === "dark"
         ? "/img/company/FlexoHostHorizontalforDark.webp"
         : "/img/company/FlexoHostHorizontalforLight.webp";
+    const redirectTarget = `${pathname || "/"}${searchParams?.toString() ? `?${searchParams.toString()}` : ""}`;
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -71,7 +74,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
                         <div className="mx-1 hidden h-6 w-px bg-gray-200 dark:bg-gray-700 sm:block"></div>
 
-                        <Link href={`/auth/login?redirect=${encodeURIComponent(pathname || '/')}`}>
+                        <Link href={`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`}>
                             <Button variant="ghost" size="sm" className="px-2 sm:px-3">Login</Button>
                         </Link>
                         <Link href="/auth/register" className="hidden sm:inline-flex">

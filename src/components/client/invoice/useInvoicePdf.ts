@@ -58,6 +58,10 @@ export function useInvoicePdf(invoiceRef: React.RefObject<HTMLDivElement | null>
         height: invoiceElement.scrollHeight,
         windowWidth: invoiceElement.scrollWidth,
         windowHeight: invoiceElement.scrollHeight,
+        onclone: (clonedDocument) => {
+          clonedDocument.documentElement.classList.remove("dark");
+          clonedDocument.body.classList.remove("dark");
+        },
       });
 
       originalStyles.forEach(({ element, display }) => {

@@ -156,11 +156,21 @@ export function CheckoutPage({
     }
   }, [product, referral, setCheckoutMode, setProductId, setProductType, setReferral]);
 
-  // Apply referral from URL once when no promo is set yet (does not block manual promo codes).
+  // Apply referral from URL and prefer it over stale persisted promo state.
+  // Keep retrying on cart/context changes until it is actually applied.
   useEffect(() => {
     if (!normalizedReferral) return;
-    if (formData.promoCode) return;
     if ((orderSummary?.subtotal ?? 0) <= 0) return;
+
+    const existingPromoCode = formData.promoCode?.trim().toUpperCase();
+    const hasSameReferralAlreadyApplied =
+      existingPromoCode === normalizedReferral && (formData.promoDiscount ?? 0) > 0;
+    if (hasSameReferralAlreadyApplied) return;
+
+    // Clear stale persisted promo so referral link can take precedence immediately.
+    if (existingPromoCode && existingPromoCode !== normalizedReferral) {
+      setPromoCode(undefined);
+    }
 
     let isCancelled = false;
 
@@ -206,12 +216,14 @@ export function CheckoutPage({
   }, [
     normalizedReferral,
     formData.promoCode,
+    formData.promoDiscount,
     orderSummary?.subtotal,
     formData.billingContact?.id,
     formData.billingCycle,
     formData.selectedDomain,
     product,
     selectedCurrency.code,
+    setPromoCode,
     setPromoApplied,
     validateCoupon,
   ]);

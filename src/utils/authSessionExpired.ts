@@ -28,6 +28,7 @@ const GUEST_AUTH_FLOW_PATH_PREFIXES = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/checkout",
 ] as const;
 
 /** True on login/register/etc. where optional auth checks return 401 for guests. */
