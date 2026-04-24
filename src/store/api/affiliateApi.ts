@@ -47,6 +47,7 @@ export interface AffiliateProfile {
 
 export interface AffiliateReferralItem {
   _id: string;
+  referredClientObjectId?: string;
   referralCode: string;
   source: string;
   status: string;
@@ -62,6 +63,8 @@ export interface AffiliateReferralItem {
 
 export interface AffiliateCommissionItem {
   _id: string;
+  referralId?: string;
+  referredClientId?: string;
   referralCode: string;
   status: string;
   currency: string;
