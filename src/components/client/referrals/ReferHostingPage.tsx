@@ -791,9 +791,18 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                 </TableHeader>
                 <TableBody>
                   {(affiliateDashboard?.referrals || []).slice(0, 5).map((referral, index) => {
-                    const relatedCommission = (affiliateDashboard?.commissions || []).find(
-                      (commission) => commission.referralCode === referral.referralCode
-                    );
+                    const referredClientObjectId = referral.referredClientObjectId;
+                    const relatedCommission = (affiliateDashboard?.commissions || []).find((commission) => {
+                      if (commission.referralId && commission.referralId === referral._id) return true;
+                      if (
+                        referredClientObjectId &&
+                        commission.referredClientId &&
+                        commission.referredClientId === referredClientObjectId
+                      ) {
+                        return true;
+                      }
+                      return commission.referralCode === referral.referralCode;
+                    });
                     const inviteLabel =
                       referral.referredClientId?.contactEmail ||
                       `${referral.referredClientId?.firstName || "Unknown"} ${referral.referredClientId?.lastName || ""}`.trim();
