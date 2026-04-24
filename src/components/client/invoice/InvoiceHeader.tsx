@@ -7,14 +7,9 @@ import { INVOICE_STATUS } from "@/constants/status";
 
 interface InvoiceHeaderProps {
   invoice: Invoice;
-  isDark: boolean;
 }
 
-export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
-  const logoSrc = isDark
-    ? "/img/company/FlexoHostHorizontalforDark.webp"
-    : "/img/company/FlexoHostHorizontalforLight.webp";
-
+export function InvoiceHeader({ invoice }: InvoiceHeaderProps) {
   return (
     <div
       data-invoice-header
@@ -56,7 +51,7 @@ export function InvoiceHeader({ invoice, isDark }: InvoiceHeaderProps) {
         <div className="shrink-0 md:max-w-[45%]">
           <div className="flex flex-col items-start space-y-4 md:items-end md:space-y-6">
             <img
-              src={logoSrc}
+              src="/img/company/FlexoHostHorizontalforLight.webp"
               alt="Company Logo"
               width={200}
               height={60}

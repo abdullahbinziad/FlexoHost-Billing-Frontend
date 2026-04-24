@@ -19,7 +19,6 @@ interface InvoiceDetailProps {
 
 export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
   const { theme } = useTheme();
-  const isDark = theme === "dark";
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [payInvoice, { isLoading: isPaying }] = usePayInvoiceMutation();
   const searchParams = useSearchParams();
@@ -69,7 +68,30 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
     }
   };
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    const html = document.documentElement;
+    const body = document.body;
+    const shouldRestoreDark = theme === "dark" && html.classList.contains("dark");
+
+    const restoreTheme = () => {
+      if (shouldRestoreDark) {
+        html.classList.add("dark");
+        body.classList.add("dark");
+      }
+      window.removeEventListener("afterprint", restoreTheme);
+    };
+
+    if (shouldRestoreDark) {
+      html.classList.remove("dark");
+      body.classList.remove("dark");
+    }
+
+    window.addEventListener("afterprint", restoreTheme);
+    window.print();
+
+    // Some browsers do not fire afterprint reliably when saving as PDF.
+    window.setTimeout(restoreTheme, 1500);
+  };
 
   return (
     <div
@@ -96,7 +118,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             data-invoice-container
             className="invoice-a4 mx-auto flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:max-w-[210mm] md:min-h-[297mm] print:max-w-none print:rounded-none print:border-0 print:shadow-none"
           >
-            <InvoiceHeader invoice={invoice} isDark={isDark} />
+            <InvoiceHeader invoice={invoice} />
             <InvoiceBody invoice={invoice} />
           </div>
         </div>
