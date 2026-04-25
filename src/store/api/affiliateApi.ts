@@ -16,6 +16,7 @@ export interface AffiliateSettings {
   defaultCommissionRate: number;
   defaultReferralDiscountRate: number;
   defaultPayoutThreshold: number;
+  commissionApprovalDelayDays: number;
 }
 
 export interface AffiliateProfile {
@@ -52,6 +53,11 @@ export interface AffiliateReferralItem {
   status: string;
   createdAt: string;
   qualifiedAt?: string;
+  commissionStatus?: string;
+  expectedApprovalAt?: string;
+  commissionAmount?: number;
+  commissionCurrency?: string;
+  purchaseItems?: string[];
   /** Set by `/affiliate/me` for linking rows to commissions (referred client's Mongo id). */
   referredClientObjectId?: string;
   referredClientId?: {
@@ -123,6 +129,14 @@ export interface MyAffiliateDashboardResponse {
 export interface AdminAffiliateDashboardResponse {
   settings: AffiliateSettings;
   payoutRequests: AffiliatePayoutRequestItem[];
+  referrals: (AffiliateReferralItem & {
+    affiliateClientId?: {
+      clientId?: number;
+      firstName?: string;
+      lastName?: string;
+      contactEmail?: string;
+    };
+  })[];
   recentTransactionsByInvoice: Record<string, string>;
 }
 
@@ -197,7 +211,12 @@ export const affiliateApi = api.injectEndpoints({
     }),
     updateAffiliateDefaultSettings: builder.mutation<
       AffiliateSettings,
-      { defaultCommissionRate: number; defaultReferralDiscountRate: number; defaultPayoutThreshold: number }
+      {
+        defaultCommissionRate: number;
+        defaultReferralDiscountRate: number;
+        defaultPayoutThreshold: number;
+        commissionApprovalDelayDays: number;
+      }
     >({
       query: (body) => ({
         url: "/affiliate/admin/settings",
