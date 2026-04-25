@@ -19,6 +19,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
 import { useGetStoreProductsQuery } from "@/store/api/storeApi";
+import type { AffiliateCommissionItem, AffiliateReferralItem } from "@/store/api/affiliateApi";
 import { useGetMyAffiliateDashboardQuery } from "@/store/api/affiliateApi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,51 @@ function getProductReference(product: Product) {
 
 function round2(value: number) {
   return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+/** Normalize Mongo/API ids for reliable comparison (avoid missing matches vs strict ===). */
+function normalizeId(value: unknown): string | undefined {
+  if (value == null || value === "") return undefined;
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value !== null && "$oid" in value) {
+    const oid = (value as { $oid?: string }).$oid;
+    return typeof oid === "string" ? oid : undefined;
+  }
+  const s = String(value);
+  return s && s !== "[object Object]" ? s : undefined;
+}
+
+function findCommissionForReferral(
+  commissions: AffiliateCommissionItem[] | undefined,
+  referral: AffiliateReferralItem
+): AffiliateCommissionItem | undefined {
+  const list = commissions || [];
+  const referralIdStr = normalizeId(referral._id);
+  const referredClientIdStr =
+    normalizeId(referral.referredClientObjectId) ||
+    normalizeId(
+      referral.referredClientId &&
+        typeof referral.referredClientId === "object" &&
+        "_id" in referral.referredClientId
+        ? (referral.referredClientId as { _id?: unknown })._id
+        : undefined
+    );
+
+  return list.find((commission) => {
+    const commissionReferralId = normalizeId(commission.referralId);
+    if (referralIdStr && commissionReferralId && commissionReferralId === referralIdStr) {
+      return true;
+    }
+    const commissionReferredClientId = normalizeId(commission.referredClientId);
+    if (
+      referredClientIdStr &&
+      commissionReferredClientId &&
+      commissionReferredClientId === referredClientIdStr
+    ) {
+      return true;
+    }
+    return false;
+  });
 }
 
 function buildAffiliateLink(params: {
@@ -791,18 +837,10 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                 </TableHeader>
                 <TableBody>
                   {(affiliateDashboard?.referrals || []).slice(0, 5).map((referral, index) => {
-                    const referredClientObjectId = referral.referredClientObjectId;
-                    const relatedCommission = (affiliateDashboard?.commissions || []).find((commission) => {
-                      if (commission.referralId && commission.referralId === referral._id) return true;
-                      if (
-                        referredClientObjectId &&
-                        commission.referredClientId &&
-                        commission.referredClientId === referredClientObjectId
-                      ) {
-                        return true;
-                      }
-                      return commission.referralCode === referral.referralCode;
-                    });
+                    const relatedCommission = findCommissionForReferral(
+                      affiliateDashboard?.commissions,
+                      referral
+                    );
                     const inviteLabel =
                       referral.referredClientId?.contactEmail ||
                       `${referral.referredClientId?.firstName || "Unknown"} ${referral.referredClientId?.lastName || ""}`.trim();
