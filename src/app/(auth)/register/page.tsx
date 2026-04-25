@@ -491,7 +491,11 @@ function RegisterPageContent() {
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                             Already have an account?{" "}
                             <Link
-                                href="/login"
+                                href={
+                                    redirectAfterSignup
+                                        ? `/login?redirect=${encodeURIComponent(redirectAfterSignup)}`
+                                        : "/login"
+                                }
                                 className="text-primary hover:underline font-medium"
                             >
                                 Sign in

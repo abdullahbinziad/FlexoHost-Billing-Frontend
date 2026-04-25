@@ -133,7 +133,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return redirectPath && redirectPath.startsWith("/") ? redirectPath : "/";
         }
         const needsProfile = ['client', 'user'].includes(role) && user.profileCompleted === false;
-        if (needsProfile) return '/complete-profile';
+        if (needsProfile) {
+            // New signups are profileCompleted:false until /complete-profile, but checkout is allowed
+            // without a full profile (ClientRouteGuard exempts /checkout). Preserve checkout deep links
+            // so register matches login behavior for affiliate/product URLs.
+            if (redirectPath) {
+                const candidate = getSmartRedirect(redirectPath, role);
+                if (candidate.startsWith('/checkout')) {
+                    return candidate;
+                }
+            }
+            return '/complete-profile';
+        }
         return getSmartRedirect(redirectPath, role);
     };
 
@@ -303,6 +314,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             setIsLoading(true);
 
+            let redirectPath: string | null = redirectUrl ?? null;
+            if (!redirectPath && typeof window !== 'undefined') {
+                redirectPath = new URLSearchParams(window.location.search).get('redirect');
+            }
+
             // Real API call
             const response = await clientService.registerClient(data);
 
@@ -317,7 +333,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(user);
                 syncUserToRedux(user, accessToken ?? null);
 
-                const finalRedirect = getRedirectAfterLogin(user, redirectUrl ?? null);
+                const finalRedirect = getRedirectAfterLogin(user, redirectPath);
                 router.push(finalRedirect);
             } else {
                 throw new Error(response.message || "Registration failed");

@@ -264,7 +264,11 @@ function LoginForm() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Don't have an account?{" "}
               <Link
-                href="/register"
+                href={
+                  redirect
+                    ? `/register?redirect=${encodeURIComponent(redirect)}`
+                    : "/register"
+                }
                 className="text-primary hover:underline font-medium"
               >
                 Sign up

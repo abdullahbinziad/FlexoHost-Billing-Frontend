@@ -47,13 +47,15 @@ export interface AffiliateProfile {
 
 export interface AffiliateReferralItem {
   _id: string;
-  referredClientObjectId?: string;
   referralCode: string;
   source: string;
   status: string;
   createdAt: string;
   qualifiedAt?: string;
+  /** Set by `/affiliate/me` for linking rows to commissions (referred client's Mongo id). */
+  referredClientObjectId?: string;
   referredClientId?: {
+    _id?: string;
     clientId?: number;
     firstName?: string;
     lastName?: string;
