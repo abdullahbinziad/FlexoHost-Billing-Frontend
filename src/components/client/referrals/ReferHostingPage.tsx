@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Check,
+  HelpCircle,
   Copy,
   ExternalLink,
   Gift,
@@ -35,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Product, PricingDetail } from "@/types/admin/product";
 
 type BillingCycleKey =
@@ -181,6 +183,21 @@ function findCommissionForReferral(
   });
 }
 
+function getReferralStatusMeta(referral: AffiliateReferralItem, commission?: AffiliateCommissionItem) {
+  const status = commission?.status || referral.commissionStatus || referral.status;
+  const normalized = String(status || "").toLowerCase();
+  const isApproved = ["approved", "credited", "paid_out", "payout_requested"].includes(normalized);
+  return {
+    label: isApproved ? "Approved" : "Qualified",
+    toneClass: isApproved
+      ? "text-emerald-700 dark:text-emerald-400"
+      : "text-amber-700 dark:text-amber-400",
+    pendingReason: isApproved
+      ? ""
+      : "Client completed purchase, waiting for the admin-configured approval delay window.",
+  };
+}
+
 function buildAffiliateLink(params: {
   origin: string;
   product: Product;
@@ -294,9 +311,7 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
     BILLING_CYCLES.find((cycle) => cycle.id === selectedBillingCycle)?.label || selectedBillingCycle;
   const selectedSummary = affiliateDashboard?.summaryByCurrency?.[selectedCurrency.code];
   const approvedAmount = selectedSummary?.approved || 0;
-  const paidOutAmount = selectedSummary?.paidOut || 0;
-  const creditedAmount = selectedSummary?.credited || 0;
-  const totalReferrals = affiliateDashboard?.profile?.referredClientsCount || 0;
+  const pendingAmount = selectedSummary?.qualified || 0;
   const payoutThreshold = affiliateDashboard?.profile?.payoutThreshold ?? 0;
   const thresholdProgress = payoutThreshold > 0 ? Math.min(100, (approvedAmount / payoutThreshold) * 100) : 0;
   const leftUntilPayout = Math.max(0, payoutThreshold - approvedAmount);
@@ -410,25 +425,27 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
         <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total paid out</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Pending earnings</CardTitle>
               <Gift className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-semibold tracking-tight">
-                {formatCurrency(paidOutAmount + creditedAmount, selectedCurrency.code)}
+                {formatCurrency(pendingAmount, selectedCurrency.code)}
               </div>
-              <p className="text-xs text-muted-foreground">Lifetime payouts and credits</p>
+              <p className="text-xs text-muted-foreground">Qualified and waiting for approval</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total referrals</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Approved earnings</CardTitle>
               <Share2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-semibold tracking-tight">{totalReferrals}</div>
-              <p className="text-xs text-muted-foreground">Clients referred</p>
+              <div className="text-2xl font-semibold tracking-tight">
+                {formatCurrency(approvedAmount, selectedCurrency.code)}
+              </div>
+              <p className="text-xs text-muted-foreground">Ready for redeem or payout request</p>
             </CardContent>
           </Card>
         </div>
@@ -818,59 +835,133 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
         </CardContent>
       </Card>
 
-      {(affiliateDashboard?.referrals?.length || 0) > 0 && (
-        <Card className="min-w-0">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold">Latest referral activity</CardTitle>
-            <CardDescription>Recent tracked referrals from your affiliate dashboard.</CardDescription>
-          </CardHeader>
-          <CardContent className="min-w-0 p-0">
-            <div className="min-w-0 overflow-x-auto border-t">
-              <Table className="min-w-[560px] whitespace-normal">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Invite</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date purchased</TableHead>
-                    <TableHead className="text-right">Earnings</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(affiliateDashboard?.referrals || []).slice(0, 5).map((referral, index) => {
-                    const relatedCommission = findCommissionForReferral(
-                      affiliateDashboard?.commissions,
-                      referral
-                    );
-                    const inviteLabel =
-                      referral.referredClientId?.contactEmail ||
-                      `${referral.referredClientId?.firstName || "Unknown"} ${referral.referredClientId?.lastName || ""}`.trim();
-
-                    return (
-                      <TableRow key={`${referral._id}-${index}`}>
-                        <TableCell>{inviteLabel || "Unknown"}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="capitalize">
-                            {referral.status.replace(/_/g, " ")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(referral.qualifiedAt || referral.createdAt)}</TableCell>
-                        <TableCell className="text-right font-medium tabular-nums">
-                          {relatedCommission
-                            ? formatCurrency(
-                                relatedCommission.commissionAmount,
-                                relatedCommission.currency || selectedCurrency.code
-                              )
-                            : "—"}
+      <Card className="min-w-0">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">Affiliate activity</CardTitle>
+          <CardDescription>Track referral status and payout history.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 p-0">
+          <Tabs defaultValue="referrals" className="w-full">
+            <div className="px-4">
+              <TabsList>
+                <TabsTrigger value="referrals">Referrals</TabsTrigger>
+                <TabsTrigger value="payouts">Payouts</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="referrals" className="mt-0">
+              <div className="min-w-0 overflow-x-auto border-t">
+                <Table className="min-w-[560px] whitespace-normal">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invite</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date purchased</TableHead>
+                      <TableHead className="text-right">Earnings</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(affiliateDashboard?.referrals || []).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
+                          No referrals yet.
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    ) : (
+                      (affiliateDashboard?.referrals || []).slice(0, 10).map((referral, index) => {
+                        const relatedCommission = findCommissionForReferral(
+                          affiliateDashboard?.commissions,
+                          referral
+                        );
+                        const statusMeta = getReferralStatusMeta(referral, relatedCommission);
+                        const approvedDate = referral.expectedApprovalAt || relatedCommission?.availableAt;
+                        const boughtItems = referral.purchaseItems || [];
+                        const inviteLabel =
+                          referral.referredClientId?.contactEmail ||
+                          `${referral.referredClientId?.firstName || "Unknown"} ${referral.referredClientId?.lastName || ""}`.trim();
+                        const infoParts = [
+                          `Status: ${statusMeta.label}${statusMeta.label === "Qualified" ? " (Pending)" : ""}`,
+                          statusMeta.pendingReason ? `Why pending: ${statusMeta.pendingReason}` : "",
+                          approvedDate ? `Auto approval: ${formatDate(approvedDate)}` : "Auto approval: Pending order validation",
+                          boughtItems.length ? `Bought: ${boughtItems.join(", ")}` : "Bought: Product details unavailable",
+                        ].filter(Boolean);
+
+                        return (
+                          <TableRow key={`${referral._id}-${index}`}>
+                            <TableCell>{inviteLabel || "Unknown"}</TableCell>
+                            <TableCell>
+                              <div className="inline-flex items-center gap-1.5">
+                                <Badge variant="secondary" className={statusMeta.toneClass}>
+                                  {statusMeta.label}
+                                  {statusMeta.label === "Qualified" ? " (Pending)" : ""}
+                                </Badge>
+                                <button
+                                  type="button"
+                                  title={infoParts.join("\n")}
+                                  className="inline-flex items-center text-muted-foreground hover:text-foreground"
+                                  aria-label="Referral status details"
+                                >
+                                  <HelpCircle className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </TableCell>
+                            <TableCell>{formatDate(referral.qualifiedAt || referral.createdAt)}</TableCell>
+                            <TableCell className="text-right font-medium tabular-nums">
+                              {relatedCommission
+                                ? formatCurrency(
+                                    relatedCommission.commissionAmount,
+                                    relatedCommission.currency || selectedCurrency.code
+                                  )
+                                : "—"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            <TabsContent value="payouts" className="mt-0">
+              <div className="min-w-0 overflow-x-auto border-t">
+                <Table className="min-w-[560px] whitespace-normal">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Requested</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Method</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(affiliateDashboard?.payoutRequests || []).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-20 text-center text-muted-foreground">
+                          No payout requests yet.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      (affiliateDashboard?.payoutRequests || []).slice(0, 10).map((request) => (
+                        <TableRow key={request._id}>
+                          <TableCell>{formatDate(request.requestedAt)}</TableCell>
+                          <TableCell className="font-medium">
+                            {formatCurrency(request.amount, request.currency || selectedCurrency.code)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="capitalize">
+                              {request.status?.replace(/_/g, " ")}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{request.payoutDetails?.method || request.payoutDetails?.provider || "—"}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

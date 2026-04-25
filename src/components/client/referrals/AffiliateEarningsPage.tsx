@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Gift, Loader2, PiggyBank, RefreshCw, Share2, Wallet } from "lucide-react";
+import { HelpCircle, Copy, Gift, Loader2, PiggyBank, RefreshCw, Share2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,14 @@ import {
 
 function humanizeStatus(value?: string) {
   return (value || "").replace(/_/g, " ");
+}
+
+function referralStatusLabel(status?: string) {
+  const normalized = String(status || "").toLowerCase();
+  if (["approved", "credited", "paid_out", "payout_requested"].includes(normalized)) {
+    return "Approved";
+  }
+  return "Qualified (Pending)";
 }
 
 interface AffiliateEarningsPageProps {
@@ -396,7 +404,30 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
                         </TableCell>
                         <TableCell className="capitalize">{item.source}</TableCell>
                         <TableCell>
-                          <Badge variant="secondary" className="capitalize">{humanizeStatus(item.status)}</Badge>
+                          <div className="inline-flex items-center gap-1.5">
+                            <Badge variant="secondary" className="capitalize">
+                              {referralStatusLabel(item.commissionStatus || item.status)}
+                            </Badge>
+                            <button
+                              type="button"
+                              title={[
+                                `Status: ${referralStatusLabel(item.commissionStatus || item.status)}`,
+                                ["approved", "credited", "paid_out", "payout_requested"].includes(
+                                  String(item.commissionStatus || "").toLowerCase()
+                                )
+                                  ? ""
+                                  : "Why pending: Waiting for approval delay window after purchase.",
+                                `Auto approval: ${item.expectedApprovalAt ? formatDate(item.expectedApprovalAt) : "Pending order validation"}`,
+                                `Bought: ${item.purchaseItems?.length ? item.purchaseItems.join(", ") : "Product details unavailable"}`,
+                              ]
+                                .filter(Boolean)
+                                .join("\n")}
+                              className="inline-flex items-center text-muted-foreground hover:text-foreground"
+                              aria-label="Referral status details"
+                            >
+                              <HelpCircle className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </TableCell>
                         <TableCell>{formatDate(item.createdAt)}</TableCell>
                       </TableRow>
