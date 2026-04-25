@@ -77,7 +77,10 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                         <Link href={`/auth/login?redirect=${encodeURIComponent(redirectTarget)}`}>
                             <Button variant="ghost" size="sm" className="px-2 sm:px-3">Login</Button>
                         </Link>
-                        <Link href="/auth/register" className="hidden sm:inline-flex">
+                        <Link
+                            href={`/register?redirect=${encodeURIComponent(redirectTarget)}`}
+                            className="hidden sm:inline-flex"
+                        >
                             <Button size="sm">Get Started</Button>
                         </Link>
                     </div>
