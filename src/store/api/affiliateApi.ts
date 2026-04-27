@@ -135,10 +135,20 @@ export interface AdminAffiliateDashboardResponse {
   payoutRequests: AffiliatePayoutRequestItem[];
   referrals: (AffiliateReferralItem & {
     affiliateClientId?: {
+      _id?: string;
       clientId?: number;
       firstName?: string;
       lastName?: string;
       contactEmail?: string;
+      email?: string;
+    };
+    referredClientId?: {
+      _id?: string;
+      clientId?: number;
+      firstName?: string;
+      lastName?: string;
+      contactEmail?: string;
+      email?: string;
     };
   })[];
   recentTransactionsByInvoice: Record<string, string>;

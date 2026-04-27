@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, HelpCircle, CircleOff, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,10 @@ import { DataTablePagination } from "@/components/shared/DataTablePagination";
 
 function humanizeStatus(value?: string) {
   return (value || "").replace(/_/g, " ");
+}
+
+function getClientEmail(client?: { contactEmail?: string; email?: string } | null) {
+  return client?.contactEmail || client?.email || "—";
 }
 
 export default function AdminAffiliatesPage() {
@@ -234,6 +239,8 @@ export default function AdminAffiliatesPage() {
                       const affiliateLabel =
                         item.affiliateClientId?.contactEmail ||
                         `${item.affiliateClientId?.firstName || "Unknown"} ${item.affiliateClientId?.lastName || ""}`.trim();
+                      const inviteEmail = getClientEmail(item.referredClientId);
+                      const affiliateEmail = getClientEmail(item.affiliateClientId as { contactEmail?: string; email?: string });
                       const infoText = [
                         `Status: ${statusLabel}`,
                         isApproved ? "" : "Why pending: Waiting for commission approval delay window.",
@@ -246,16 +253,36 @@ export default function AdminAffiliatesPage() {
                       return (
                         <TableRow key={item._id}>
                           <TableCell>
-                            <div className="font-medium">{inviteLabel || "Unknown"}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Client #{item.referredClientId?.clientId || "—"}
-                            </div>
+                            {item.referredClientId?._id ? (
+                              <Link
+                                href={`/admin/clients/${item.referredClientId._id}`}
+                                className="block"
+                              >
+                                <div className="font-medium">{inviteLabel || "Unknown"}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{inviteEmail}</div>
+                              </Link>
+                            ) : (
+                              <div>
+                                <div className="font-medium">{inviteLabel || "Unknown"}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{inviteEmail}</div>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <div className="font-medium">{affiliateLabel || "Unknown"}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Code: {item.referralCode || "—"}
-                            </div>
+                            {item.affiliateClientId?._id ? (
+                              <Link
+                                href={`/admin/clients/${item.affiliateClientId._id}`}
+                                className="block"
+                              >
+                                <div className="font-medium">{affiliateLabel || "Unknown"}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{affiliateEmail}</div>
+                              </Link>
+                            ) : (
+                              <div>
+                                <div className="font-medium">{affiliateLabel || "Unknown"}</div>
+                                <div className="mt-1 text-xs text-muted-foreground">{affiliateEmail}</div>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="inline-flex items-center gap-1.5">
