@@ -908,8 +908,9 @@ export function ReferHostingPage({ embedded = false }: { embedded?: boolean }) {
                             <TableCell className="text-right font-medium tabular-nums">
                               {relatedCommission
                                 ? formatCurrency(
-                                    relatedCommission.commissionAmount,
-                                    relatedCommission.currency || selectedCurrency.code
+                                    relatedCommission.commissionAmounts?.[selectedCurrency.code] ??
+                                      relatedCommission.commissionAmount,
+                                    selectedCurrency.code
                                   )
                                 : "—"}
                             </TableCell>

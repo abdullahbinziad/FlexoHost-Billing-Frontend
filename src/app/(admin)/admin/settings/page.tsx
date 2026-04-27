@@ -18,6 +18,7 @@ import {
     ReminderEmailCard,
     DomainReminderCard,
     LateFeeCard,
+    CurrencyRateCard,
     SettingsPageFrame,
 } from "@/components/admin/settings";
 
@@ -82,6 +83,7 @@ export default function AdminSettingsPage() {
         >
             <div className="grid gap-4 sm:grid-cols-2">
                 <DefaultStaffRoleCard form={form} onChange={handleChange} />
+                <CurrencyRateCard form={form} onChange={handleChange} />
                 <InvoiceSettingsCard form={form} onChange={handleChange} />
                 <ServiceEnforcementCard form={form} onChange={handleChange} />
                 <ReminderEmailCard form={form} onChange={handleChange} />

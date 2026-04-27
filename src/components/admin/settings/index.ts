@@ -11,3 +11,4 @@ export { ServiceEnforcementCard } from "./ServiceEnforcementCard";
 export { ReminderEmailCard } from "./ReminderEmailCard";
 export { DomainReminderCard } from "./DomainReminderCard";
 export { LateFeeCard } from "./LateFeeCard";
+export { CurrencyRateCard } from "./CurrencyRateCard";

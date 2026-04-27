@@ -56,6 +56,7 @@ export interface AffiliateReferralItem {
   commissionStatus?: string;
   expectedApprovalAt?: string;
   commissionAmount?: number;
+  commissionAmounts?: Record<string, number>;
   commissionCurrency?: string;
   purchaseItems?: string[];
   /** Set by `/affiliate/me` for linking rows to commissions (referred client's Mongo id). */
@@ -79,6 +80,9 @@ export interface AffiliateCommissionItem {
   orderNetAmount: number;
   discountAmount: number;
   commissionAmount: number;
+  orderNetAmounts?: Record<string, number>;
+  discountAmounts?: Record<string, number>;
+  commissionAmounts?: Record<string, number>;
   refundWindowDays: number;
   qualifiedAt: string;
   availableAt: string;
