@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { DashboardStatCard } from "@/components/client/dashboard/DashboardStatCard";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useFormatCurrency } from "@/hooks/useFormatCurrency";
 import { formatDate } from "@/utils/format";
 import {
@@ -37,6 +38,7 @@ interface AffiliateEarningsPageProps {
 }
 
 export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPageProps) {
+  const { selectedCurrency } = useCurrency();
   const formatCurrency = useFormatCurrency();
   const { data, isLoading, error } = useGetMyAffiliateDashboardQuery();
   const [redeemAffiliateCredit, { isLoading: isRedeeming }] = useRedeemAffiliateCreditMutation();
@@ -53,7 +55,7 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
   const [provider, setProvider] = useState("");
   const [referralCodeInput, setReferralCodeInput] = useState("");
 
-  const preferredCurrency = data?.profile?.preferredCurrency || data?.clientCreditCurrency || "BDT";
+  const preferredCurrency = selectedCurrency.code || data?.profile?.preferredCurrency || data?.clientCreditCurrency || "BDT";
   const activeSummary = useMemo(() => {
     return data?.summaryByCurrency?.[preferredCurrency]
       || (data?.summaryByCurrency ? Object.values(data.summaryByCurrency)[0] : undefined);
@@ -159,6 +161,12 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
   const payoutThreshold = data.profile.payoutThreshold ?? 0;
   const availableForPayout = activeSummary?.approved || 0;
   const thresholdProgress = payoutThreshold > 0 ? Math.min(100, (availableForPayout / payoutThreshold) * 100) : 0;
+
+  const resolveCommissionAmount = (item: { commissionAmount?: number; commissionAmounts?: Record<string, number> }) => {
+    const amount = item.commissionAmounts?.[preferredCurrency];
+    if (typeof amount === "number") return amount;
+    return item.commissionAmount || 0;
+  };
 
   return (
     <div className="w-full min-w-0 space-y-4 sm:space-y-6">
@@ -467,8 +475,15 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
                         <TableCell>
                           <Badge variant="secondary" className="capitalize">{humanizeStatus(item.status)}</Badge>
                         </TableCell>
-                        <TableCell>{formatCurrency(item.orderNetAmount, item.currency)}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(item.commissionAmount, item.currency)}</TableCell>
+                        <TableCell>
+                          {formatCurrency(
+                            item.orderNetAmounts?.[preferredCurrency] ?? item.orderNetAmount,
+                            preferredCurrency
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(resolveCommissionAmount(item), preferredCurrency)}
+                        </TableCell>
                         <TableCell>{formatDate(item.approvedAt || item.availableAt)}</TableCell>
                         <TableCell>{item.referralCode}</TableCell>
                       </TableRow>
@@ -506,7 +521,7 @@ export function AffiliateEarningsPage({ embedded = false }: AffiliateEarningsPag
                     (data.payoutRequests || []).map((item) => (
                       <TableRow key={item._id}>
                         <TableCell>{formatDate(item.requestedAt)}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(item.amount, item.currency)}</TableCell>
+                        <TableCell className="font-medium">{formatCurrency(item.amount, item.currency || preferredCurrency)}</TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="capitalize">{humanizeStatus(item.status)}</Badge>
                         </TableCell>

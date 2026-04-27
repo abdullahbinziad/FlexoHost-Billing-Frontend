@@ -3,6 +3,7 @@ import { ApiResponse } from "@/types/api";
 
 export interface BillingSettings {
     defaultStaffRoleId?: string | null;
+    exchangeRateBdt: number;
     renewalLeadDays: number;
     daysBeforeSuspend: number;
     daysBeforeTermination: number;
@@ -25,6 +26,7 @@ export interface BillingSettings {
 export type BillingSettingsPatch = Partial<BillingSettings>;
 
 export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
+    exchangeRateBdt: 0.009,
     renewalLeadDays: 7,
     daysBeforeSuspend: 5,
     daysBeforeTermination: 30,
