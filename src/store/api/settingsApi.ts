@@ -8,6 +8,10 @@ export interface BillingSettings {
     daysBeforeSuspend: number;
     daysBeforeTermination: number;
     invoiceDueDays: number;
+    renewalHostingItemTemplate: string;
+    renewalDomainItemTemplate: string;
+    renewalItemDateFormat: "DD/MM/YYYY" | "YYYY-MM-DD";
+    renewalShowDomainAddons: boolean;
     overdueExtraChargeDays: number;
     overdueExtraChargeAmount: number;
     overdueExtraChargeType: "fixed" | "percent";
@@ -31,6 +35,10 @@ export const DEFAULT_BILLING_SETTINGS: BillingSettings = {
     daysBeforeSuspend: 5,
     daysBeforeTermination: 30,
     invoiceDueDays: 7,
+    renewalHostingItemTemplate: "{packageName} - {domainName} ({periodStart} - {periodEnd})",
+    renewalDomainItemTemplate: "Domain Renewal - {domainName} - {yearsLabel} ({periodStart} - {periodEnd})",
+    renewalItemDateFormat: "DD/MM/YYYY",
+    renewalShowDomainAddons: true,
     overdueExtraChargeDays: 0,
     overdueExtraChargeAmount: 0,
     overdueExtraChargeType: "fixed",

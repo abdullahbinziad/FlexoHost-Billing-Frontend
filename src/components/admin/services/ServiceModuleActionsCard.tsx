@@ -226,11 +226,22 @@ export function ServiceModuleActionsCard({
     try {
       const result = await fn();
       onSuccess?.();
-      const msg = result && typeof result === "object" && "message" in result ? result.message : undefined;
+      const msg = result && typeof result === "object" && "message" in result ? (result as { message?: string }).message : undefined;
       if (msg) {
-        toast.success(msg, {
-          description: domainLabel !== "—" ? `${domainLabel}` : undefined,
-        });
+        // Use warning toast when notification/email failed despite action success
+        const hasNotificationFailure =
+          typeof msg === "string" &&
+          (msg.includes("Email failed") || msg.includes("Notification failed") || msg.includes("email not sent"));
+        if (hasNotificationFailure) {
+          toast.warning(msg, {
+            description: domainLabel !== "—" ? `${domainLabel}` : undefined,
+            duration: 8000,
+          });
+        } else {
+          toast.success(msg, {
+            description: domainLabel !== "—" ? `${domainLabel}` : undefined,
+          });
+        }
       }
     } catch (e: unknown) {
       const message =
