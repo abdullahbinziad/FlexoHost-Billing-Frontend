@@ -21,7 +21,7 @@ export function ReminderEmailCard({ form, onChange }: ReminderEmailCardProps) {
                     <CardTitle className="text-base">Invoice Reminder Emails</CardTitle>
                 </div>
                 <CardDescription className="text-xs">
-                    Flexible reminder schedule. Add or remove days for each stage. Comma-separated.
+                    Emails send only on the exact configured calendar day for each stage.
                 </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-2 space-y-4">
@@ -30,13 +30,13 @@ export function ReminderEmailCard({ form, onChange }: ReminderEmailCardProps) {
                         label="Pre-reminder (days before due)"
                         value={form.preReminderDays ?? [30, 14, 7, 3, 1]}
                         onChange={(arr) => onChange("preReminderDays", arr)}
-                        hint="e.g. 30, 14, 7, 3, 1"
+                        hint="Exact days before invoice due date, e.g. 30, 14, 7, 3, 1"
                     />
                     <DaysArrayInput
                         label="Overdue reminders (days overdue)"
                         value={form.overdueReminderDays ?? [1, 3, 7, 14, 30]}
                         onChange={(arr) => onChange("overdueReminderDays", arr)}
-                        hint="e.g. 1, 3, 7, 14, 30"
+                        hint="Exact days after invoice due date, e.g. 1, 3, 7, 14, 30"
                     />
                     <DaysArrayInput
                         label="Suspend warning (days before suspend)"

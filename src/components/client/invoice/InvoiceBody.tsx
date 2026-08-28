@@ -80,7 +80,16 @@ export function InvoiceBody({ invoice }: InvoiceBodyProps) {
                   )}
                 >
                   <td className="break-words border-r border-gray-300 px-2 py-2 text-xs text-gray-900 dark:border-gray-700 dark:text-gray-100 sm:px-3 sm:py-2.5 sm:text-sm">
-                    {item.description}
+                    {String(item.description || "")
+                      .split("\n")
+                      .map((line, lineIndex) => (
+                        <div
+                          key={`${item.id}-${lineIndex}`}
+                          className={lineIndex > 0 ? "mt-1 text-gray-700 dark:text-gray-300" : undefined}
+                        >
+                          {line}
+                        </div>
+                      ))}
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right text-xs font-semibold text-gray-900 dark:text-gray-100 sm:px-3 sm:py-2.5 sm:text-sm">
                     {formatCurrency(item.amount, invoice.currency)}
